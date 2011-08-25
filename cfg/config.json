@@ -1,0 +1,22 @@
+{
+  "host": "127.0.0.1",
+  "port": 1389,
+  "logLevel": "INFO",
+  "rootDN": "cn=root",
+  "rootPassword": "secret",
+  "schemaLocation": "./schema",
+  "trees": {
+    "o=joyent": {
+      "type": "riak",
+      "riak": {
+        "host": "localhost",
+        "port": 8098,
+        "bucket": "ufds",
+        "indexes": ["l", "cn"],
+        "uniqueIndexes": ["uid"],
+        "numConnections": 5
+      }
+    }
+  }
+
+}

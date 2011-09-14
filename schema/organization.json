@@ -1,0 +1,28 @@
+{
+  "name":"organization",
+  "type": "object",
+  "properties": {
+    "o": {
+      "type": "array",
+      "description": "organization name",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "objectclass": {
+      "type": "array",
+      "description": "objectclass",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1
+    }
+  },
+  "patternProperties": {
+    "(^_\\w+)": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

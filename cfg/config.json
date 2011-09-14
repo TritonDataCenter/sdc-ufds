@@ -4,19 +4,17 @@
   "logLevel": "INFO",
   "rootDN": "cn=root",
   "rootPassword": "secret",
-  "schemaLocation": "./schema",
+  "schemaDirectory": "./schema",
   "trees": {
-    "o=joyent": {
-      "type": "riak",
+    "o=smartdc": {
       "riak": {
         "host": "localhost",
         "port": 8098,
         "bucket": "ufds",
-        "indexes": ["l", "cn"],
-        "uniqueIndexes": ["uid"],
+        "indexes": ["owner", "fingerprint"],
+        "uniqueIndexes": ["uuid", "login", "email"],
         "numConnections": 5
       }
     }
   }
-
 }

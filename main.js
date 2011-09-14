@@ -9,15 +9,15 @@ var ldap = require('ldapjs');
 var log4js = require('log4js');
 var nopt = require('nopt');
 var ldapRiak = require('ldapjs-riak');
-var rbytes = require('rbytes');
+
+var salt = require('./lib/salt');
+var schema = require('./lib/schema');
 
 
 
 ///--- Globals
 
-var SALT_LEN = 20;
-
-var log = log4js.getLogger('ufds');
+var log = log4js.getLogger('main');
 var config = null;
 var server = null;
 
@@ -55,15 +55,15 @@ function usage(code) {
 
 function processConfig() {
   var parsed = nopt(opts, shortOpts, process.argv, 2);
+
   if (parsed.help)
     usage(0);
 
-  // Load the config file first, and treat cmd-line switches as
-  // overrides
   try {
     var file = parsed.file || './cfg/config.json';
 
     config = JSON.parse(fs.readFileSync(file, 'utf8'));
+    config.log4js = log4js;
 
     if (config.logLevel)
       log4js.setGlobalLogLevel(config.logLevel);
@@ -88,101 +88,67 @@ function processConfig() {
   }
 }
 
-function saltPassword(salt, password) {
-  var hash = crypto.createHash('sha1');
-  hash.update('--');
-  hash.update(salt);
-  hash.update('--');
-  hash.update(password);
-  hash.update('--');
-  return hash.digest('hex')
-}
 
+function audit(req, res, next) {
+  var out = process.stderr;
 
-function loadSalt(req, callback) {
-  req.riak.db.get(req.riak.bucket, req.riak.key, function(err, obj, meta) {
-    if (err) {
-      if (err.statusCode === 404)
-        return callback(new ldap.NoSuchObjectError(req.dn.toString()));
-
-      req.riak.log.warn('%s error talking to riak %s', req.logId, err.stack);
-      return callback(new ldap.OperationsError(err.message));
-    }
-    obj = obj.attributes || {};
-
-    if (!obj._salt)
-      return callback(new ldap.NoSuchAttributeError('salt'));
-
-    return callback(null, obj._salt[0]);
-  })
-}
-
-
-function addSalt(req, res, next) {
-  var entry = req.toObject().attributes;
-  if (!entry.userpassword || !entry.userpassword.length)
-    return next();
-
-  var salt = '';
-  var buf = rbytes.randomBytes(SALT_LEN); // CAPI's SALT length
-  for (i = 0; i < buf.length; i++)
-    salt += buf[i].toString(16); // hex encode
-
-  // attrs are sorted on the wire, so userPassword will be closer to tail
-  req.addAttribute(new ldap.Attribute({
-    type: '_salt',
-    vals: [salt]
-  }));
-
-  for (i = req.attributes.length - 1; i >= 0; i--) {
-    if (req.attributes[i].type === 'userpassword') {
-      req.attributes[i].vals = [saltPassword(salt, entry.userpassword[0])];
-      return next();
-    }
+  var additional = '';
+  switch (req.type) {
+  case 'BindRequest':
+    additional += 'bindType=' + req.authentication + ', ';
+    break;
+  case 'AddRequest':
+    var attrs = req.toObject().attributes;
+    if (attrs.userpassword)
+      attrs.userpassword = ['XXXXXX'];
+    additional += 'entry= ' + JSON.stringify(attrs) + ', ';
+    break;
+  case 'SearchRequest':
+    additional += 'scope=' + req.scope + ', ' +
+      'filter=' + req.filter.toString() + ', ' +
+      'attributes=' + (req.attributes.join() || '[]') + ', ' +
+      'sentEntries=' + res.sentEntries + ', ';
+    break;
   }
+
+  function ISODateString(d){
+    if (!d)
+      d = new Date();
+
+    function pad(n) {
+      return n <10 ? '0' + n : n;
+    }
+    return d.getUTCFullYear() + '-'
+      + pad(d.getUTCMonth() + 1) + '-'
+      + pad(d.getUTCDate()) + 'T'
+      + pad(d.getUTCHours()) + ':'
+      + pad(d.getUTCMinutes()) + ':'
+      + pad(d.getUTCSeconds()) + 'Z';
+  }
+
+  var now = new Date();
+  out.write(ISODateString(now) + ' ' +
+            'clientip=' + req.connection.remoteAddress + ', ' +
+            'bindDN=' + req.connection.ldap.bindDN.toString() + ', ' +
+            'msgid=' + req.id + ', ' +
+            'request=' + req.type + ', ' +
+            'requestDN=' + req.dn.toString() + ', ' +
+            additional +
+            'status=' + res.status + ', ' +
+            'time=' + (now.getTime() - req.startTime) + 'ms, ' +
+            '\n'
+           );
 }
-
-
-function bindSalt(req, res, next) {
-  return loadSalt(req, function(err, salt) {
-    if (err)
-      return next(err);
-
-    req.credentials = saltPassword(salt, req.credentials);
-    return next();
-  });
-}
-
-
-function compareSalt(req, res, next) {
-  if (req.attribute !== 'userpassword')
-    return next();
-
-  return loadSalt(req, function(err, salt) {
-    if (err)
-      return next(err);
-
-    req.value = saltPassword(salt, req.value);
-    return next();
-  });
-}
-
-
-function searchSalt(req, res, next) {
-  res.notAttributes.push('userpassword');
-  return next();
-}
-
 
 
 ///--- Mainline
 
 processConfig();
-config.log4js = log4js;
 
 log.debug('config processed: %j', config);
 
 server = ldap.createServer(config);
+server.after(audit);
 
 server.bind(config.rootDN, function(req, res, next) {
   if (req.version !== 3)
@@ -195,56 +161,72 @@ server.bind(config.rootDN, function(req, res, next) {
   return next();
 });
 
-// server.exop('1.3.6.1.4.1.4203.1.11.3', function(req, res, next) {
-//   res.responseValue = 'u:xxyyz@EXAMPLE.NET';
-//   res.end(0);
-//   return next();
-// });
 
-ldap.loadSchema(config.schemaLocation, function(err, schema) {
+// ldapwhoami -H ldap://localhost:1389 -x -D cn=root -w secret
+// cn=root
+server.exop('1.3.6.1.4.1.4203.1.11.3', function(req, res, next) {
+  res.responseValue = req.connection.ldap.bindDN.toString();
+  res.end();
+  return next();
+});
+
+
+schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
   if (err) {
-    console.error('Unabled to load schema: %s', err.stack);
+    log.warn('Error loading schema: ' + err.stack);
     process.exit(1);
   }
 
+  function addSchema(req, res, next) {
+    if (req.toObject)
+      req.object = req.toObject();
+
+    req.schema = _schema;
+    return next();
+  }
+
+  function authorize(req, res, next) {
+    var bindDN = req.connection.ldap.bindDN;
+
+    if (req.type === 'BindRequest' ||
+        bindDN.equals(config.rootDN) ||
+        bindDN.parentOf(req.dn) ||
+        bindDN.equals(req.dn)) {
+      return next();
+    }
+
+    return next(new ldap.InsufficientAccessRightsError());
+  }
+
+  var pre = [authorize, addSchema];
+
   Object.keys(config.trees).forEach(function(t) {
     var tree = config.trees[t];
-    if (tree.type === 'riak') {
-      tree.riak.log4js = log4js;
-      var backend = ldapRiak.createBackend(tree.riak);
-      server.add(t,
-                 backend,
-                 ldap.createSchemaAddHandler({
-                   log4js: log4js,
-                   schema: schema
-                 }),
-                 backend.add(addSalt));
-      server.modify(t,
-                    backend,
-                    ldap.createSchemaModifyHandler({
-                      log4js: log4js,
-                      schema: schema
-                    }),
-                    backend.modify());
-
-
-      server.bind(t, backend, backend.bind(bindSalt));
-      server.compare(t, backend, backend.compare(compareSalt));
-      server.del(t, backend, backend.del());
-
-      server.modifyDN(t, backend, backend.modifyDN());
-      server.search(t,
-                    backend,
-                    ldap.createSchemaSearchHandler({
-                      log4js: log4js,
-                      schema: schema
-                    }),
-                    backend.search(searchSalt));
+    if (typeof(tree.riak) !== 'object') {
+      log.warn('Tree type %s is an invalid type. Ignoring %s', tree.type, t);
+      return;
     }
+
+    tree.riak.log4js = log4js;
+    var backend = ldapRiak.createBackend(tree.riak);
+
+    server.add(t, backend, pre, schema.validateAdd, backend.add(salt.add));
+    server.bind(t, backend, pre, backend.bind(salt.bind));
+    server.compare(t, backend, pre, backend.compare(salt.compare));
+    server.modify(t, backend, pre, backend.modify([
+      schema.validateModify,
+      salt.modify]));
+    server.del(t, backend, pre, backend.del());
+    server.modifyDN(t, backend, pre, backend.modifyDN());
+    server.search(t, backend, pre, backend.search(salt.search));
   });
 
   server.listen(config.port, config.host, function() {
-    log.info('UFDS listening at: %s', server.url);
+    log.info('UFDS listening at: %s\n\n', server.url);
   });
 });
+
+
+
+
 

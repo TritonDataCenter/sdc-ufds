@@ -1,0 +1,117 @@
+{
+  "name":"sdcperson",
+  "type": "object",
+  "properties": {
+    "login": {
+      "type": "array",
+      "description": "Unique login name",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "uuid": {
+      "description": "Customer UUID",
+      "type": "array",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "userpassword": {
+      "description": "password for the user",
+      "type": "array",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "email": {
+      "description": "email address",
+      "type": "array",
+      "required": true,
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 2
+    },
+    "cn": {
+      "description": "commonName (first name)",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "sn": {
+      "description": "last name",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "company": {
+      "description": "company name",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "address": {
+      "description": "street (1...5)",
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "minItems": 1,
+      "maxItems": 5
+    },
+    "city": {
+      "description": "City",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "state": {
+      "description": "State",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "postalcode": {
+      "description": "Postal Code",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "country": {
+      "description": "Country Name",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "phone": {
+      "description": "City",
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "objectclass": {
+      "type": "array",
+      "description": "objectclass",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1
+    }
+  },
+  "patternProperties": {
+    "(^_\\w+)": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

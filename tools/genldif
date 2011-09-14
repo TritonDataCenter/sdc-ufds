@@ -1,0 +1,132 @@
+#!/usr/bin/env node
+// -*- mode: js -*-
+// Copyright 2011 Joyent, Inc.  All rights reserved.
+
+var path = require('path');
+
+var ldap = require('ldapjs');
+var nopt = require('nopt');
+var uuid = require('node-uuid');
+
+
+
+///--- Globals
+
+var opts = {
+  'debug': Number,
+  'help': Boolean,
+  'number': Number,
+  'suffix': String
+};
+
+var shortOpts = {
+  'd': ['--debug'],
+  'h': ['--help'],
+  'n': ['--number'],
+  's': ['--suffix']
+};
+
+
+
+///--- Internal Functions
+
+function usage(code, message) {
+  var msg = (message ? message + '\n' : '') +
+    'usage: ' + path.basename(process.argv[1]) +
+    ' [-hd] [-s suffix] [-n number]';
+
+
+  if (code === 0) {
+    console.log(msg);
+  } else {
+    console.error(msg);
+  }
+
+  process.exit(code);
+}
+
+
+function writeEntry(dn, obj) {
+  console.log('dn: ' + dn);
+  console.log('changetype: add');
+
+  Object.keys(obj).forEach(function(k) {
+    if (Array.isArray(obj[k])) {
+      obj[k].forEach(function(v) {
+        console.log(k + ': ' + v);
+      });
+    } else {
+      console.log(k + ': ' + obj[k]);
+    }
+  });
+
+  console.log();
+}
+
+
+function rand(length, current){
+ current = current ? current : '';
+ return length ? rand( --length , "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz".charAt( Math.floor( Math.random() * 60 ) ) + current ) : current;
+}
+
+
+///--- Mainline
+
+var parsed = nopt(opts, shortOpts, process.argv, 2);
+
+if (parsed.help)
+  usage(0);
+
+if (!parsed.number)
+  parsed.number = 100;
+
+if (!parsed.suffix)
+  parsed.suffix = 'o=smartdc';
+
+var suffixDN;
+try {
+  suffixDN = ldap.parseDN(parsed.suffix);
+  if (!suffixDN.rdns[0].o)
+    usage(1, 'suffix must be o=');
+
+} catch (e) {
+  usage(1, parsed.suffix + ' is not a valid DN');
+}
+
+/// Write to stdout
+console.log('version: 1\n');
+
+writeEntry(parsed.suffix, {
+  objectclass: 'organization',
+  o: suffixDN.rdns[0].o
+});
+
+writeEntry('ou=customers, ' + parsed.suffix, {
+  objectclass: 'organizationalUnit',
+  ou: 'customers'
+});
+
+writeEntry('ou=operators, ' + parsed.suffix, {
+  objectclass: 'organizationalUnit',
+  ou: 'operators'
+});
+
+for (var i = 0; i < parsed.number; i++) {
+  var login = 'user_' + (i + 1);
+  writeEntry('login=' + login + ', ou=customers, ' + parsed.suffix, {
+    login: login,
+    uuid: uuid(),
+    userpassword: rand(6),
+    email: login + '@joyent.com',
+    cn: 'Test',
+    sn: 'User',
+    company: 'Joyent',
+    address: ['Joyent, Inc.', '345 California Street, Suite 2000'],
+    city: 'San Francisco',
+    state: 'CA',
+    postalCode: 94104,
+    country: 'USA',
+    phone: '+1 415 400 0600',
+    objectclass: 'sdcPerson'
+  });
+}

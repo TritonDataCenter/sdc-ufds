@@ -2,7 +2,9 @@
 // -*- mode: js -*-
 // Copyright 2011 Joyent, Inc.  All rights reserved.
 
+var fs = require('fs');
 var path = require('path');
+var spawn = require('child_process').spawn;
 
 var ldap = require('ldapjs');
 var nopt = require('nopt');
@@ -70,6 +72,37 @@ function rand(length, current){
 }
 
 
+function newKey(parentDN, callback) {
+  var keyFile = '/tmp/.' + uuid();
+  var sshkeygen = spawn('ssh-keygen', ['-f', keyFile,
+                                       '-C', 'genldif@localhost',
+                                       '-t', 'rsa',
+                                       '-b', 1024,
+                                       '-N', '']);
+
+  sshkeygen.stderr.on('data', function(data) {
+    console.error(data.toString());
+  });
+  sshkeygen.on('exit', function(code) {
+    var rm = spawn('rm', ['-f', keyFile]);
+
+    if (code !== 0) {
+      console.error('failed to generate ssh key');
+      process.exit(code);
+    }
+    fs.readFile(keyFile + '.pub', 'utf8', function(err, key) {
+      var rm = spawn('rm', ['-f', keyFile + '.pub']);
+      if (err) {
+        console.error(err.stack);
+        process.exit(1);
+      }
+
+      var dn = 'name=mysshkey, ' + parentDN;
+      return callback(dn, key.replace('\n', ''));
+    });
+  });
+}
+
 ///--- Mainline
 
 var parsed = nopt(opts, shortOpts, process.argv, 2);
@@ -113,7 +146,8 @@ writeEntry('ou=operators, ' + parsed.suffix, {
 
 for (var i = 0; i < parsed.number; i++) {
   var login = 'user_' + (i + 1);
-  writeEntry('login=' + login + ', ou=customers, ' + parsed.suffix, {
+  var loginDN = 'login=' + login + ', ou=customers, ' + parsed.suffix;
+  writeEntry(loginDN, {
     login: login,
     uuid: uuid(),
     userpassword: rand(6),
@@ -129,4 +163,13 @@ for (var i = 0; i < parsed.number; i++) {
     phone: '+1 415 400 0600',
     objectclass: 'sdcPerson'
   });
+
+  newKey(loginDN, function(dn, key) {
+    writeEntry(dn, {
+      name: 'mysshkey',
+      openssh: key,
+      objectclass: 'sdcKey'
+    });
+  });
+
 }

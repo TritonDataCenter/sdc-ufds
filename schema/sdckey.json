@@ -1,0 +1,52 @@
+{
+  "name":"sdckey",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "array",
+      "description": "Unique login name",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "openssh": {
+      "description": "OpenSSH formatted public key",
+      "type": "array",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "fingerprint": {
+      "description": "ssh fingerprint",
+      "type": "array",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "pkcs": {
+      "description": "OpenSSL encoded version of the ssh public key",
+      "type": "array",
+      "required": true,
+      "items": { "type": "string" },
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "objectclass": {
+      "type": "array",
+      "description": "objectclass",
+      "items": { "type": "string" },
+      "required": true,
+      "minItems": 1
+    }
+  },
+  "patternProperties": {
+    "(^_\\w+)": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}

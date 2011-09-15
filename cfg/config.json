@@ -11,7 +11,7 @@
         "host": "localhost",
         "port": 8098,
         "bucket": "ufds",
-        "indexes": ["owner", "fingerprint"],
+        "indexes": ["fingerprint"],
         "uniqueIndexes": ["uuid", "login", "email"],
         "numConnections": 5
       }

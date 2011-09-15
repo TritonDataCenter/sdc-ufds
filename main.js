@@ -10,6 +10,7 @@ var log4js = require('log4js');
 var nopt = require('nopt');
 var ldapRiak = require('ldapjs-riak');
 
+var keys = require('./lib/keys');
 var salt = require('./lib/salt');
 var schema = require('./lib/schema');
 
@@ -210,7 +211,10 @@ schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
     tree.riak.log4js = log4js;
     var backend = ldapRiak.createBackend(tree.riak);
 
-    server.add(t, backend, pre, schema.validateAdd, backend.add(salt.add));
+    server.add(t, backend,
+               pre, keys.add, schema.validateAdd,
+               backend.add(salt.add));
+
     server.bind(t, backend, pre, backend.bind(salt.bind));
     server.compare(t, backend, pre, backend.compare(salt.compare));
     server.modify(t, backend, pre, backend.modify([

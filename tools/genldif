@@ -15,19 +15,26 @@ var uuid = require('node-uuid');
 ///--- Globals
 
 var opts = {
+  'admin': Boolean,
   'debug': Number,
   'help': Boolean,
+  'keys': Boolean,
   'number': Number,
-  'suffix': String
+  'suffix': String,
+  'words': String
 };
 
 var shortOpts = {
+  'a': ['--admin'],
   'd': ['--debug'],
   'h': ['--help'],
+  'k': ['--keys'],
   'n': ['--number'],
-  's': ['--suffix']
+  's': ['--suffix'],
+  'w': ['--words']
 };
 
+var words;
 
 
 ///--- Internal Functions
@@ -35,8 +42,7 @@ var shortOpts = {
 function usage(code, message) {
   var msg = (message ? message + '\n' : '') +
     'usage: ' + path.basename(process.argv[1]) +
-    ' [-hd] [-s suffix] [-n number]';
-
+    ' [-hdak] [-s suffix] [-n number] [-w words_file]';
 
   if (code === 0) {
     console.log(msg);
@@ -65,17 +71,26 @@ function writeEntry(dn, obj) {
   console.log();
 }
 
+function randomInt(from, to) {
+  return Math.floor(Math.random() * (to - from + 1) + from);
+}
 
-function rand(length, current){
+function randomWord() {
+  var index = randomInt(0, words.length - 1);
+  return words[index];
+}
+
+
+function randomPassword(length, current){
  current = current ? current : '';
- return length ? rand( --length , "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz".charAt( Math.floor( Math.random() * 60 ) ) + current ) : current;
+ return length ? randomPassword( --length , "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz".charAt( Math.floor( Math.random() * 60 ) ) + current ) : current;
 }
 
 
 function newKey(parentDN, callback) {
   var keyFile = '/tmp/.' + uuid();
   var sshkeygen = spawn('ssh-keygen', ['-f', keyFile,
-                                       '-C', 'genldif@localhost',
+                                       '-C', randomWord() + '@' + randomWord(),
                                        '-t', 'rsa',
                                        '-b', 1024,
                                        '-N', '']);
@@ -110,11 +125,14 @@ var parsed = nopt(opts, shortOpts, process.argv, 2);
 if (parsed.help)
   usage(0);
 
-if (!parsed.number)
+if (typeof(parsed.number) !== 'number')
   parsed.number = 100;
 
 if (!parsed.suffix)
   parsed.suffix = 'o=smartdc';
+
+if (!parsed.words)
+  parsed.words = '/usr/share/dict/words';
 
 var suffixDN;
 try {
@@ -125,6 +143,13 @@ try {
 } catch (e) {
   usage(1, parsed.suffix + ' is not a valid DN');
 }
+
+try {
+  var words = fs.readFileSync(parsed.words, 'utf8').split('\n');
+} catch (e) {
+  usage(1, 'unable to read ' + parsed.words + ':' + e.toString());
+}
+
 
 /// Write to stdout
 console.log('version: 1\n');
@@ -144,16 +169,16 @@ writeEntry('ou=operators, ' + parsed.suffix, {
   ou: 'operators'
 });
 
-for (var i = 0; i < parsed.number; i++) {
-  var login = 'user_' + (i + 1);
-  var loginDN = 'login=' + login + ', ou=customers, ' + parsed.suffix;
-  writeEntry(loginDN, {
-    login: login,
-    uuid: uuid(),
-    userpassword: rand(6),
-    email: login + '@joyent.com',
-    cn: 'Test',
-    sn: 'User',
+var _uuid;
+if (parsed.admin) {
+  _uuid = uuid();
+  writeEntry('uuid=' + _uuid + ', ou=operators, ' + parsed.suffix, {
+    login: 'admin',
+    uuid: _uuid,
+    userpassword: 'joypass123',
+    email: 'nobody@joyent.com',
+    cn: 'root',
+    sn: 'user',
     company: 'Joyent',
     address: ['Joyent, Inc.', '345 California Street, Suite 2000'],
     city: 'San Francisco',
@@ -163,13 +188,37 @@ for (var i = 0; i < parsed.number; i++) {
     phone: '+1 415 400 0600',
     objectclass: 'sdcPerson'
   });
+}
 
-  newKey(loginDN, function(dn, key) {
-    writeEntry(dn, {
-      name: 'mysshkey',
-      openssh: key,
-      objectclass: 'sdcKey'
-    });
+for (var i = 0; i < parsed.number; i++) {
+  _uuid = uuid();
+  var userDN = 'uuid=' + _uuid + ', ou=customers, ' + parsed.suffix;
+  writeEntry(userDN, {
+    login: randomWord(),
+    uuid: _uuid,
+    userpassword: randomPassword(6),
+    email: randomWord() + '@' + randomWord() + '.com',
+    cn: randomWord(),
+    sn: randomWord(),
+    company: randomWord(),
+    address: [randomWord() + ', Inc.',
+              randomInt(100, 9999) + ' ' + randomWord() + ' Street'],
+    city: randomWord() + ' ' + randomWord(),
+    state: randomWord().substr(0, 2).toUpperCase(),
+    postalCode: randomInt(01000, 99999),
+    country: randomWord().substr(0, 3).toUpperCase(),
+    phone: '+1 ' + randomInt(201, 999) + ' ' + randomInt(111, 999) + ' ' +
+      randomInt(1000, 9999),
+    objectclass: 'sdcPerson'
   });
+
+  if (parsed.keys)
+    newKey(userDN, function(dn, key) {
+      writeEntry(dn, {
+        name: randomWord(),
+        openssh: key,
+        objectclass: 'sdcKey'
+      });
+    });
 
 }

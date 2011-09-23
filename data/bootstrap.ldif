@@ -1,0 +1,35 @@
+version: 1
+
+dn: o=smartdc
+changetype: add
+objectclass: organization
+o: smartdc
+
+dn: ou=customers, o=smartdc
+changetype: add
+objectclass: organizationalUnit
+ou: customers
+
+dn: ou=operators, o=smartdc
+changetype: add
+objectclass: organizationalUnit
+ou: operators
+
+dn: uuid=6c4a3f7f-dd5b-43dd-bd2e-22abfa61b0cd, ou=operators, o=smartdc
+changetype: add
+login: admin
+uuid: 6c4a3f7f-dd5b-43dd-bd2e-22abfa61b0cd
+userpassword: joypass123
+email: nobody@joyent.com
+cn: root
+sn: user
+company: Joyent
+address: Joyent, Inc.
+address: 345 California Street, Suite 2000
+city: San Francisco
+state: CA
+postalCode: 94104
+country: USA
+phone: +1 415 400 0600
+objectclass: sdcPerson
+

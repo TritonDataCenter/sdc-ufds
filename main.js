@@ -192,7 +192,8 @@ schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
     if (req.type === 'BindRequest' ||
         bindDN.equals(config.rootDN) ||
         bindDN.parentOf(req.dn) ||
-        bindDN.equals(req.dn)) {
+        bindDN.equals(req.dn) ||
+        bindDN.childOf('ou=operators, o=smartdc')) {
       return next();
     }
 
@@ -210,17 +211,22 @@ schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
 
     tree.riak.log4js = log4js;
     var backend = ldapRiak.createBackend(tree.riak);
+    backend.init(function(err) {
+      if (err) {
+        process.stderr.write(err.toString() + '\n');
+        process.exit(1);
+      }
+    });
 
     server.add(t, backend,
                pre, keys.add, schema.validateAdd,
                backend.add(salt.add));
-
     server.bind(t, backend, pre, backend.bind(salt.bind));
     server.compare(t, backend, pre, backend.compare(salt.compare));
+    server.del(t, backend, pre, backend.del());
     server.modify(t, backend, pre, backend.modify([
       schema.validateModify,
       salt.modify]));
-    server.del(t, backend, pre, backend.del());
     server.modifyDN(t, backend, pre, backend.modifyDN());
     server.search(t, backend, pre, backend.search(salt.search));
   });

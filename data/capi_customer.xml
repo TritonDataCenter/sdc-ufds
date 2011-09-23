@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<customer>
+  <login>mark</login>
+  <email_address>mark.cavage@joyent.com</email_address>
+  <first_name>Mark</first_name>
+  <last_name>Cavage</last_name>
+  <company_name>Joyent</company_name>
+  <street_1>Joyent, Inc.</street_1>
+  <city>Seattle</city>
+  <state>WA</state>
+  <postal_code>98101</postal_code>
+  <country>USA</country>
+  <phone_number>+1 415 400 0604</phone_number>
+  <password>secret</password>
+</customer>

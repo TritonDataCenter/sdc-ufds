@@ -5,6 +5,7 @@ var fs = require('fs');
 var http = require('http');
 
 var ldap = require('ldapjs');
+var log4js = require('log4js');
 var nopt = require('nopt');
 var restify = require('restify');
 var sprintf = require('sprintf').sprintf;
@@ -91,10 +92,10 @@ if (parsed.help)
 if (parsed.debug) {
   if (parsed.debug > 1) {
     log.level(log.Level.Trace);
-    ldap.log4js.setLevel('TRACE');
+    log4js.setGlobalLogLevel('TRACE');
   } else {
     log.level(log.Level.Debug);
-    ldap.log4js.setLevel('DEBUG');
+    log4js.setGlobalLogLevel('DEBUG');
   }
 }
 
@@ -209,7 +210,8 @@ server.del('/customers/:uuid/keys/:id', [before], keys.del, [log.w3c]);
 ///-- Start up
 
 client = ldap.createClient({
-  url: 'ldap://localhost:1389'
+  url: 'ldap://localhost:1389',
+  log4js: log4js
 });
 
 client.bind('cn=root', 'secret', function(err) {

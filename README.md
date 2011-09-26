@@ -114,6 +114,9 @@ to bitcask).  Once you have that, you also need to increase your ulimits:
 want to clean out/reset your data:
 `./bin/riak stop && rm -fr data/leveldb/* && ./bin/riak start`
 
+Note that UFDS heavily leverages riak secondary indexing, which isn't really
+documented yet, save here: <https://gist.github.com/d66f8298802e4ae28e95>.
+
 ## UFDS
 
 Next you need to start UFDS, which is the LDAP interface over riak.  Config

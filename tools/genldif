@@ -112,7 +112,7 @@ function newKey(parentDN, callback) {
         process.exit(1);
       }
 
-      var dn = 'name=mysshkey, ' + parentDN;
+      var dn = 'key=id_rsa, ' + parentDN;
       return callback(dn, key.replace('\n', ''));
     });
   });

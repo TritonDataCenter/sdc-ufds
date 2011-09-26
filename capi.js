@@ -11,6 +11,7 @@ var sprintf = require('sprintf').sprintf;
 var uuid = require('node-uuid');
 
 var customers = require('./capi/customers');
+var keys = require('./capi/keys');
 var login = require('./capi/login');
 var metadata = require('./capi/metadata');
 
@@ -71,7 +72,7 @@ function before(req, res, next) {
     req.xml = true;
   }
 
-  if (/\.json$/.test(req.url)) {
+  if (/.*\.json$/.test(req.url)) {
     res._accept = 'application/json';
     req.xml = false;
   }
@@ -90,9 +91,10 @@ if (parsed.help)
 if (parsed.debug) {
   if (parsed.debug > 1) {
     log.level(log.Level.Trace);
-    ldap.log4js.setLevel('Trace');
+    ldap.log4js.setLevel('TRACE');
   } else {
     log.level(log.Level.Debug);
+    ldap.log4js.setLevel('DEBUG');
   }
 }
 
@@ -189,6 +191,22 @@ server.get('/auth/customers/:uuid/metadata/:appkey/:key',
            [before], metadata.get, [log.w3c]);
 server.del('/auth/customers/:uuid/metadata/:appkey/:key',
            [before], metadata.del, [log.w3c]);
+
+/// Keys
+server.post('/customers/:uuid/keys', [before], keys.post, [log.w3c]);
+server.get('/customers/:uuid/keys', [before], keys.list, [log.w3c]);
+server.get('/customers/:uuid/keys.json', [before], keys.list, [log.w3c]);
+server.get('/customers/:uuid/keys.xml', [before], keys.list, [log.w3c]);
+server.get('/customers/:uuid/keys/:id', [before], keys.get, [log.w3c]);
+server.get('/customers/:uuid/keys/:id.json', [before], keys.get, [log.w3c]);
+server.get('/customers/:uuid/keys/:id.xml', [before], keys.get, [log.w3c]);
+server.put('/customers/:uuid/keys/:id', [before], keys.put, [log.w3c]);
+server.put('/customers/:uuid/keys/:id.json', [before], keys.put, [log.w3c]);
+server.put('/customers/:uuid/keys/:id.xml', [before], keys.put, [log.w3c]);
+server.del('/customers/:uuid/keys/:id', [before], keys.del, [log.w3c]);
+
+
+///-- Start up
 
 client = ldap.createClient({
   url: 'ldap://localhost:1389'

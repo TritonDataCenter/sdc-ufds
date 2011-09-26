@@ -183,7 +183,7 @@ module.exports = {
       errors.push('password mis is a required parameter');
 
     if (errors.length)
-      sendError(errors);
+      return sendError(errors);
 
     var customer = {
       uuid: [uuid()],
@@ -213,7 +213,7 @@ module.exports = {
                      (req.params.role && req.params.role === '2') ?
                      'operators' : 'customers');
     log.debug('CreateCustomer, saving: %s -> %o', dn, customer);
-    req.ldap.add(dn, customer, function(err) {
+    return req.ldap.add(dn, customer, function(err) {
       if (err) {
         if (err instanceof ldap.EntryAlreadyExistsError) {
           return sendError(['Username is already taken']);
@@ -225,7 +225,7 @@ module.exports = {
       }
 
       customer.forgot_password_code =
-        utils.forgotPasswordCode(customer.uuid[0]);
+        util.forgotPasswordCode(customer.uuid[0]);
 
       if (req.xml)
         customer = { customer : customer };

@@ -4,7 +4,7 @@
   "properties": {
     "name": {
       "type": "array",
-      "description": "Unique login name",
+      "description": "Unique name",
       "items": { "type": "string" },
       "required": true,
       "minItems": 1,

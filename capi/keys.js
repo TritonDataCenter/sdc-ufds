@@ -299,6 +299,33 @@ module.exports = {
         return next();
       });
     });
+  },
+
+  smartlogin: function(req, res, next) {
+    assert.ok(req.customer);
+    assert.ok(req.ldap);
+
+    log.debug('SmartLogin(%s/%s) entered',
+              req.uriParams.uuid, req.uriParams.fp);
+
+    return loadKeys(req, function(err, keys) {
+      if (err)
+        return next(new restify.InternalError(err.message));
+
+      var k = false;
+      for (var i = 0; i < keys.length; i++) {
+        if (keys[i].fingerprint === req.uriParams.fp) {
+          k = keys[i];
+          break;
+        }
+      }
+
+      if (!k)
+        return next(new restify.InvalidArgumentError('Invalid SSH Key'));
+
+      res.send(201);
+      return next();
+    });
   }
 
 };

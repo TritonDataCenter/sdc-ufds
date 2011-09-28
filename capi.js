@@ -191,7 +191,6 @@ server.get('/login/:login', [before], login.getSalt, [log.w3c]);
 server.get('/login/:login.json', [before], login.getSalt, [log.w3c]);
 server.get('/login/:login.xml', [before], login.getSalt, [log.w3c]);
 
-
 // Login
 server.post('/login', [before], login.login, [log.w3c]);
 server.post('/login.json', [before], login.login, [log.w3c]);
@@ -227,6 +226,10 @@ server.put('/customers/:uuid/keys/:id.json', loadBefore, keys.put, [log.w3c]);
 server.put('/customers/:uuid/keys/:id.xml', loadBefore, keys.put, [log.w3c]);
 server.del('/customers/:uuid/keys/:id', loadBefore, keys.del, [log.w3c]);
 
+/// Smartlogin
+
+server.post('/customers/:uuid/ssh_sessions/:fp',
+            loadBefore, keys.smartlogin, [log.w3c]);
 
 /// Limits
 

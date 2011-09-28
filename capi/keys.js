@@ -314,7 +314,7 @@ module.exports = {
 
       var k = false;
       for (var i = 0; i < keys.length; i++) {
-        if (keys[i].fingerprint === req.uriParams.fp) {
+        if (keys[i].fingerprint === req.params.fingerprint) {
           k = keys[i];
           break;
         }

@@ -167,6 +167,8 @@ module.exports = {
     if (!req.uriParams.uuid)
       return next();
 
+    log.debug('LoadCustomer(%s) entered', req.uriParams.uuid);
+
     var opts = {
       scope: 'sub',
       filter: '(uuid=' + req.uriParams.uuid + ')'

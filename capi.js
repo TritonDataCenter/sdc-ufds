@@ -228,7 +228,7 @@ server.del('/customers/:uuid/keys/:id', loadBefore, keys.del, [log.w3c]);
 
 /// Smartlogin
 
-server.post('/customers/:uuid/ssh_sessions/:fp',
+server.post('/customers/:uuid/ssh_sessions',
             loadBefore, keys.smartlogin, [log.w3c]);
 
 /// Limits

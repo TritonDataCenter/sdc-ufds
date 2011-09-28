@@ -179,6 +179,7 @@ module.exports = {
         req.customer = entry;
       });
       result.on('end', function() {
+        log.debug('LoadCustomer(%s) -> %o', req.uriParams.uuid, req.customer);
         return next();
       });
     });

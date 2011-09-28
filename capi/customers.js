@@ -311,7 +311,6 @@ module.exports = {
       } else if (typeof(req.params.customer) === 'string') {
         if (res._accept === 'application/json') {
           try {
-            console.log('hi!');
             req.params = JSON.parse(req.params.customer);
           } catch (e) {
             return sendError([e.message]);
@@ -412,7 +411,6 @@ module.exports = {
         return next(new restify.InternalError(500, err.message));
 
       log.debug('UpdateCustomer(%s) => ok', req.uriParams.id);
-      res.send(200);
       return next();
     });
   },

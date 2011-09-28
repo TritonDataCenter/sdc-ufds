@@ -5,7 +5,6 @@ var fs = require('fs');
 var http = require('http');
 
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 var nopt = require('nopt');
 var restify = require('restify');
 var sprintf = require('sprintf').sprintf;
@@ -96,10 +95,8 @@ if (parsed.help)
 if (parsed.debug) {
   if (parsed.debug > 1) {
     log.level(log.Level.Trace);
-    log4js.setGlobalLogLevel('TRACE');
   } else {
     log.level(log.Level.Debug);
-    log4js.setGlobalLogLevel('DEBUG');
   }
 }
 
@@ -168,7 +165,18 @@ server.get('/customers.xml', [before], customers.list, [log.w3c]);
 server.post('/customers', [before], customers.create, [log.w3c]);
 
 // UpdateCustomer
-server.put('/customers/:uuid', [before], customers.update, [log.w3c]);
+server.put('/customers/:uuid',
+           loadBefore,
+           customers.update,
+           utils.loadCustomer,
+           function respond(req, res, next) {
+             var customer = utils.translateCustomer(req.customer.toObject());
+             if (req.xml)
+               customer = { customer: customer };
+             res.send(200, customer);
+             return next();
+           },
+           [log.w3c]);
 
 // GetCustomer
 server.get('/customers/:uuid', loadBefore, customers.get, [log.w3c]);
@@ -234,9 +242,11 @@ server.del('/customers/:uuid/limits/:dc/:dataset',
 ///-- Start up
 
 client = ldap.createClient({
-  url: 'ldap://' + config.host + ':' + config.port,
-  log4js: log4js
+  url: 'ldap://' + config.host + ':' + config.port
 });
+
+if (parsed.debug)
+  client.log4js.setLevel(((parsed.debug > 1) ? 'TRACE' : 'DEBUG'));
 
 client.bind(config.rootDN, config.rootPassword, function(err) {
   assert.ifError(err);

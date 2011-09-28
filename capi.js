@@ -14,6 +14,7 @@ var uuid = require('node-uuid');
 var customers = require('./capi/customers');
 var keys = require('./capi/keys');
 var login = require('./capi/login');
+var limits = require('./capi/limits');
 var metadata = require('./capi/metadata');
 var utils = require('./capi/util');
 
@@ -219,9 +220,18 @@ server.put('/customers/:uuid/keys/:id.xml', loadBefore, keys.put, [log.w3c]);
 server.del('/customers/:uuid/keys/:id', loadBefore, keys.del, [log.w3c]);
 
 
+/// Limits
+
+server.get('/customers/:uuid/limits', loadBefore, limits.list, [log.w3c]);
+server.put('/customers/:uuid/limits/:dc/:dataset',
+           loadBefore, limits.put, [log.w3c]);
+server.del('/customers/:uuid/limits/:dc/:dataset',
+           loadBefore, limits.del, [log.w3c]);
+
+
+
+
 ///-- Start up
-
-
 
 client = ldap.createClient({
   url: 'ldap://' + config.host + ':' + config.port,

@@ -15,6 +15,8 @@ var customers = require('./capi/customers');
 var keys = require('./capi/keys');
 var login = require('./capi/login');
 var metadata = require('./capi/metadata');
+var utils = require('./capi/util');
+
 
 
 ///--- Globals
@@ -148,6 +150,7 @@ server = restify.createServer({
 
 // Show
 server.get('/customers', [before], customers.list, [log.w3c]);
+server.head('/customers', [before], customers.list, [log.w3c]);
 server.get('/customers.json', [before], customers.list, [log.w3c]);
 server.get('/customers.xml', [before], customers.list, [log.w3c]);
 
@@ -158,9 +161,12 @@ server.post('/customers', [before], customers.create, [log.w3c]);
 server.put('/customers/:id', [before], customers.update, [log.w3c]);
 
 // GetCustomer
-server.get('/customers/:id', [before], customers.get, [log.w3c]);
-server.get('/customers/:id.json', [before], customers.get, [log.w3c]);
-server.get('/customers/:id.xml', [before], customers.get, [log.w3c]);
+server.get('/customers/:id', [before, utils.loadCustomer], customers.get,
+           [log.w3c]);
+server.get('/customers/:id.json', [before, utils.loadCustomer], customers.get,
+           [log.w3c]);
+server.get('/customers/:id.xml', [before, utils.loadCustomer], customers.get,
+           [log.w3c]);
 
 // DeleteCustomer
 server.del('/customers/:id', [before], customers.del, [log.w3c]);
@@ -194,23 +200,24 @@ server.del('/auth/customers/:uuid/metadata/:appkey/:key',
            [before], metadata.del, [log.w3c]);
 
 /// Keys
-server.post('/customers/:uuid/keys', [before], keys.post, [log.w3c]);
-server.get('/customers/:uuid/keys', [before], keys.list, [log.w3c]);
-server.get('/customers/:uuid/keys.json', [before], keys.list, [log.w3c]);
-server.get('/customers/:uuid/keys.xml', [before], keys.list, [log.w3c]);
-server.get('/customers/:uuid/keys/:id', [before], keys.get, [log.w3c]);
-server.get('/customers/:uuid/keys/:id.json', [before], keys.get, [log.w3c]);
-server.get('/customers/:uuid/keys/:id.xml', [before], keys.get, [log.w3c]);
-server.put('/customers/:uuid/keys/:id', [before], keys.put, [log.w3c]);
-server.put('/customers/:uuid/keys/:id.json', [before], keys.put, [log.w3c]);
-server.put('/customers/:uuid/keys/:id.xml', [before], keys.put, [log.w3c]);
-server.del('/customers/:uuid/keys/:id', [before], keys.del, [log.w3c]);
+var keysBefore = [before, utils.loadCustomer];
+server.post('/customers/:uuid/keys', keysBefore, keys.post, [log.w3c]);
+server.get('/customers/:uuid/keys', keysBefore, keys.list, [log.w3c]);
+server.get('/customers/:uuid/keys.json', keysBefore, keys.list, [log.w3c]);
+server.get('/customers/:uuid/keys.xml', keysBefore, keys.list, [log.w3c]);
+server.get('/customers/:uuid/keys/:id', keysBefore, keys.get, [log.w3c]);
+server.get('/customers/:uuid/keys/:id.json', keysBefore, keys.get, [log.w3c]);
+server.get('/customers/:uuid/keys/:id.xml', keysBefore, keys.get, [log.w3c]);
+server.put('/customers/:uuid/keys/:id', keysBefore, keys.put, [log.w3c]);
+server.put('/customers/:uuid/keys/:id.json', keysBefore, keys.put, [log.w3c]);
+server.put('/customers/:uuid/keys/:id.xml', keysBefore, keys.put, [log.w3c]);
+server.del('/customers/:uuid/keys/:id', keysBefore, keys.del, [log.w3c]);
 
 
 ///-- Start up
 
 client = ldap.createClient({
-  url: 'ldap://localhost:1389',
+  url: 'ldap://10.99.99.20:389',
   log4js: log4js
 });
 

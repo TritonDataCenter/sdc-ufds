@@ -14,8 +14,7 @@ var util = require('./util');
 
 ///--- Globals
 
-var CUST_DN = 'uuid=%s, ou=customers, o=smartdc';
-var KEY_DN = 'fingerprint=%s, uuid=%s, ou=customers, o=smartdc';
+var KEY_DN = 'fingerprint=%s, %s';
 
 var HIDDEN = [new ldap.Control({
   type: 'hidden',
@@ -53,6 +52,7 @@ function translateKey(key, uuid) {
   return {
     id: fingerprintToId(key.fingerprint),
     customer_id: uuid,
+    customer_uuid: uuid,
     name: key.name,
     body: key.openssh,
     fingerprint: key.fingerprint,
@@ -64,14 +64,18 @@ function translateKey(key, uuid) {
 
 
 function loadKeys(req, callback) {
-  var dn = sprintf(CUST_DN, req.uriParams.uuid);
+  var dn = req.customer.dn.toString();
   var opts = {
-    scope: 'sub',
+    scope: 'one',
     filter: '(objectclass=sdckey)'
   };
   req.ldap.search(dn, opts, HIDDEN, function(err, _res) {
-    if (err)
+    if (err) {
+      if (err instanceof ldap.NoSuchObjectError)
+        return callback(new restify.ResourceNotFoundError(req.uriParams.uuid));
+
       return callback(new restify.InternalError(err.toString()));
+    }
 
     var entries = [];
     var done = false;
@@ -140,7 +144,7 @@ module.exports = {
 
 
     var fp = fingerprint(req.params.key);
-    var dn = sprintf(KEY_DN, fp, req.uriParams.uuid);
+    var dn = sprintf(KEY_DN, fp, req.customer.dn.toString());
     var entry = {
       name: [req.params.name],
       openssh: [req.params.key],
@@ -155,6 +159,8 @@ module.exports = {
                                                        ' already exists'));
         } else if (err instanceof ldap.ConstraintViolationError) {
           return next(new restify.InvalidArgumentError('ssh key is in use'));
+        } else if (err instanceof ldap.NoSuchObjectError) {
+          return next(new restify.ResourceNotFoundError(req.uriParams.uuid));
         }
         return next(new restify.InternalError(err.message));
       }
@@ -248,12 +254,12 @@ module.exports = {
       }
 
 
-      var dn = sprintf(KEY_DN, key.fingerprint, req.uriParams.uuid);
+      var dn = sprintf(KEY_DN, key.fingerprint, req.customer.dn.toString());
       if (req.params.key) {
         log.debug('PutKey(%s/%s) rename', req.uriParams.uuid, req.uriParams.id);
 
         var _fp = fingerprint(req.params.key);
-        var dn2 = sprintf(KEY_DN, _fp, req.uriParams.uuid);
+        var dn2 = sprintf(KEY_DN, _fp, req.customer.dn.toString());
         return req.ldap.modifyDN(dn, dn2, function(err) {
           if (err)
             return next(new restify.InternalError(err.message));
@@ -283,7 +289,7 @@ module.exports = {
         return next(err);
 
 
-      var dn = sprintf(KEY_DN, key.fingerprint, req.uriParams.uuid);
+      var dn = sprintf(KEY_DN, key.fingerprint, req.customer.dn.toString());
       return req.ldap.del(dn, function(err) {
         if (err)
           return next(new restify.InternalError(err.message));

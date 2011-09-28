@@ -76,6 +76,7 @@ function _translate(entry) {
   var customer = {
     id: _randomId(),
     uuid: entry.uuid,
+    customer_id: entry.uuid,
     login: entry.login,
     email_address: entry.email,
     first_name: entry.cn,
@@ -97,8 +98,10 @@ function _translate(entry) {
     customer.street_2 = null;
 
   var dn = ldap.parseDN(entry.dn);
-  if (dn.childOf('ou=operators, o=smartdc'))
+  if (dn.childOf('ou=operators, o=smartdc')) {
     customer.role_type = 2;
+    customer.role = 2;
+  }
 
   return _merge(customer, {
     city: entry.city || null,
@@ -107,6 +110,7 @@ function _translate(entry) {
     country: entry.country || null,
     phone_number: entry.phone || null,
     role_type: 1,
+    role: 1,
     asset_id: null,
     legacy_id: null,
     deleted_at: null,
@@ -154,6 +158,27 @@ module.exports = {
       });
       result.on('end', function() {
         return callback(null, entries);
+      });
+    });
+  },
+
+  loadCustomer: function(req, res, next) {
+    if (!req.uriParams.uuid)
+      return next();
+
+    var opts = {
+      scope: 'sub',
+      filter: '(uuid=' + req.uriParams.uuid + ')'
+    };
+    return req.ldap.search('o=smartdc', opts, hidden, function(err, result) {
+      if (err)
+        return next(new restify.InternalError(err.message));
+
+      result.on('searchEntry', function(entry) {
+        req.customer = entry;
+      });
+      result.on('end', function() {
+        return next();
       });
     });
   },

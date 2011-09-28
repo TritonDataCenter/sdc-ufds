@@ -147,11 +147,12 @@ module.exports = {
       if (limit !== false)
         customers = customers.splice(0, limit);
 
+      var count = customers.length;
       if (req.xml)
         customers = { customers: { customer: customers } };
 
       log.debug('ListCustomers: returning %o', customers);
-      res.send(200, customers);
+      res.send(200, customers, { 'X-Joyent-Resource-Count': count });
       return next();
     }, base);
   },
@@ -159,8 +160,11 @@ module.exports = {
 
   create: function(req, res, next) {
     function sendError(errors) {
-      if (req.xml)
+      if (req.xml) {
         errors = { errors: { error: errors } };
+      } else {
+        errors = { errors: errors };
+      }
       res.send(409, errors);
       return next();
     }
@@ -169,8 +173,20 @@ module.exports = {
 
     var errors = [];
 
-    if (req.params.customer)
-      req.params = req.params.customer;
+    if (req.params.customer) {
+      if (typeof(req.params.customer) === 'object') {
+        req.params = req.params.customer;
+      } else if (typeof(req.params.customer) === 'string') {
+        if (res._accept === 'application/json') {
+          try {
+            console.log('hi!');
+            req.params = JSON.parse(req.params.customer);
+          } catch (e) {
+            return sendError([e.message]);
+          }
+        }
+      }
+    }
 
     if (!req.params.login)
       errors.push('login is a required parameter');
@@ -186,27 +202,31 @@ module.exports = {
       return sendError(errors);
 
     var customer = {
-      uuid: [uuid()],
-      login: [req.params.login],
-      email: [req.params.email_address],
-      userpassword: [req.params.password],
-      cn: req.params.first_name ? [req.params.first_name] : undefined,
-      sn: req.params.last_name ? [req.params.last_name] : undefined,
-      company: req.params.company_name ? [req.params.company_name] : undefined,
-      address: req.params.street_1 ? [req.params.street_1] : undefined,
-      city: req.params.city ? [req.params.city] : undefined,
-      state: req.params.state ? [req.params.state] : undefined,
-      postalcode: req.params.postal_code ? [req.params.postal_code] : undefined,
-      country: req.params.country ? [req.params.country] : undefined,
+      uuid: uuid(),
+      login: req.params.login,
+      email: req.params.email_address,
+      userpassword: req.params.password,
       objectclass: ['sdcperson']
     };
-    if (req.params.street_2) {
-      if (!req.params.address)
-        req.params.address = [];
+
+    if (req.params.first_name)
+      customer.cn = req.params.first_name;
+    if (req.params.last_name)
+      customer.sn = req.params.last_name;
+    if (req.params.company_name)
+      customer.company = req.params.company_name;
+    if (req.params.street_1)
+      customer.address = [req.params.street_1];
+    if (req.params.street_2 && customer.address)
       customer.address.push(req.params.street_2);
-    }
-    if (req.params.alternate_email_address)
-      customer.email.push(req.params.alternate_email_address);
+    if (req.params.city)
+      customer.city = req.params.city;
+    if (req.params.state)
+      customer.state = req.params.state;
+    if (req.params.postal_code)
+      customer.postalcode = req.params.postal_code;
+    if (req.params.country)
+      customer.country = req.params.country;
 
     var dn = sprintf('uuid=%s, ou=%s, o=smartdc',
                      customer.uuid[0],
@@ -223,6 +243,9 @@ module.exports = {
           return sendError([err.toString()]);
         }
       }
+
+      customer.dn = dn;
+      customer = util.translateCustomer(customer);
 
       customer.forgot_password_code =
         util.forgotPasswordCode(customer.uuid[0]);

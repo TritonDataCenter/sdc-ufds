@@ -231,7 +231,7 @@ schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
     server.search(t, backend, pre, backend.search(salt.search));
   });
 
-  server.listen(config.port, config.host, function() {
+  server.listen(config.port, function() {
     log.info('UFDS listening at: %s\n\n', server.url);
   });
 });

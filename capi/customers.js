@@ -179,7 +179,6 @@ module.exports = {
       } else if (typeof(req.params.customer) === 'string') {
         if (res._accept === 'application/json') {
           try {
-            console.log('hi!');
             req.params = JSON.parse(req.params.customer);
           } catch (e) {
             return sendError([e.message]);
@@ -260,15 +259,15 @@ module.exports = {
 
 
   get: function(req, res, next) {
-    log.debug('GetCustomer(%s) entered', req.uriParams.id);
+    log.debug('GetCustomer(%s) entered', req.uriParams.uuid);
 
     var filter;
-    if (req.uriParams.id.indexOf('+') === -1)
-      filter = sprintf(GET_FILTER, req.uriParams.id);
+    if (req.uriParams.uuid.indexOf('+') === -1)
+      filter = sprintf(GET_FILTER, req.uriParams.uuid);
 
     if (!filter) {
       filter = '(&' + LIST_FILTER + '(|';
-      req.uriParams.id.split('+').forEach(function(id) {
+      req.uriParams.uuid.split('+').forEach(function(id) {
         filter += sprintf(ID_FILTER, id);
       });
       filter += '))';
@@ -293,7 +292,7 @@ module.exports = {
           result = { customer: customers[0] };
       }
 
-      log.debug('GetCustomer(%s) => %o', req.uriParams.id, result);
+      log.debug('GetCustomer(%s) => %o', req.uriParams.uuid, result);
       res.send(200, result);
       return next();
     });
@@ -301,12 +300,25 @@ module.exports = {
 
 
   update: function(req, res, next) {
+    assert.ok(req.customer);
     log.debug('UpdateCustomer entered %o', req.params);
 
     var errors = [];
 
-    if (req.params.customer)
-      req.params = req.params.customer;
+    if (req.params.customer) {
+      if (typeof(req.params.customer) === 'object') {
+        req.params = req.params.customer;
+      } else if (typeof(req.params.customer) === 'string') {
+        if (res._accept === 'application/json') {
+          try {
+            console.log('hi!');
+            req.params = JSON.parse(req.params.customer);
+          } catch (e) {
+            return sendError([e.message]);
+          }
+        }
+      }
+    }
 
     var changes = [];
     var address = [];
@@ -394,54 +406,31 @@ module.exports = {
     if (!changes.length)
       return next(new restify.MissingParameterError('no updates specified'));
 
-    var filter = sprintf(GET_FILTER, req.uriParams.id)
-    util.loadCustomers(req.ldap, filter, function(err, customers) {
+    var _dn = req.customer.dn.toString();
+    return req.ldap.modify(_dn, changes, function(err) {
       if (err)
-        return next(err);
+        return next(new restify.InternalError(500, err.message));
 
-      if (!customers.length)
-        return next(new restify.ResourceNotFoundError(404, req.uriParams.id +
-                                                     ' does not exist.'));
-
-      if (customers.length !== 1)
-        return next(new restify.InternalError(500, req.uriParams.id +
-                                              ' mapped to multiple accounts'));
-
-      var _dn = 'uuid=' + req.uriParams.id +
-        ', ou=' + (customers[0].role_type === 2 ? 'operators' : 'customers') +
-        ', o=smartdc';
-      return req.ldap.modify(_dn, changes, function(err) {
-        if (err)
-          return next(new restify.InternalError(500, err.message));
-
-        log.debug('UpdateCustomer(%s) => ok', req.uriParams.id);
-        res.send(200);
-        return next();
-      });
+      log.debug('UpdateCustomer(%s) => ok', req.uriParams.id);
+      res.send(200);
+      return next();
     });
   },
 
+
   del: function(req, res, next) {
+    assert.ok(req.customer);
     assert.ok(req.ldap);
 
     log.debug('DeleteCustomer(%s): entered', req.uriParams.id);
     var filter = sprintf(GET_FILTER, req.uriParams.id)
-    util.loadCustomers(req.ldap, filter, false, function(err, customers) {
+    return req.ldap.del(req.customers.dn.toString(), function(err) {
       if (err)
-        return next(err);
+        return next(new restify.UnknownError(500, err.message));
 
-      if (!customers.length)
-        return next(new restify.ResourceNotFoundError(404, req.uriParams.id +
-                                                     ' does not exist.'));
-
-      return req.ldap.del(customers[0].dn, function(err) {
-        if (err)
-          return next(new restify.UnknownError(500, err.message));
-
-        log.debug('DeleteCustomer(%s) => gone', req.uriParams.id);
-        res.send(200);
-        return next();
-      });
+      log.debug('DeleteCustomer(%s) => gone', req.uriParams.id);
+      res.send(200);
+      return next();
     });
   }
 

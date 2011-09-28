@@ -14,7 +14,7 @@ var util = require('./util');
 
 ///--- Globals
 
-var MD_DN = 'metadata=%s, uuid=%s, ou=customers, o=smartdc';
+var MD_DN = 'metadata=%s, %s';
 
 var Change = ldap.Change;
 var log = restify.log;
@@ -28,7 +28,7 @@ function loadMetadata(req, notFoundOk, callback) {
     callback = notFoundOk;
     notFoundOk = false;
   }
-  var base = sprintf(MD_DN, req.uriParams.appkey, req.uriParams.uuid);
+  var base = sprintf(MD_DN, req.uriParams.appkey, req.customer.dn.toString());
   var opts = {
     filter: '(objectclass=capimetadata)',
     scope: 'base'
@@ -77,6 +77,7 @@ function loadMetadata(req, notFoundOk, callback) {
 module.exports = {
 
   list: function(req, res, next) {
+    assert.ok(req.customer);
     assert.ok(req.ldap);
 
     log.debug('GetMetadataKeys %s/%s entered',
@@ -101,7 +102,7 @@ module.exports = {
   put: function(req, res, next) {
     assert.ok(req.ldap);
 
-    var dn = sprintf(MD_DN, req.uriParams.appkey, req.uriParams.uuid);
+    var dn = sprintf(MD_DN, req.uriParams.appkey, req.customer.dn.toString());
 
     log.debug('PutMetadataKey %s/%s/%s entered',
               req.uriParams.uuid, req.uriParams.appkey, req.uriParams.key);
@@ -173,6 +174,7 @@ module.exports = {
   },
 
   del: function(req, res, next) {
+    assert.ok(req.customer);
     assert.ok(req.ldap);
 
     log.debug('DeleteMetadataKey %s/%s/%s entered',
@@ -192,7 +194,7 @@ module.exports = {
         modification: mod
       });
 
-      var dn = sprintf(MD_DN, req.uriParams.appkey, req.uriParams.uuid);
+      var dn = sprintf(MD_DN, req.uriParams.appkey, req.customer.dn.toString());
       log.debug('DeletMetadataKey %s: deleting %s', dn, req.uriParams.key);
       return req.ldap.modify(dn, change, function(err) {
         if (err)

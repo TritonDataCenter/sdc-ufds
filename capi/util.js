@@ -77,6 +77,7 @@ function _translate(entry) {
     id: _randomId(),
     uuid: entry.uuid,
     customer_id: entry.uuid,
+    customer_uuid: entry.uuid,
     login: entry.login,
     email_address: entry.email,
     first_name: entry.cn,

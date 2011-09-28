@@ -167,15 +167,15 @@ server.get('/customers.xml', [before], customers.list, [log.w3c]);
 server.post('/customers', [before], customers.create, [log.w3c]);
 
 // UpdateCustomer
-server.put('/customers/:id', [before], customers.update, [log.w3c]);
+server.put('/customers/:uuid', [before], customers.update, [log.w3c]);
 
 // GetCustomer
-server.get('/customers/:id', loadBefore, customers.get, [log.w3c]);
-server.get('/customers/:id.json', loadBefore, customers.get, [log.w3c]);
-server.get('/customers/:id.xml', loadBefore, customers.get, [log.w3c]);
+server.get('/customers/:uuid', loadBefore, customers.get, [log.w3c]);
+server.get('/customers/:uuid.json', loadBefore, customers.get, [log.w3c]);
+server.get('/customers/:uuid.xml', loadBefore, customers.get, [log.w3c]);
 
 // DeleteCustomer
-server.del('/customers/:id', [before], customers.del, [log.w3c]);
+server.del('/customers/:uuid', [before], customers.del, [log.w3c]);
 
 // GetSalt
 server.get('/login/:login', [before], login.getSalt, [log.w3c]);

@@ -13,7 +13,7 @@ var uuid = require('node-uuid');
 ///--- Globals
 
 var hidden = new ldap.Control({
-  type: 'hidden',
+  type: '1.3.6.1.4.1.38678.1',
   criticality: true
 });
 var log = restify.log;

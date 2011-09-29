@@ -17,7 +17,7 @@ var util = require('./util');
 var KEY_DN = 'fingerprint=%s, %s';
 
 var HIDDEN = [new ldap.Control({
-  type: 'hidden',
+  type: '1.3.6.1.4.1.38678.1',
   criticality: true
 })];
 

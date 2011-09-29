@@ -172,6 +172,37 @@ server.exop('1.3.6.1.4.1.4203.1.11.3', function(req, res, next) {
 });
 
 
+// RootDSE
+server.search('', function(req, res, next) {
+  function now() {
+    function pad(n) { return ((n < 10) ? '0' + n : n); }
+    var d = new Date();
+    return d.getUTCFullYear() +
+      pad(d.getUTCMonth() + 1) +
+      pad(d.getUTCDate()) +
+      pad(d.getUTCHours()) +
+      pad(d.getUTCMinutes()) +
+      pad(d.getUTCSeconds()) +
+      '.0Z';
+  }
+
+  var entry = {
+    dn: '',
+    attributes: {
+      namingcontexts: 'o=smartdc',
+      supportedcontrol: ['1.3.6.1.4.1.38678.1'],
+      supportedextension: ['1.3.6.1.4.1.4203.1.11.3'],
+      supportedldapversion: 3,
+      currenttime: now(),
+      objectclass: 'RootDSE'
+    }
+  };
+
+  res.send(entry);
+  res.end();
+  return next();
+});
+
 schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
   if (err) {
     log.warn('Error loading schema: ' + err.stack);

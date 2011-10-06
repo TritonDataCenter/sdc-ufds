@@ -15,13 +15,13 @@ changetype: add
 objectclass: organizationalUnit
 ou: operators
 
-dn: uuid=6c4a3f7f-dd5b-43dd-bd2e-22abfa61b0cd, ou=operators, o=smartdc
+dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators, o=smartdc
 changetype: add
 login: admin
-uuid: 6c4a3f7f-dd5b-43dd-bd2e-22abfa61b0cd
+uuid: 930896af-bf8c-48d4-885c-6573a94b1853
 userpassword: joypass123
 email: nobody@joyent.com
-cn: root
+cn: admin
 sn: user
 company: Joyent
 address: Joyent, Inc.

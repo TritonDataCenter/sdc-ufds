@@ -1,8 +1,11 @@
+<!-- -*- mode: markdown -*- -->
 # Overview
 
 UFDS is the "unified foundational directory service" built for SDC over
-[ldapjs](http://ldapjs.org) and [Riak](https://github.com/mcavage/node-ldapjs-riak).
-In short, it's the new CAPI.
+[ldapjs](http://ldapjs.org) and [Riak](https://github.com/mcavage/node-ldapjs-riak),
+and is used to track accounts, credentials, and more. It is a superset of
+functionality offered by previous SDC versions employing CAPI (there is a
+backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
 
 # DIT
 
@@ -17,86 +20,53 @@ The directory tree is laid out as follows:
       |  | +-ou=users
       |  | | +-login=:login
       |  | | | +-key=:name
-      |  | +-ou=groups
-      |  | | +-cn=:name
+      |  | | | +-metadata=:appkey
+      |  | | | +-dclimit=:datacenter
       +-ou=operators
       |  +-login=:login
       |  | +-key=:name
 
+We could maintain a static group of operators in the tree, rather than
+separating it out.  However, then there is a burden to keep the tree and that
+group in sync (since "dynamic" LDAP groups are not yet supported).
+
 ## Schema
 
-The following objectclass definitions make up each of the entities currently in
-the tree:
+All schema for UFDS is located in the `./schema` directory, and is modeled in
+JSON schema; while JSON schema is far from perfect, it's not terrible, and is a
+big usability improvement over "standard" LDAP schema.  Reference that directory
+for an up to date listing of schema, but basically, operators/customers are an
+instance of the `sdcperson` objectclass, then the other entities are for
+credentials et al hung off a 'user'.  Typically, we use JSON schema in a manner
+where the set of attributes defined are required, but the object is left "open"
+so that administrators et al can tack on additional attributes without worrying
+about the schema.
 
-### Users
+## Indexing
 
-#### sdcPerson
+UFDS supports indexes and unique indexes.  Indexes are fairly cheap, so it's
+advantageous to index a lot of fields, really.  Unique indexes however, are
+extremely costly, so we only really want to set those where you really
+need them (notably login and email, since we're assuming we can generate
+uuid's without collision).
 
-Represents a "traditional" customer in CAPI, and is the base objectclass type
-for all the other entries that are "people/users".
+Indexing is configured in config.json, and leverages Riak's `2i` code.
 
-    {
-      required: [login, uuid, userPassword, email],
-      optional: [company, cn, sn, address, city, state, postalCode, country, phone]
-    }
+## Searching
 
-UniqueIndexes:
+While UFDS supports pretty much all LDAP search filters and operations, you
+almost certainly don't want to use something like `objectclass=*` outside of a
+development environment.  You pretty much want to stick to equality filters
+on indexes (although, `&` filters where not all of the equality filters are
+indexed is ok).  For example, this would be ok:
 
-* login
-* uuid
-* email
+    `alias lsearch='ldapsearch -LLL -x -D cn=root -w secret -b o=smartdc'`
 
-#### sdcCustomer
+    `lsearch "(&(objectclass=sdcperson)(email=foo@joyent.com))"`
 
-Represents a customer account that we allow resource ownership with.  The users
-_directly_ under `ou=customers` will use this objectclass type. Nothing but a
-structural extension of `sdcPerson`.
+While this would be a poor performing filter:
 
-#### sdcOperator
-
-Represents an "operator" in the SmartDataCenter. The users under `ou=operators`
-will leverage this objectclass. This objectclass is just a structural extension
-of `sdcPerson` and the objectclass extension is used to replace the CAPI
-`role` column.
-
-#### sdcSubUser
-
-Represents a "sub user". Sub users are the user management feature present in
-SDC, and a subuser is directly "owned" by a `sdcPerson`. If you haven't guessed,
-it's an extension of an `sdcPerson`.  These entries sit underneath an account
-in the `ou=customers` tree.
-
-### Keys
-
-Keys are containers for an ssh key, and are always placed directly underneath
-the "owning" user.  The objectclass still has a `owner` field (contains the
-uuid), solely so that you can easily find all keys belonging to a given user.
-
-    {
-      required: [name, owner, fingerprint, sshKey, pkcs8],
-      optional: []
-    }
-
-Indexes:
-
-* owner
-* fingerprint
-
-### Groups
-
-#### sdcGroup
-
-Simply contains a list of DNs.  Can be placed pretty much anywhere in the tree.
-
-    {
-      optional: [member]
-    }
-
-#### sdcPersonGroup
-
-Extension of `sdcGroup`.  Contains a list of sdcPeron DNs only.  Code on top of
-the system can use this in a "context sensitive" way depending on where the
-group is in the tree.
+    `lsearch "(|(objectclass=sdcperson)(_ctime>=2010-01-01:T00:00:00))"`
 
 # Development
 

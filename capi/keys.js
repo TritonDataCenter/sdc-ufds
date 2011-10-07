@@ -42,6 +42,9 @@ function idToFingerprint(id) {
 
 
 function fingerprintToId(fingerprint) {
+  if (!fingerprint)
+    return '';
+
   return fingerprint.replace(/:/g, '');
 }
 

@@ -173,6 +173,7 @@ server.exop('1.3.6.1.4.1.4203.1.11.3', function(req, res, next) {
 
 
 // RootDSE
+/*
 server.search('', function(req, res, next) {
   function now() {
     function pad(n) { return ((n < 10) ? '0' + n : n); }
@@ -202,6 +203,7 @@ server.search('', function(req, res, next) {
   res.end();
   return next();
 });
+*/
 
 schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
   if (err) {

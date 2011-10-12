@@ -18,6 +18,7 @@ RESTDOWN = ./node_modules/.restdown/bin/restdown \
 	-b ./docs/branding \
 	-m ${DOCPKGDIR} \
 	-D mediaroot=media
+DOCPKGDIR = $(SRC)/build/docpkg
 
 ifeq ($(TIMESTAMP),)
 	TIMESTAMP=$(shell date -u "+%Y%m%dT%H%M%SZ")
@@ -62,11 +63,11 @@ lint:
 endif
 
 doc: dep
-	@rm -rf ${DOCPKGDIR}
-	@mkdir -p ${DOCPKGDIR}
-	rm -f docs/*.json
-	mv docs/*.html ${DOCPKGDIR}
-	(cd ${DOCPKGDIR} && $(TAR) -czf ${SRC}/${NAME}-docs-`git log -1 --pretty='format:%h'`.tar.gz *)
+#	@rm -rf ${DOCPKGDIR}
+#	@mkdir -p ${DOCPKGDIR}
+#	rm -f docs/*.json
+#	mv docs/*.html ${DOCPKGDIR}
+#	(cd ${DOCPKGDIR} && $(TAR) -czf ${SRC}/${NAME}-docs-`git log -1 --pretty='format:%h'`.tar.gz *)
 
 
 test: dep lint

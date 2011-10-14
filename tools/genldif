@@ -35,6 +35,10 @@ var shortOpts = {
 };
 
 var words;
+var KEY;
+var FP;
+var UNIQ = [];
+
 
 
 ///--- Internal Functions
@@ -75,9 +79,17 @@ function randomInt(from, to) {
   return Math.floor(Math.random() * (to - from + 1) + from);
 }
 
-function randomWord() {
-  var index = randomInt(0, words.length - 1);
-  return words[index];
+function randomWord(unique) {
+  if (!unique)
+    return words[randomInt(0, words.length - 1)];
+
+  while (true) {
+    var ndx = randomInt(0, words.length - 1);
+    if (UNIQ.indexOf(words[ndx]) === -1) {
+      UNIQ.push(words[ndx]);
+      return words[ndx];
+    }
+  }
 }
 
 
@@ -88,36 +100,57 @@ function randomPassword(length, current){
 
 
 function newKey(parentDN, callback) {
-  var keyFile = '/tmp/.' + uuid();
-  var sshkeygen = spawn('ssh-keygen', ['-f', keyFile,
-                                       '-C', randomWord() + '@' + randomWord(),
-                                       '-t', 'rsa',
-                                       '-b', 1024,
-                                       '-N', '']);
 
-  sshkeygen.stderr.on('data', function(data) {
-    console.error(data.toString());
-  });
-  sshkeygen.on('exit', function(code) {
-    var rm = spawn('rm', ['-f', keyFile]);
+  if (!KEY) {
+    var keyFile = '/tmp/.' + uuid();
+    var sshkeygen = spawn('ssh-keygen', ['-f', keyFile,
+                                         '-C', randomWord() + '@' + randomWord(),
+                                         '-t', 'rsa',
+                                         '-b', 1024,
+                                         '-N', '']);
 
-    if (code !== 0) {
-      console.error('failed to generate ssh key');
-      process.exit(code);
-    }
-    fs.readFile(keyFile + '.pub', 'utf8', function(err, key) {
-      var rm = spawn('rm', ['-f', keyFile + '.pub']);
-      if (err) {
-        console.error(err.stack);
-        process.exit(1);
-      }
-
-      var dn = 'key=id_rsa, ' + parentDN;
-      return callback(dn, key.replace('\n', ''));
+    sshkeygen.stderr.on('data', function(data) {
+      console.error(data.toString());
     });
-  });
-}
+    sshkeygen.on('exit', function(code) {
+      var rm = spawn('rm', ['-f', keyFile]);
 
+      if (code !== 0) {
+        console.error('failed to generate ssh key');
+        process.exit(code);
+      }
+      fs.readFile(keyFile + '.pub', 'utf8', function(err, key) {
+        if (err) {
+          console.error(err.stack);
+          process.exit(1);
+        }
+
+        KEY = key.replace('\n', '');
+
+        var fp = spawn('ssh-keygen', ['-f', keyFile + '.pub', '-l']);
+        fp.stdout.on('data', function(line) {
+          FP = line.toString('utf8').split(' ')[1];
+        });
+        fp.on('exit', function(code) {
+          if (code !== 0) {
+            console.error('Unable to read fingerprint');
+            process.exit(1);
+          }
+
+          dn = 'fingerprint=' + FP + ', ' + parentDN;
+
+          var rm = spawn('rm', ['-f', keyFile + '.pub']);
+          rm.on('exit', function(code) {
+            return callback(dn, KEY);
+          });
+        });
+      });
+    });
+  } else {
+    dn = 'fingerprint=' + FP + ', ' + parentDN;
+    return callback(dn, KEY);
+  }
+}
 ///--- Mainline
 
 var parsed = nopt(opts, shortOpts, process.argv, 2);
@@ -150,75 +183,85 @@ try {
   usage(1, 'unable to read ' + parsed.words + ':' + e.toString());
 }
 
+function generate() {
+  /// Write to stdout
+  console.log('version: 1\n');
 
-/// Write to stdout
-console.log('version: 1\n');
-
-writeEntry(parsed.suffix, {
-  objectclass: 'organization',
-  o: suffixDN.rdns[0].o
-});
-
-writeEntry('ou=customers, ' + parsed.suffix, {
-  objectclass: 'organizationalUnit',
-  ou: 'customers'
-});
-
-writeEntry('ou=operators, ' + parsed.suffix, {
-  objectclass: 'organizationalUnit',
-  ou: 'operators'
-});
-
-var _uuid;
-if (parsed.admin) {
-  _uuid = uuid();
-  writeEntry('uuid=' + _uuid + ', ou=operators, ' + parsed.suffix, {
-    login: 'admin',
-    uuid: _uuid,
-    userpassword: 'joypass123',
-    email: 'nobody@joyent.com',
-    cn: 'root',
-    sn: 'user',
-    company: 'Joyent',
-    address: ['Joyent, Inc.', '345 California Street, Suite 2000'],
-    city: 'San Francisco',
-    state: 'CA',
-    postalCode: 94104,
-    country: 'USA',
-    phone: '+1 415 400 0600',
-    objectclass: 'sdcPerson'
-  });
-}
-
-for (var i = 0; i < parsed.number; i++) {
-  _uuid = uuid();
-  var userDN = 'uuid=' + _uuid + ', ou=customers, ' + parsed.suffix;
-  writeEntry(userDN, {
-    login: randomWord(),
-    uuid: _uuid,
-    userpassword: randomPassword(6),
-    email: randomWord() + '@' + randomWord() + '.com',
-    cn: randomWord(),
-    sn: randomWord(),
-    company: randomWord(),
-    address: [randomWord() + ', Inc.',
-              randomInt(100, 9999) + ' ' + randomWord() + ' Street'],
-    city: randomWord() + ' ' + randomWord(),
-    state: randomWord().substr(0, 2).toUpperCase(),
-    postalCode: randomInt(01000, 99999),
-    country: randomWord().substr(0, 3).toUpperCase(),
-    phone: '+1 ' + randomInt(201, 999) + ' ' + randomInt(111, 999) + ' ' +
-      randomInt(1000, 9999),
-    objectclass: 'sdcPerson'
+  writeEntry(parsed.suffix, {
+    objectclass: 'organization',
+    o: suffixDN.rdns[0].o
   });
 
-  if (parsed.keys)
-    newKey(userDN, function(dn, key) {
-      writeEntry(dn, {
-        name: randomWord(),
-        openssh: key,
-        objectclass: 'sdcKey'
-      });
+  writeEntry('ou=customers, ' + parsed.suffix, {
+    objectclass: 'organizationalUnit',
+    ou: 'customers'
+  });
+
+  writeEntry('ou=operators, ' + parsed.suffix, {
+    objectclass: 'organizationalUnit',
+    ou: 'operators'
+  });
+
+  var _uuid;
+  if (parsed.admin) {
+    _uuid = uuid();
+    writeEntry('uuid=' + _uuid + ', ou=operators, ' + parsed.suffix, {
+      login: 'admin',
+      uuid: _uuid,
+      userpassword: 'joypass123',
+      email: 'nobody@joyent.com',
+      cn: 'root',
+      sn: 'user',
+      company: 'Joyent',
+      address: ['Joyent, Inc.', '345 California Street, Suite 2000'],
+      city: 'San Francisco',
+      state: 'CA',
+      postalCode: 94104,
+      country: 'USA',
+      phone: '+1 415 400 0600',
+      objectclass: 'sdcPerson'
+    });
+  }
+
+  for (var i = 0; i < parsed.number; i++) {
+    _uuid = uuid();
+    var userDN = 'uuid=' + _uuid + ', ou=customers, ' + parsed.suffix;
+    writeEntry(userDN, {
+      login: randomWord(true),
+      uuid: _uuid,
+      userpassword: randomPassword(6),
+      email: randomWord(true) + '@' + randomWord() + '.com',
+      cn: randomWord(),
+      sn: randomWord(),
+      company: randomWord(),
+      address: [randomWord() + ', Inc.',
+                randomInt(100, 9999) + ' ' + randomWord() + ' Street'],
+      city: randomWord() + ' ' + randomWord(),
+      state: randomWord().substr(0, 2).toUpperCase(),
+      postalCode: randomInt(01000, 99999),
+      country: randomWord().substr(0, 3).toUpperCase(),
+      phone: '+1 ' + randomInt(201, 999) + ' ' + randomInt(111, 999) + ' ' +
+        randomInt(1000, 9999),
+      objectclass: 'sdcPerson'
     });
 
+    if (parsed.keys)
+      newKey(userDN, function(dn, key) {
+        writeEntry(dn, {
+          name: randomWord(),
+          fingerprint: FP,
+          openssh: key,
+          objectclass: 'sdcKey'
+        });
+      });
+  }
+}
+
+// Pregen a key
+if (parsed.keys) {
+  newKey(parsed.suffix, function() {
+    return generate();
+  });
+} else {
+  return generate();
 }

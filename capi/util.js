@@ -168,21 +168,36 @@ module.exports = {
       return next();
 
     log.debug('LoadCustomer(%s) entered', req.uriParams.uuid);
-
+    var sent = false;
+    function returnError(err) {
+      if (!sent) {
+        sent = true;
+        return next(new restify.InternalError(err.message));
+      }
+    }
     var opts = {
       scope: 'sub',
       filter: '(uuid=' + req.uriParams.uuid + ')'
     };
     return req.ldap.search('o=smartdc', opts, hidden, function(err, result) {
       if (err)
-        return next(new restify.InternalError(err.message));
+        return returnError(err);
 
       result.on('searchEntry', function(entry) {
         req.customer = entry;
       });
+      result.on('error', function(err) {
+        return returnError(err);
+      })
       result.on('end', function() {
         log.debug('LoadCustomer(%s) -> %o', req.uriParams.uuid, req.customer);
-        return next();
+        if (!sent) {
+          sent = true;
+          if (!req.customer) {
+            return next(new restify.ResourceNotFoundError(req.uriParams.uuid));
+          }
+          return next();
+        }
       });
     });
   },

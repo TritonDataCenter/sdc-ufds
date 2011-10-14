@@ -228,7 +228,7 @@ module.exports = {
       customer.country = req.params.country;
 
     var dn = sprintf('uuid=%s, ou=%s, o=smartdc',
-                     customer.uuid[0],
+                     customer.uuid,
                      (req.params.role && req.params.role === '2') ?
                      'operators' : 'customers');
     log.debug('CreateCustomer, saving: %s -> %o', dn, customer);

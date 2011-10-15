@@ -205,7 +205,7 @@ server.search('', function(req, res, next) {
 });
 */
 
-schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
+schema.load(config.schemaDirectory, function(err, _schema) {
   if (err) {
     log.warn('Error loading schema: ' + err.stack);
     process.exit(1);
@@ -243,25 +243,21 @@ schema.loadDirectory(config.schemaDirectory, function(err, _schema) {
     }
 
     tree.riak.log4js = log4js;
-    var backend = ldapRiak.createBackend(tree.riak);
-    backend.init(function(err) {
+    var be = ldapRiak.createBackend(tree.riak);
+    be.init(function(err) {
       if (err) {
         process.stderr.write(err.toString() + '\n');
         process.exit(1);
       }
     });
 
-    server.add(t, backend,
-               pre, keys.add, schema.validateAdd,
-               backend.add(salt.add));
-    server.bind(t, backend, pre, backend.bind(salt.bind));
-    server.compare(t, backend, pre, backend.compare(salt.compare));
-    server.del(t, backend, pre, backend.del());
-    server.modify(t, backend, pre, backend.modify([
-      schema.validateModify,
-      salt.modify]));
-    server.modifyDN(t, backend, pre, backend.modifyDN());
-    server.search(t, backend, pre, backend.search(salt.search));
+    server.add(t, be, pre, keys.add, schema.add, be.add(salt.add));
+    server.bind(t, be, pre, be.bind(salt.bind));
+    server.compare(t, be, pre, be.compare(salt.compare));
+    server.del(t, be, pre, be.del());
+    server.modify(t, be, pre, be.modify([schema.modify, salt.modify]));
+    server.modifyDN(t, be, pre, be.modifyDN());
+    server.search(t, be, pre, be.search(salt.search));
   });
 
   server.listen(config.port, function() {

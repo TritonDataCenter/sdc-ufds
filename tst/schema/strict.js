@@ -25,7 +25,7 @@ function StrictUnitTest() {
 util.inherits(StrictUnitTest, Validator);
 
 
-StrictUnitTest.prototype.add = function(entry, callback) {
+StrictUnitTest.prototype.validate = function(entry, callback) {
   assert.ok(entry);
   assert.ok(entry.dn);
   assert.ok(entry.attributes);

@@ -53,7 +53,7 @@ function SDCPerson() {
 util.inherits(SDCPerson, Validator);
 
 
-SDCPerson.prototype.add = function(entry, callback) {
+SDCPerson.prototype.validate = function(entry, callback) {
   var attrs = entry.attributes;
   var i;
   var errors = [];

@@ -11,6 +11,8 @@ var schema = require('../lib/schema');
 
 ///--- Globals
 
+var Change = ldap.Change;
+
 var SCHEMA;
 var SOCKET = '/tmp/.' + uuid();
 var SUFFIX = 'dc=unit-test';
@@ -24,7 +26,7 @@ var server;
 ///--- Tests
 
 test('setup', function(t) {
-  log4js.setGlobalLogLevel('INFO');
+  log4js.setGlobalLogLevel('DEBUG');
   server = ldap.createServer({
     log4js: log4js
   });
@@ -40,6 +42,26 @@ test('setup', function(t) {
                res.end();
              }
             );
+
+  server.modify(SUFFIX,
+                function(req, res, next) {
+                  req.entry = {
+                    dn: ldap.parseDN(SUFFIX),
+                    attributes: {
+                      objectclass: ['unittest'],
+                      dc: ['foo'],
+                      cn: ['bar'],
+                      sn: ['moo']
+                    }
+                  };
+                  req.schema = SCHEMA;
+                  return next();
+                },
+                schema.modify,
+                function(req, res, next) {
+                  res.end();
+                }
+               );
 
   server.listen(SOCKET, function() {
     client = ldap.createClient({
@@ -130,7 +152,7 @@ test('add extra params', function(t) {
 });
 
 
-test('not strict', function(t) {
+test('add not strict', function(t) {
   var entry = {
     foo: 'moo',
     objectClass: 'unittestanything'
@@ -143,6 +165,54 @@ test('not strict', function(t) {
     t.end();
   });
   t.end();
+});
+
+
+test('modify strict ok', function(t) {
+  var changes = [];
+  changes.push(new Change({
+    type: 'add',
+    modification: {
+      cn: 'bullwinkle'
+    }
+  }));
+  changes.push(new Change({
+    type: 'replace',
+    modification: {
+      dc: 'boo'
+    }
+  }));
+  changes.push(new Change({
+    type: 'delete',
+    modification: {
+      sn: 'moo'
+    }
+  }));
+
+  client.modify(SUFFIX, changes, function(err, res) {
+    t.ifError(err);
+    t.ok(res);
+    t.equal(res.status, 0);
+    t.end();
+  });
+});
+
+
+test('modify strict not ok', function(t) {
+  var changes = [];
+  changes.push(new Change({
+    type: 'delete',
+    modification: {
+      dc: 'foo'
+    }
+  }));
+
+  client.modify(SUFFIX, changes, function(err, res) {
+    t.ok(err);
+    t.ok(!res);
+    t.ok(err instanceof ldap.ObjectclassViolationError);
+    t.end();
+  });
 });
 
 

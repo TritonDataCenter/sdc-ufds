@@ -255,17 +255,37 @@ schema.load(__dirname + '/schema', function(err, _schema) {
     server.bind(t, be, pre, be.bind(salt.bind));
     server.compare(t, be, pre, be.compare(salt.compare));
     server.del(t, be, pre, be.del());
-    server.modify(t, be, pre, be.modify([schema.modify, salt.modify]));
     server.modifyDN(t, be, pre, be.modifyDN());
     server.search(t, be, pre, be.search(salt.search));
+
+    // Modify is the most complicated, since we have to go load the enttry
+    // to validate the schema
+    server.modify(t, be, pre, be.modify(
+      [
+       function (req, res, next) {
+         assert.ok(req.riak);
+         var client = req.riak.client;
+
+         client.get(req.riak.bucket, req.riak.key, function(err, entry) {
+           if (err) {
+             if (err.statusCode === 404)
+               return next(new ldap.NoSuchObjectError(req.dn.toString()));
+
+             log.warn('%s error talking to riak %s', req.logId, err.stack);
+             return next(new ldap.OperationsError('Riak: ' + err.message));
+           }
+
+           // store this so we don't go refetch it.
+           req.entry = entry;
+           req.riak.entry = entry;
+           return next();
+         });
+       },
+        schema.modify, salt.modify]));
   });
 
+  // Rock 'n Roll
   server.listen(config.port, function() {
     log.info('UFDS listening at: %s\n\n', server.url);
   });
 });
-
-
-
-
-

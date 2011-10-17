@@ -17,7 +17,7 @@ function WeakUnitTest() {
 util.inherits(WeakUnitTest, Validator);
 
 
-WeakUnitTest.prototype.add = function(entry, callback) {
+WeakUnitTest.prototype.validate = function(entry, callback) {
   assert.ok(entry);
   assert.ok(entry.dn);
   assert.ok(entry.attributes);

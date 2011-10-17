@@ -4,7 +4,6 @@
   "logLevel": "INFO",
   "rootDN": "cn=root",
   "rootPassword": "secret",
-  "schemaDirectory": "./schema",
   "trees": {
     "o=smartdc": {
       "riak": {

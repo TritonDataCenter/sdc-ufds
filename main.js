@@ -205,7 +205,7 @@ server.search('', function(req, res, next) {
 });
 */
 
-schema.load(config.schemaDirectory, function(err, _schema) {
+schema.load(__dirname + '/schema', function(err, _schema) {
   if (err) {
     log.warn('Error loading schema: ' + err.stack);
     process.exit(1);

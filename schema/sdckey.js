@@ -8,7 +8,7 @@ var Validator = require('../lib/schema/validator');
 
 ///--- API
 
-function Metadata() {
+function SDCKey() {
   Validator.call(this, {
     name: 'sdckey',
     required: {
@@ -20,7 +20,7 @@ function Metadata() {
     strict: true
   });
 }
-util.inherits(Metadata, Validator);
+util.inherits(SDCKey, Validator);
 
 
 
@@ -28,6 +28,6 @@ util.inherits(Metadata, Validator);
 
 module.exports = {
   createInstance: function() {
-    return new Metadata();
+    return new SDCKey();
   }
 };

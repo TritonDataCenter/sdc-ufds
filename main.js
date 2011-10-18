@@ -11,12 +11,15 @@ var nopt = require('nopt');
 var ldapRiak = require('ldapjs-riak');
 
 var keys = require('./lib/keys');
+var owner = require('./lib/owner');
 var salt = require('./lib/salt');
 var schema = require('./lib/schema');
 
 
 
 ///--- Globals
+
+log4js.setGlobalLogLevel('INFO');
 
 var log = log4js.getLogger('main');
 var config = null;
@@ -163,48 +166,6 @@ server.bind(config.rootDN, function(req, res, next) {
 });
 
 
-// ldapwhoami -H ldap://localhost:1389 -x -D cn=root -w secret
-// cn=root
-server.exop('1.3.6.1.4.1.4203.1.11.3', function(req, res, next) {
-  res.responseValue = req.connection.ldap.bindDN.toString();
-  res.end();
-  return next();
-});
-
-
-// RootDSE
-/*
-server.search('', function(req, res, next) {
-  function now() {
-    function pad(n) { return ((n < 10) ? '0' + n : n); }
-    var d = new Date();
-    return d.getUTCFullYear() +
-      pad(d.getUTCMonth() + 1) +
-      pad(d.getUTCDate()) +
-      pad(d.getUTCHours()) +
-      pad(d.getUTCMinutes()) +
-      pad(d.getUTCSeconds()) +
-      '.0Z';
-  }
-
-  var entry = {
-    dn: '',
-    attributes: {
-      namingcontexts: 'o=smartdc',
-      supportedcontrol: ['1.3.6.1.4.1.38678.1'],
-      supportedextension: ['1.3.6.1.4.1.4203.1.11.3'],
-      supportedldapversion: 3,
-      currenttime: now(),
-      objectclass: 'RootDSE'
-    }
-  };
-
-  res.send(entry);
-  res.end();
-  return next();
-});
-*/
-
 schema.load(__dirname + '/schema', function(err, _schema) {
   if (err) {
     log.warn('Error loading schema: ' + err.stack);
@@ -251,12 +212,12 @@ schema.load(__dirname + '/schema', function(err, _schema) {
       }
     });
 
-    server.add(t, be, pre, keys.add, schema.add, be.add(salt.add));
+    server.add(t, be, pre, owner.add, keys.add, schema.add, be.add(salt.add));
     server.bind(t, be, pre, be.bind(salt.bind));
     server.compare(t, be, pre, be.compare(salt.compare));
     server.del(t, be, pre, be.del());
-    server.modifyDN(t, be, pre, be.modifyDN());
-    server.search(t, be, pre, be.search(salt.search));
+    server.modifyDN(t, be, pre, owner.modifyDN, be.modifyDN());
+    server.search(t, be, pre, owner.search, be.search(salt.search));
 
     // Modify is the most complicated, since we have to go load the enttry
     // to validate the schema
@@ -284,8 +245,49 @@ schema.load(__dirname + '/schema', function(err, _schema) {
         schema.modify, salt.modify]));
   });
 
+  // ldapwhoami -H ldap://localhost:1389 -x -D cn=root -w secret
+  // cn=root
+  server.exop('1.3.6.1.4.1.4203.1.11.3', function(req, res, next) {
+    res.responseValue = req.connection.ldap.bindDN.toString();
+    res.end();
+    return next();
+  });
+
+  // RootDSE
+  server.search('', function(req, res, next) {
+    function now() {
+      function pad(n) { return ((n < 10) ? '0' + n : n); }
+      var d = new Date();
+      return d.getUTCFullYear() +
+        pad(d.getUTCMonth() + 1) +
+        pad(d.getUTCDate()) +
+        pad(d.getUTCHours()) +
+        pad(d.getUTCMinutes()) +
+        pad(d.getUTCSeconds()) +
+        '.0Z';
+    }
+
+    var entry = {
+      dn: '',
+      attributes: {
+        namingcontexts: 'o=smartdc',
+        supportedcontrol: ['1.3.6.1.4.1.38678.1'],
+        supportedextension: ['1.3.6.1.4.1.4203.1.11.3'],
+        supportedldapversion: 3,
+        currenttime: now(),
+        objectclass: 'RootDSE'
+      }
+    };
+
+    res.send(entry);
+    res.end();
+    return next();
+  });
+
+
   // Rock 'n Roll
   server.listen(config.port, function() {
     log.info('UFDS listening at: %s\n\n', server.url);
   });
+
 });

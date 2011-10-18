@@ -35,7 +35,15 @@
           "login": true,
           "email": true,
           "uuid": true,
-          "fingerprint": false
+          "fingerprint": false,
+          "_owner": false,
+          "company": false,
+          "postalcode": false,
+          "country": false,
+          "city": false,
+          "state": false,
+          "cn": false,
+          "sn": false
         },
         "client": {
           "url": "http://localhost:8098",

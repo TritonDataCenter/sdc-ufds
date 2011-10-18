@@ -26,15 +26,19 @@ var config = null;
 var server = null;
 
 var opts = {
+  'certificate': String,
   'debug': Number,
   'file': String,
+  'key': String,
   'port': Number,
   'help': Boolean
 };
 
 var shortOpts = {
+  'c': ['--certificate'],
   'd': ['--debug'],
   'f': ['--file'],
+  'k': ['--key'],
   'p': ['--port'],
   'h': ['--help']
 };
@@ -72,9 +76,11 @@ function processConfig() {
     if (config.logLevel)
       log4js.setGlobalLogLevel(config.logLevel);
 
+    if (config.certificate && config.key && !config.port)
+      config.port = 636;
+
     if (!config.port)
       config.port = 389;
-
   } catch (e) {
     console.error('Unable to parse config file: ' + e.message);
     process.exit(1);
@@ -90,7 +96,18 @@ function processConfig() {
       log4js.setGlobalLogLevel('DEBUG');
     }
   }
+
+  if (parsed.certificate)
+    config.certificate = parsed.certificate;
+  if (parsed.key)
+    config.key = parsed.key;
+
+  if (config.certificate)
+    config.certificate = fs.readFileSync(config.certificate, 'utf8');
+  if (config.key)
+    config.key = fs.readFileSync(config.key, 'utf8');
 }
+
 
 
 function audit(req, res, next) {
@@ -212,7 +229,7 @@ schema.load(__dirname + '/schema', function(err, _schema) {
       }
     });
 
-    server.add(t, be, pre, owner.add, keys.add, schema.add, be.add(salt.add));
+    server.add(t, be, pre, salt.add, keys.add, owner.add, schema.add, be.add());
     server.bind(t, be, pre, be.bind(salt.bind));
     server.compare(t, be, pre, be.compare(salt.compare));
     server.del(t, be, pre, be.del());

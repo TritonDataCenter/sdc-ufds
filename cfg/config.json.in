@@ -1,0 +1,63 @@
+{
+  "host": "HOSTNAME",
+  "port": 636,
+  "certificate": "/opt/smartdc/ufds/ssl/cert.pem",
+  "key": "/opt/smartdc/ufds/ssl/key.pem",
+  "logLevel": "INFO",
+  "rootDN": "ROOTDN",
+  "rootPassword": "ROOTPW",
+  "trees": {
+    "o=smartdc": {
+      "riak": {
+        "bucket": {
+          "name": "ufds",
+          "props": {
+            "n_val": 3,
+            "allow_mult": false,
+            "last_write_wins": false,
+            "r": "quorum",
+            "w": "quorum",
+            "dw": "0",
+            "rw": "quorum"
+          }
+        },
+        "uniqueIndexBucket": {
+          "name": "ufds_uindex",
+          "props": {
+            "n_val": 2,
+            "allow_mult": false,
+            "last_write_wins": false,
+            "r": "all",
+            "w": "all",
+            "dw": 0,
+            "rw": "all"
+          }
+        },
+        "indexes": {
+          "login": true,
+          "email": true,
+          "uuid": true,
+          "fingerprint": false,
+          "_owner": false,
+          "company": false,
+          "postalcode": false,
+          "country": false,
+          "city": false,
+          "state": false,
+          "cn": false,
+          "sn": false
+        },
+        "client": {
+          "url": "RIAKIP",
+          "clientId": "ufds",
+          "retry": {
+            "retries": 3,
+            "factor": 2,
+            "minTimeout": 1000,
+            "maxTimeout": 10000
+          }
+        }
+      }
+    }
+  }
+}

@@ -102,6 +102,10 @@ a small LDIF file that has what you need, so just run this:
 
     `ldapadd -H ldap://localhost:1389 -x -D cn=root -w secret -f data/bootstrap.ldif`
 
+Note that if using SSL, OpenSSL requires the following env var to turn
+off certificate checking: `LDAPTLS_REQCERT=allow`.
+
+
 ## CAPI
 
 To maintain backwards compatibility, there is a restify app that "approximates"

@@ -17,7 +17,7 @@
             "last_write_wins": false,
             "r": "quorum",
             "w": "quorum",
-            "dw": "0",
+            "dw": 0,
             "rw": "quorum"
           }
         },

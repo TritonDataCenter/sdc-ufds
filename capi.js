@@ -32,6 +32,7 @@ var opts = {
   'file': String,
   'key': String,
   'port': Number,
+  'ufds': String,
   'help': Boolean
 };
 
@@ -41,7 +42,8 @@ var shortOpts = {
   'f': ['--file'],
   'k': ['--key'],
   'p': ['--port'],
-  'h': ['--help']
+  'h': ['--help'],
+  'u': ['--ufds']
 };
 
 
@@ -244,8 +246,11 @@ server.del('/customers/:uuid/limits/:dc/:dataset',
 
 ///-- Start up
 
+if (!parsed.ufds)
+  parsed.ufds = 'ldaps://localhost:636';
+
 client = ldap.createClient({
-  url: 'ldap://' + config.host + ':' + config.port
+  url: parsed.ufds
 });
 
 if (parsed.debug)

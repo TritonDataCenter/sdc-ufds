@@ -33,6 +33,18 @@
             "rw": "all"
           }
         },
+        "changelogBucket": {
+          "name": "ufds_changelog",
+          "props": {
+            "n_val": 3,
+            "allow_mult": false,
+            "last_write_wins": false,
+            "r": "quorum",
+            "w": "quorum",
+            "dw": 0,
+            "rw": "quorum"
+          }
+        },
         "indexes": {
           "login": true,
           "email": true,

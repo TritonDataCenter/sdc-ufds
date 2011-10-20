@@ -19,10 +19,22 @@
             "rw": "all"
           }
         },
+        "changelogBucket": {
+          "name": "ufds_changelog",
+          "props": {
+            "n_val": 1,
+            "allow_mult": false,
+            "last_write_wins": false,
+            "r": "all",
+            "w": "all",
+            "dw": 0,
+            "rw": "all"
+          }
+        },
         "uniqueIndexBucket": {
           "name": "ufds_uindex",
           "props": {
-            "n_val": 2,
+            "n_val": 1,
             "allow_mult": false,
             "last_write_wins": false,
             "r": "all",

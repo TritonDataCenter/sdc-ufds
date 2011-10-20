@@ -235,6 +235,7 @@ schema.load(__dirname + '/schema', function(err, _schema) {
     server.del(t, be, pre, be.del());
     server.modifyDN(t, be, pre, owner.modifyDN, be.modifyDN());
     server.search(t, be, pre, owner.search, be.search(salt.search));
+    server.search('cn=changelog', be, pre, be.changelogSearch());
 
     // Modify is the most complicated, since we have to go load the enttry
     // to validate the schema
@@ -287,7 +288,7 @@ schema.load(__dirname + '/schema', function(err, _schema) {
     var entry = {
       dn: '',
       attributes: {
-        namingcontexts: 'o=smartdc',
+        namingcontexts: ['o=smartdc', 'cn=changelog'],
         supportedcontrol: ['1.3.6.1.4.1.38678.1'],
         supportedextension: ['1.3.6.1.4.1.4203.1.11.3'],
         supportedldapversion: 3,

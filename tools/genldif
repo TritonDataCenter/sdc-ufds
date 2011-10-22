@@ -19,6 +19,7 @@ var opts = {
   'debug': Number,
   'help': Boolean,
   'keys': Boolean,
+  'notree': Boolean,
   'number': Number,
   'suffix': String,
   'words': String
@@ -31,6 +32,7 @@ var shortOpts = {
   'k': ['--keys'],
   'n': ['--number'],
   's': ['--suffix'],
+  't': ['--notree'],
   'w': ['--words']
 };
 
@@ -187,20 +189,22 @@ function generate() {
   /// Write to stdout
   console.log('version: 1\n');
 
-  writeEntry(parsed.suffix, {
-    objectclass: 'organization',
-    o: suffixDN.rdns[0].o
-  });
+  if (!parsed.notree) {
+    writeEntry(parsed.suffix, {
+      objectclass: 'organization',
+      o: suffixDN.rdns[0].o
+    });
 
-  writeEntry('ou=customers, ' + parsed.suffix, {
-    objectclass: 'organizationalUnit',
-    ou: 'customers'
-  });
+    writeEntry('ou=customers, ' + parsed.suffix, {
+      objectclass: 'organizationalUnit',
+      ou: 'customers'
+    });
 
-  writeEntry('ou=operators, ' + parsed.suffix, {
-    objectclass: 'organizationalUnit',
-    ou: 'operators'
-  });
+    writeEntry('ou=operators, ' + parsed.suffix, {
+      objectclass: 'organizationalUnit',
+      ou: 'operators'
+    });
+  }
 
   var _uuid;
   if (parsed.admin) {

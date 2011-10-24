@@ -9,6 +9,7 @@ var ldap = require('ldapjs');
 var log4js = require('log4js');
 var nopt = require('nopt');
 var ldapRiak = require('ldapjs-riak');
+var retry = require('retry');
 
 var keys = require('./lib/keys');
 var owner = require('./lib/owner');
@@ -222,11 +223,40 @@ schema.load(__dirname + '/schema', function(err, _schema) {
 
     tree.riak.log4js = log4js;
     var be = ldapRiak.createBackend(tree.riak);
-    be.init(function(err) {
+    var timer;
+
+    function _init(callback) {
+      var operation = retry.operation({
+        retries: 10,
+        factor: 2,
+        minTimeout: 1000,
+        maxTimeout: Number.MAX_VALUE,
+        randomize: false
+      }); // Bake in the defaults, as they're fairly sane
+
+      operation.attempt(function(currentAttempt) {
+        be.init(function(err) {
+          if (err) {
+            log.warn('Error initializing backend(attempt=%d): %s',
+                     currentAttempt, err.toString());
+            if (operation.retry(err))
+              return;
+
+            return callback(operation.mainError());
+          }
+
+          return callback();
+        });
+      });
+    }
+
+    _init(function(err) {
       if (err) {
-        process.stderr.write(err.toString() + '\n');
+        log.fatal('Unable to initialize Riak backend, exiting');
         process.exit(1);
       }
+
+      log.info('Riak backend initialized');
     });
 
     server.add(t, be, pre, salt.add, keys.add, owner.add, schema.add, be.add());

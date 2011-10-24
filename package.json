@@ -23,6 +23,7 @@
     "nopt": "1.0.10",
     "restify": "0.5.4",
     "rbytes": "0.0.2",
+    "retry": "0.4.0",
     "sprintf": "0.1.1"
   },
   "devDependencies": {

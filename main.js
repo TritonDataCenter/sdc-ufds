@@ -10,6 +10,7 @@ var log4js = require('log4js');
 var nopt = require('nopt');
 var ldapRiak = require('ldapjs-riak');
 var retry = require('retry');
+var nstatic = require('node-static');
 
 var keys = require('./lib/keys');
 var owner = require('./lib/owner');
@@ -338,4 +339,18 @@ schema.load(__dirname + '/schema', function(err, _schema) {
     log.info('UFDS listening at: %s\n\n', server.url);
   });
 
+});
+
+
+
+///--- Serve up docs
+
+var file = new(nstatic.Server)('./docs/pkg');
+var docsPort = config.port < 1024 ? 80 : 9080;
+require('http').createServer(function (req, res) {
+    req.addListener('end', function () {
+        file.serve(req, res);
+    });
+}).listen(docsPort, function() {
+  log.info('Docs listener up at %d', docsPort);
 });

@@ -19,6 +19,7 @@
     "ldapjs": "0.2.6",
     "ldapjs-riak": "0.1.10",
     "log4js": "0.3.9",
+    "node-static": "0.5.9",
     "node-uuid": "1.2.0",
     "nopt": "1.0.10",
     "restify": "0.5.4",

@@ -2,45 +2,105 @@
 # Overview
 
 UFDS is the "unified foundational directory service" built for SDC over
-[ldapjs](http://ldapjs.org) and [Riak](https://github.com/mcavage/node-ldapjs-riak),
+[ldapjs](http://ldapjs.org) and [Riak](http://mcavage.github.com/node-ldapjs-riak),
 and is used to track accounts, credentials, and more. It is a superset of
 functionality offered by previous SDC versions employing CAPI (there is a
 backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
 
-# DIT
+This document does not really discuss any generic-LDAP things, but
+really just the SDC-specific uses of it.
 
-## Hierarchy
+# SmartDataCenter Tree
+
+## Tree
 
 The directory tree is laid out as follows:
 
     o=smartdc
       +-ou=customers
-      |  +-login=:login
-      |  | +-key=:name
-      |  | +-ou=users
-      |  | | +-login=:login
-      |  | | | +-key=:name
-      |  | | | +-metadata=:appkey
-      |  | | | +-dclimit=:datacenter
+      |  +-uuid=:uuid
+      |  | +-key=:fingerpring
+      |  | +-metadata=:appkey
+      |  | +-dclimit=:datacenter
       +-ou=operators
-      |  +-login=:login
-      |  | +-key=:name
+      |  +-uuid=:uuid
+      |  | +-key=:fingerpring
+      |  | +-metadata=:appkey
+      |  | +-dclimit=:datacenter
 
-We could maintain a static group of operators in the tree, rather than
-separating it out.  However, then there is a burden to keep the tree and that
-group in sync (since "dynamic" LDAP groups are not yet supported).
+So, basically there are two "subtrees", one for customers and one for
+operators.  We could maintain a static group of operators in the tree,
+rather than separating it out.  However, then there is a burden to
+keep the tree and that group in sync (since "dynamic" LDAP groups are
+not yet supported).  But it's probably a better long-term approach.
+
+## Entries/Schema
+
+Reference the files in `./schema` for an up to date list of attributes
+et al. This is just high-level information on what you can look for.
+
+### sdcPerson
+
+The `sdcPerson` type is one of the `uuid=:uuid, ou=customers, o=smartdc`
+entries (or operators), and contains all the attributes for a "user".
+These objects should always be stored by uuid.  Here's the
+bootstrapped user:
+
+    dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators, o=smartdc
+    cn: Admin
+    email: user@joyent.com
+    login: admin
+    objectclass: sdcperson
+    sn: User
+    uuid: 930896af-bf8c-48d4-885c-6573a94b1853
+
+### sdcKey
+
+The `sdcKey` objectclass holds SSH keys for tenants, as well as the
+OpenSSL compatible form of the SSH key (to support signing).  While
+these objects have a `name` field, they are stored by fingerprint, and
+it is on the short term TODO list to make CloudAPI work with
+fingerprint as the URL.
+
+### CAPI Specific Objects
+
+Unclear if these have long-term viability, but for now they exist,
+so...
+
+#### capiLimit
+
+Holds a mapping of "limits" per dataset type in a particular
+datacenter.  Stored with "dclimit=:datacenter, ..." as the DN.
+
+#### capiMetadata
+
+There's probably not anything using this, but it's just a free-form
+entry (meaning you can put any attribute/value pairs in you
+want). Stored by `metadata=:appkey, ...`.
+
+# How Stuff works
 
 ## Schema
 
-All schema for UFDS is located in the `./schema` directory, and is modeled in
-JSON schema; while JSON schema is far from perfect, it's not terrible, and is a
-big usability improvement over "standard" LDAP schema.  Reference that directory
-for an up to date listing of schema, but basically, operators/customers are an
-instance of the `sdcperson` objectclass, then the other entities are for
-credentials et al hung off a 'user'.  Typically, we use JSON schema in a manner
-where the set of attributes defined are required, but the object is left "open"
-so that administrators et al can tack on additional attributes without worrying
-about the schema.
+Schema for UFDS is built on a custom framework where you extend a
+`Validator` class, and simply model the attributes you want, whether
+they're required or optional, and the number of values to allow.  This
+means to add new schema types into UFDS, you have to write (minimal)
+code.  Take a look at `./schema` to get a feel for what this looks
+like.  It's really not rocket science.
+
+The schema framework automatically runs on add/modify/modifyDN, and
+UFDS "discovers" all schema in that directory, so all you need to do
+to get a new type in the system is drop a file in there.
+
+In terms of the paradigm, you describe your _required_ attributes, and
+the number of values each can have, and then decide whether or not you
+want the type to be _strict_.  Strict set to true means that only the
+attributes described in your schema will be allowed, and you can then
+use the _optional_ block to describe optional attributes.  If _strict_
+is false, then _optional_ is pretty much irrelevant, as anything
+goes (_required_ attributes however, must be present). The default for
+strictness is _false_.
 
 ## Indexing
 
@@ -50,31 +110,134 @@ extremely costly, so we only really want to set those where you really
 need them (notably login and email, since we're assuming we can generate
 uuid's without collision).
 
-Indexing is configured in config.json, and leverages Riak's `2i` code.
+Indexing is configured in config.json, and leverages Riak's `2i`
+code.  Note that you'll need to keep `./cfg/config.json.in` in sync
+with what's needed, as that's what usb-headnode uses to generate the
+"in zone" config.  But in the config file, you'll see this block:
 
-## Searching
+    "indexes": {
+      "login": true,
+      "email": true,
+      "uuid": true,
+      "fingerprint": false,
+      "_owner": false,
+      "company": false,
+      "postalcode": false,
+      "country": false,
+      "city": false,
+      "state": false,
+      "cn": false,
+      "sn": false
+    }
 
-While UFDS supports pretty much all LDAP search filters and operations, you
-almost certainly don't want to use something like `objectclass=*` outside of a
-development environment.  You pretty much want to stick to equality filters
-on indexes (although, `&` filters where not all of the equality filters are
-indexed is ok).  For example, this would be ok:
+_true_ means the attribute is a unique index, _false_ means it's a
+regular index.  Everything in there ends up as a Riak 2i index.
 
-    `alias lsearch='ldapsearch -LLL -x -D cn=root -w secret -b o=smartdc'`
+Note that there's no such thing as "reindexing" in Riak, so if you
+need indexes for your types, you *must* put them in before customer's
+touch the release (i.e., before any real data ends up in the
+stack). Reindexing means you've got to dump and reload.  Not pretty.
 
-    `lsearch "(&(objectclass=sdcperson)(email=foo@joyent.com))"`
+## Adding Triggers
 
-While this would be a poor performing filter:
+Most of the code for UFDS is really in the [http://ldapjs.org](ldapjs)
+and [http://mcavage.github.com/node-ldapjs-riak](ldapjs-riak)
+code-bases, but the SmartDataCenter specific stuff lives here.  For
+example, to allow easy migration from CAPI to UFDS, password salting
+is *identical* to CAPI's. To do that, there's a `./lib/salt.js` file
+that has ldapjs handlers that inject attributes and modify the request
+as appropriate for each LDAP operation type that's appropriate.
+Similarly, there's code to convert an SSH key into the PKCS#8 PEM
+format.
 
-    `lsearch "(|(objectclass=sdcperson)(_ctime>=2010-01-01:T00:00:00))"`
+Basically, if you want UFDS to do something other than store your
+record as-is, you need to write code to do so, and add it into the
+handler chain as appropriate.
 
-# Development
+## Searching (effectively)
+
+This is really important, so read this 2x if you have to! If you're
+doing searches on Riak that are _not_ indexed, you're fucked. Stop. Go
+back and figure out how to find what you need with indexes.
+
+To find a customer from the top of the tree, you're best off doing
+something like `(&(login=markc)(objectclass=sdcperson))` or
+`(&(email=mark.cavage@joyent.com)(objectclass=sdcperson))`.  That's
+going to find you a record where you can then use the DN.  So, suppose
+I found one where the DN was
+`uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators,
+o=smartdc`. I could then go ahead and (safely) use _any_ filter if I
+retarget searches at that scope base.  This is because UFDS
+automatically indexes all objects at or under a `uuid=...` entry with
+the `_owner` attribute, and on searches will automagically add that
+`_owner=$uuid` into your search filter.
+
+So, once you're searching at or under a customer record, do whatever
+you want. When searching from the top of the tree, only use equality
+filters on indexed attributes (you can use an `and` filter, but one of
+them really should be an equality match).
+
+### Hidden attributes
+
+UFDS stores a bunch of attributes prefixed with `_`.  For example,
+`_ctime`, `_salt`, etc.  And, by default, UFDS will not return these
+on searches (notably this includes `userpassword`).  To make UFDS
+return these, you must (1) be an operator (or the actual admin), and
+(2) you must pass in the "hiddenAttributes" control, which is
+something Joyent invented.  The OID for this control is
+'1.3.6.1.4.1.38678.1'. Here's an example search that shows all the attributes:
+
+
+    $ ./bin/ldapjs-search -u ldaps://10.99.99.21 -D cn=root -w secret -c 1.3.6.1.4.1.38678.1 -b o=smartdc "(login=*)"
+    [{
+      "dn": "uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators, o=smartdc",
+      "cn": "Admin",
+      "email": "user@joyent.com",
+      "login": "admin",
+      "objectclass": "sdcperson",
+      "sn": "User",
+      "userpassword": "d72f926f632784be67d1f96a4d82396c67ef5f5b",
+      "uuid": "930896af-bf8c-48d4-885c-6573a94b1853",
+      "_salt": "51bcac43c05e9148744b151317351fd96d8d953f",
+      "_owner": "930896af-bf8c-48d4-885c-6573a94b1853",
+      "_ctime": "2011-10-25T16:45:08Z",
+      "_createdfrom": "undefined:undefined::5",
+      "_createdby": "cn=root",
+      "_mtime": "2011-10-25T16:45:08Z",
+      "_modifiedfrom": "undefined:undefined::5",
+      "_modifiedby": "cn=root"
+    }]
+
+## Changelog
+
+UFDS supports an almost-RFC compliant LDAP changelog, which will
+always live at `cn=changelog`.  It contains all changes that have ever
+happened in the directory.  You can search by `changetype`,
+`changenumber`, `changetime` and `targetdn`.  Here's a sample record:
+
+    dn: changenumber=1319561108253, cn=changelog
+    targetdn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators, o=smartdc
+    changetime: 2011-10-25T16:45:08Z
+    changenumber: 1319561108253
+    changetype: add
+    changes: {"cn":["Admin"],"email":["user@joyent.com"],"login":["admin"],"object
+     class":["sdcPerson"],"sn":["User"],"userpassword":"XXXXXX","uuid":["930896af-
+     bf8c-48d4-885c-6573a94b1853"],"_salt":["51bcac43c05e9148744b151317351fd96d8d9
+     53f"],"_owner":["930896af-bf8c-48d4-885c-6573a94b1853"]}
+    objectclass: changeLogEntry
+
+# Development/Setup
+
+This all assumes you're developing for UFDS on your macbook.
+
+## Erlang
+
+    $ brew install erlang
 
 ## Riak
 
-You need a 1.0.x version of Riak.  As of this writing, they are still in release
-candidate(s) for 1.0, but you can grab one here:
-<http://downloads.basho.com/riak/riak-1.0.0rc1>.
+You need a 1.0.x version of Riak. Get one here:
+<http://downloads.basho.com/riak/riak-1.0.1>.
 
 Once you have that, you need to be on the leveldb backend, so crack open
 `riak-1.0.0rc1/etc/app.config` and under the section `{riak_kv`, change the
@@ -84,9 +247,6 @@ to bitcask).  Once you have that, you also need to increase your ulimits:
 want to clean out/reset your data:
 `./bin/riak stop && rm -fr data/leveldb/* && ./bin/riak start`
 
-Note that UFDS heavily leverages riak secondary indexing, which isn't really
-documented yet, save here: <https://gist.github.com/d66f8298802e4ae28e95>.
-
 ## UFDS
 
 Next you need to start UFDS, which is the LDAP interface over riak.  Config
@@ -95,22 +255,37 @@ riak, you should be good to go with: `node main.js -f cfg/config.json -d 2`;
 note the `-d 2` is optional, but will spew diagnostic logs for you, which is
 helpful if you're developing.
 
+### Aliasing the OpenLDAP CLI
+
+Do this, or your life will suck:
+
+    $ alias lsearch='LDAPTLS_REQCERT=allow ldapsearch -x -LLL -D cn=root -w secret -H ldaps://localhost:1636'
+    $ alias ladd='LDAPTLS_REQCERT=allow ldapadd -x -D cn=root -w secret -H ldaps://localhost:1636'
+    $ alias lmodify='LDAPTLS_REQCERT=allow ldapmodify -x -D cn=root -w secret -H ldaps://localhost:1636'
+    $ alias ldelete='LDAPTLS_REQCERT=allow ldapdelete -x -D cn=root -w secret -H ldaps://localhost:1636'
+
 ### Bootstrapping
 
-Once you have riak+ufds running, you need to 'bootstrap' the LDAP tree. There's
-a small LDIF file that has what you need, so just run this:
+Once you have riak+ufds running, you need to 'bootstrap' the LDAP tree.
 
-    `ldapadd -H ldap://localhost:1389 -x -D cn=root -w secret -f data/bootstrap.ldif`
+    $ ladd -f ./data/bootstrap.ldif
 
-Note that if using SSL, OpenSSL requires the following env var to turn
-off certificate checking: `LDAPTLS_REQCERT=allow`.
+That adds the shell of the tree, as well as the "admin" user.  To add
+a bunch of new records, you can run:
 
+    $ ladd -f ./data/1k.ldif
+
+Also, in `./tools` is `genldif`, which you can invoke like:
+
+    $ ./tools/genldif -k -n 10000
+
+To generate 10k users with SSH keys (note they will all share one SSH key).
 
 ## CAPI
 
 To maintain backwards compatibility, there is a restify app that "approximates"
 the old CAPI interface. It assumes that UFDS is running on the same host, so to
-fire it up, just run `node capi.js -p 8080 -d 2`.
+fire it up, just run `node capi.js -u ldaps://localhost:1636 -p 8080 -d 2`.
 
 To make curl'ing the CAPI thing easier, I have a small bash function:
 
@@ -119,79 +294,37 @@ To make curl'ing the CAPI thing easier, I have a small bash function:
         echo "";
     }
 
-### Adding/Updating/Listing/Deleteing Customers
+After that, reference the CAPI api at <http://apidocs.joyent.com/sdcapidoc/capi>.
 
-Edit the file to your heart's content and POST to add:
+But, here's some helpers for you:
 
-`capi /customers -d @/Users/mark/work/ufds/data/capi_customer.xml`
+### Customers
 
-Update with:
-
-`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -d @/Users/mark/work/ufds/data/update_customer.xml -X PUT`
-
-Get with:
-
-`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d`
-
-List/Search with:
-
-`capi /customers`
-`capi /customers?email_address=%40joyent.com`
-
-Delete with:
-
-`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -X DELETE`
+||*create*||`capi /customers -d @/Users/mark/work/ufds/data/capi_customer.xml`||
+||*update*||`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -d @/Users/mark/work/ufds/data/update_customer.xml -X PUT`||
+||*get*||`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d`||
+||*list*||`capi /customers`||
+||*search*||`capi /customers?email_address=%40joyent.com`||
+||*delete*||`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -X DELETE`||
 
 ### SSH keys
 
-Add (can't use fn(), as content-type is different):
-`/usr/bin/curl -is http://localhost:8080/customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d/keys --data-urlencode key@/Users/mark/.ssh/id_rsa.pub -d name=id_rsa`
+||*add*||`/usr/bin/curl -is http://localhost:8080/customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d/keys --data-urlencode key@/Users/mark/.ssh/id_rsa.pub -d name=id_rsa`||
+||*list*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys`||
+||*rename*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f?name=foo -X PUT`||
+||*delete*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f -X DELETE`||
 
-List:
+# TODO
 
-`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys`
-
-Rename:
-
-`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f?name=foo -X PUT`
-
-Delete:
-
-`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f -X DELETE`
-
-## Raw LDAP
-
-Preferably though, you're going to use LDAP directly, as it's more powerful than
-the CAPI shim.  Here's some stuff to get you going.
-
-`alias lsearch='ldapsearch -H ldap://localhost:1389 -x -LLL -D cn=root -w secret -b o=smartdc'`
-`alias ladd='ldapadd -H ldap://localhost:1389 -x -D cn=root -w secret -f'`
-`alias ldelete='ldapdelete -H ldap://localhost:1389 -x -D cn=root -w secret'`
-`alias lmodify='ldapmodify -H ldap://localhost:1389 -x -D cn=root -w secret -f'`
-
-### Searches
-
-Not everything here is really suitable for production, as the `objectclass=`
-searches are not hitting indexes.  I marked these for note.
-
-Everything (N/A):
-
-`lsearch objectclass=*`
-
-Customers (N/A):
-
-`lsearch -b ou=customers,o=smartdc objectclass=sdcperson`
-
-Customer by login:
-
-`lsearch -b ou=customers,o=smartdc login=mark`
-
-Keys for a customer:
-
-`lsearch -b uuid=9c664a75-b638-4bc6-9213-9cda22f8f2d9,ou=customers,o=smartdc fingerprint=*`
-
-Operators (N/A):
-
-`lsearch -b ou=operators,o=smartdc objectclass=sdcperson`
-
-
+- Riak over SSL
+- load balancing Riak cluster
+- JSON error messages
+- port CloudAPI/Portal
+- change numbers as uuid
+- groups...
+- 6.5 upgrade
+- CloudAPI to use fingerprints instead of names
+- log rotation
+- npm build -> MG
+- `undefined` IP/Port in logs
+- Riak 1.0.1

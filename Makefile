@@ -14,11 +14,11 @@ endif
 HAVE_GJSLINT := $(shell which gjslint >/dev/null && echo yes || echo no)
 NPM := npm_config_tar=$(TAR) npm
 
+DOCPKGDIR = ./docs/pkg
 RESTDOWN = ./node_modules/.restdown/bin/restdown \
-	-b ./docs/branding \
-	-m ${DOCPKGDIR} \
-	-D mediaroot=media
-DOCPKGDIR = $(SRC)/build/docpkg
+	-b ./node_modules/.restdown/brand/ohthejoy \
+	-m ${DOCPKGDIR}
+
 
 ifeq ($(TIMESTAMP),)
 	TIMESTAMP=$(shell date -u "+%Y%m%dT%H%M%SZ")
@@ -62,12 +62,14 @@ lint:
 	@echo "* * *"
 endif
 
+
 doc: dep
-#	@rm -rf ${DOCPKGDIR}
-#	@mkdir -p ${DOCPKGDIR}
-#	rm -f docs/*.json
-#	mv docs/*.html ${DOCPKGDIR}
-#	(cd ${DOCPKGDIR} && $(TAR) -czf ${SRC}/${NAME}-docs-`git log -1 --pretty='format:%h'`.tar.gz *)
+	@rm -rf ${DOCPKGDIR}/readme.html
+	@mkdir -p ${DOCPKGDIR}
+	${RESTDOWN} -m ${DOCPKGDIR} ./README
+	@rm README.json
+	@mv README.html ${DOCPKGDIR}/readme.html
+	(cd ${DOCPKGDIR} && $(TAR) -czf ${SRC}/${NAME}-docs-`git log -1 --pretty='format:%h'`.tar.gz *)
 
 
 test: dep lint
@@ -96,4 +98,5 @@ publish:
 	cp $(RELEASE_TARBALL) $(BITS_DIR)/ufds/$(RELEASE_TARBALL)
 
 clean:
-	@rm -fr ${DOCPKGDIR} node_modules *.log *.tar.gz *.tar.bz2
+	@rm -fr ${DOCPKGDIR}/*.html ${DOCPKGDIR}/pkg/css \
+		node_modules *.log *.tar.gz *.tar.bz2

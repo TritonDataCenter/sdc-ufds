@@ -81,15 +81,16 @@ function randomInt(from, to) {
   return Math.floor(Math.random() * (to - from + 1) + from);
 }
 
-function randomWord(unique) {
-  if (!unique)
-    return words[randomInt(0, words.length - 1)];
-
+function randomWord(unique, len) {
   while (true) {
-    var ndx = randomInt(0, words.length - 1);
-    if (UNIQ.indexOf(words[ndx]) === -1) {
-      UNIQ.push(words[ndx]);
-      return words[ndx];
+    var word = words[randomInt(0, words.length - 1)];
+
+    while (word.length < len)
+      word += words[randomInt(0, words.length - 1)];
+
+    if (!unique || UNIQ.indexOf(word) === -1) {
+      UNIQ.push(word);
+      return word;
     }
   }
 }
@@ -231,7 +232,7 @@ function generate() {
     _uuid = uuid();
     var userDN = 'uuid=' + _uuid + ', ou=customers, ' + parsed.suffix;
     writeEntry(userDN, {
-      login: randomWord(true),
+      login: randomWord(true, 5),
       uuid: _uuid,
       userpassword: randomPassword(6),
       email: randomWord(true) + '@' + randomWord() + '.com',

@@ -92,8 +92,8 @@ publish:
 		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
 		exit 1; \
 	fi
-	mkdir -p $(BITS_DIR)/assets
-	cp $(RELEASE_TARBALL) $(BITS_DIR)/assets/$(RELEASE_TARBALL)
+	mkdir -p $(BITS_DIR)/ufds
+	cp $(RELEASE_TARBALL) $(BITS_DIR)/ufds/$(RELEASE_TARBALL)
 
 clean:
 	@rm -fr ${DOCPKGDIR} node_modules *.log *.tar.gz *.tar.bz2

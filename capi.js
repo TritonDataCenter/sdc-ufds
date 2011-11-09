@@ -256,14 +256,21 @@ client = ldap.createClient({
 if (parsed.debug)
   client.log4js.setLevel(((parsed.debug > 1) ? 'TRACE' : 'DEBUG'));
 
+
+function initError(err) {
+  log.fatal('Unable to bind to UFDS: %s', err.stack);
+  process.exit(1);
+}
+
+client.once('error', initError);
+
 client.bind(config.rootDN, config.rootPassword, function(err) {
   assert.ifError(err);
 
   server.listen(parsed.port, function() {
+    client.removeListener('error', initError);
     log.info('CAPI listening on port %d', parsed.port);
   });
 });
 
-client.on('error', function(err) {
-  log.fatal(err.stack);
-});
+

@@ -180,10 +180,22 @@ module.exports = {
         return callback(new restify.InternalError(500, err.message));
 
       var entries = [];
+      var done = false;
       result.on('searchEntry', function(entry) {
         entries.push((translate ? _translate(entry.object) : entry.object));
       });
+      result.on('error', function(err) {
+        if (done)
+          return;
+
+        done = true;
+        return callback(new restify.InternalError(err.message));
+      })
       result.on('end', function() {
+        if (done)
+          return;
+
+        done = true;
         return callback(null, entries);
       });
     });

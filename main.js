@@ -404,9 +404,14 @@ schema.load(__dirname + '/schema', function(err, _schema) {
       log4js: log4js
     });
 
+    CLIENT.once('error', function(err) {
+      log.fatal('Error connecting: %s', err.stack);
+      process.exit(1);
+    });
+
     CLIENT.bind(CONFIG.rootDN, CONFIG.rootPassword, function(err) {
       if (err) {
-        log.fatal('Unable to ldap_bind to: %s', CONFIG.loopbackPath);
+        log.fatal('Unable to bind to: %s: %s', CONFIG.loopbackPath, err.stack);
         process.exit(1);
       }
 

@@ -20,6 +20,9 @@ var log = restify.log;
 
 var AES_KEY = uuid().replace('-').substring(0, 16);
 
+var OPERATORS_DN = 'cn=operators, ou=groups, o=smartdc';
+
+
 
 ///--- Helpers
 
@@ -98,10 +101,18 @@ function _translate(entry) {
   if (!customer.street_2)
     customer.street_2 = null;
 
-  var dn = ldap.parseDN(entry.dn);
-  if (dn.childOf('ou=operators, o=smartdc')) {
-    customer.role_type = 2;
-    customer.role = 2;
+  if (entry.memberof) {
+    if (Array.isArray(entry.memberof)) {
+      if (entry.memberof.indexOf(OPERATORS_DN) !== -1) {
+        customer.role_type = 2;
+        customer.role = 2;
+      }
+    } else {
+      if (entry.memberof === OPERATORS_DN) {
+        customer.role_type = 2;
+        customer.role = 2;
+      }
+    }
   }
 
   return _merge(customer, {
@@ -147,7 +158,22 @@ module.exports = {
 
     var opts = {
       scope: 'sub',
-      filter: filter
+      filter: filter,
+      attributes: [
+        'login',
+        'phone',
+        'email',
+        'cn',
+        'sn',
+        'company',
+        'address',
+        'city',
+        'state',
+        'postalcode',
+        'country',
+        'memberof',
+        'uuid'
+      ]
     };
     return ldap.search(base, opts, hidden, function(err, result) {
       if (err)

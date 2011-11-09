@@ -1,11 +1,14 @@
 {
   "host": "HOSTNAME",
   "port": 636,
+  "loopbackPath": "/tmp/.smartdc_ufds_loopback_socket",
   "certificate": "/opt/smartdc/ufds/ssl/cert.pem",
   "key": "/opt/smartdc/ufds/ssl/key.pem",
   "logLevel": "INFO",
   "rootDN": "ROOTDN",
   "rootPassword": "ROOTPW",
+  "lruCacheSize": 1000,
+  "lruCacheAge": 60,
   "trees": {
     "o=smartdc": {
       "riak": {
@@ -57,7 +60,8 @@
           "city": false,
           "state": false,
           "cn": false,
-          "sn": false
+          "sn": false,
+          "uniquemember": false
         },
         "client": {
           "url": "RIAKIP",

@@ -263,3 +263,7 @@ client.bind(config.rootDN, config.rootPassword, function(err) {
     log.info('CAPI listening on port %d', parsed.port);
   });
 });
+
+client.on('error', function(err) {
+  log.fatal(err.stack);
+});

@@ -1,22 +1,18 @@
 version: 1
 
 dn: o=smartdc
-changetype: add
 objectclass: organization
 o: smartdc
 
-dn: ou=customers, o=smartdc
-changetype: add
+dn: ou=users, o=smartdc
 objectclass: organizationalUnit
-ou: customers
+ou: users
 
-dn: ou=operators, o=smartdc
-changetype: add
+dn: ou=groups, o=smartdc
 objectclass: organizationalUnit
-ou: operators
+ou: groups
 
-dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators, o=smartdc
-changetype: add
+dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc
 login: admin
 uuid: 930896af-bf8c-48d4-885c-6573a94b1853
 userpassword: joypass123
@@ -33,3 +29,6 @@ country: USA
 phone: +1 415 400 0600
 objectclass: sdcPerson
 
+dn: cn=operators, ou=groups, o=smartdc
+uniquemember: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc
+objectclass: groupOfUniqueNames

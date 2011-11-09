@@ -19,6 +19,7 @@ var ID_FILTER = '(uuid=%s)';
 var GET_FILTER = '(&' + ID_FILTER + LIST_FILTER + ')';
 var FILTER = '(%s=%s)';
 var WC_FILTER = '(%s=*%s*)';
+var OPERATORS_DN = 'cn=operators, ou=groups, o=smartdc';
 
 var Change = ldap.Change;
 
@@ -97,7 +98,7 @@ module.exports = {
           filter += sprintf(WC_FILTER, 'country', req.params[k]);
           break;
         case 'role_type':
-          filter += '(objectclass=sdcperson)';
+          filter += '(memberof=cn=operators, ou=groups, o=smartdc)';
           role_type = req.params[k];
         default:
           break;
@@ -108,18 +109,7 @@ module.exports = {
       filter = LIST_FILTER;
     }
 
-    var base = null;
-    switch (role_type) {
-    case '1':
-      base = 'ou=customers, o=smartdc';
-      break;
-    case '2':
-      base = 'ou=operators, o=smartdc';
-      break;
-    default:
-      base = 'o=smartdc';
-      break;
-    }
+    var base = 'ou=users, o=smartdc';
 
     return util.loadCustomers(req.ldap, filter, function(err, customers) {
       if (err)
@@ -227,10 +217,7 @@ module.exports = {
     if (req.params.country)
       customer.country = req.params.country;
 
-    var dn = sprintf('uuid=%s, ou=%s, o=smartdc',
-                     customer.uuid,
-                     (req.params.role && req.params.role === '2') ?
-                     'operators' : 'customers');
+    var dn = sprintf('uuid=%s, ou=users, o=smartdc', customer.uuid);
     log.debug('CreateCustomer, saving: %s -> %o', dn, customer);
     return req.ldap.add(dn, customer, function(err) {
       if (err) {
@@ -249,11 +236,33 @@ module.exports = {
       customer.forgot_password_code =
         util.forgotPasswordCode(customer.uuid[0]);
 
-      if (req.xml)
-        customer = { customer : customer };
+      function done() {
+        if (req.xml)
+          customer = { customer : customer };
 
-      res.send(201, customer);
-      return next();
+        res.send(201, customer);
+        return next();
+      }
+
+      if (req.params.role !== '2')
+        return done();
+
+      var change = {
+        operation: 'add',
+        modification: {
+          uniquemember: dn.toString()
+        }
+      };
+      return req.ldap.modify(OPERATORS_DN, change, function(err) {
+        if (err) {
+          req.ldap.del(dn, function(err) {});
+          log.error('Unable to add %s to operators group.', dn.toString());
+          return sendError([err.toString()]);
+        }
+
+        return done();
+      });
+
     });
   },
 
@@ -427,8 +436,17 @@ module.exports = {
         return next(new restify.UnknownError(500, err.message));
 
       log.debug('DeleteCustomer(%s) => gone', req.uriParams.id);
-      res.send(200);
-      return next();
+      var change = {
+        operation: 'delete',
+        modification: {
+          uniquemember: req.customers.dn.toString()
+        }
+      };
+      return req.ldap.modify(OPERATORS_DN, change, function(err) {
+        // Ignore error, as it may not have existed in the group.
+        res.send(200);
+        return next();
+      });
     });
   }
 

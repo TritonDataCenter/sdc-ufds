@@ -12,6 +12,7 @@ var ldapRiak = require('ldapjs-riak');
 var retry = require('retry');
 var nstatic = require('node-static');
 
+var groups = require('./lib/groups');
 var keys = require('./lib/keys');
 var owner = require('./lib/owner');
 var salt = require('./lib/salt');
@@ -21,26 +22,30 @@ var schema = require('./lib/schema');
 
 ///--- Globals
 
-log4js.setGlobalLogLevel('INFO');
+var CLIENT = null;
+var CONFIG = null;
 
 var log = log4js.getLogger('main');
-var config = null;
-var server = null;
+var groupManager = null;
 
 var opts = {
   'certificate': String,
   'debug': Number,
   'file': String,
   'key': String,
+  'lrusize': Number,
+  'lruage': Number,
   'port': Number,
   'help': Boolean
 };
 
 var shortOpts = {
+  'a': ['--lruage'],
   'c': ['--certificate'],
   'd': ['--debug'],
   'f': ['--file'],
   'k': ['--key'],
+  'l': ['--lru'],
   'p': ['--port'],
   'h': ['--help']
 };
@@ -72,24 +77,36 @@ function processConfig() {
   try {
     var file = parsed.file || './cfg/config.json';
 
-    config = JSON.parse(fs.readFileSync(file, 'utf8'));
-    config.log4js = log4js;
+    CONFIG = JSON.parse(fs.readFileSync(file, 'utf8'));
+    CONFIG.log4js = log4js;
 
-    if (config.logLevel)
-      log4js.setGlobalLogLevel(config.logLevel);
+    if (CONFIG.logLevel)
+      log4js.setGlobalLogLevel(CONFIG.logLevel);
 
-    if (config.certificate && config.key && !config.port)
-      config.port = 636;
+    if (CONFIG.certificate && CONFIG.key && !CONFIG.port)
+      CONFIG.port = 636;
 
-    if (!config.port)
-      config.port = 389;
+    if (!CONFIG.port)
+      CONFIG.port = 389;
+
+    if (!CONFIG.lruCacheSize)
+      CONFIG.lruCacheSize = 1000;
+
+    if (!CONFIG.lruCacheAge)
+      CONFIG.lruCacheAge = 300;
+
   } catch (e) {
-    console.error('Unable to parse config file: ' + e.message);
+    console.error('Unable to parse configuration file: ' + e.message);
     process.exit(1);
   }
 
   if (parsed.port)
-    config.port = parsed.port;
+    CONFIG.port = parsed.port;
+
+  if (parsed.lruage)
+    CONFIG.lruCacheAge= parsed.lruage;
+  if (parsed.lrusize)
+    CONFIG.lruCacheSize = parsed.lrusize;
 
   if (parsed.debug) {
     if (parsed.debug > 1) {
@@ -100,14 +117,16 @@ function processConfig() {
   }
 
   if (parsed.certificate)
-    config.certificate = parsed.certificate;
+    CONFIG.certificate = parsed.certificate;
   if (parsed.key)
-    config.key = parsed.key;
+    CONFIG.key = parsed.key;
 
-  if (config.certificate)
-    config.certificate = fs.readFileSync(config.certificate, 'utf8');
-  if (config.key)
-    config.key = fs.readFileSync(config.key, 'utf8');
+  if (CONFIG.certificate)
+    CONFIG.certificate = fs.readFileSync(CONFIG.certificate, 'utf8');
+  if (CONFIG.key)
+    CONFIG.key = fs.readFileSync(CONFIG.key, 'utf8');
+
+  log.debug('config processed: %j', CONFIG);
 }
 
 
@@ -164,134 +183,19 @@ function audit(req, res, next) {
 }
 
 
-///--- Mainline
+function createServer(config, trees) {
+  var server = ldap.createServer(config);
+  server.after(audit);
 
-processConfig();
+  server.bind(CONFIG.rootDN, function(req, res, next) {
+    if (req.version !== 3)
+      return next(new ldap.ProtocolError(req.version + ' is not v3'));
 
-log.debug('config processed: %j', config);
+    if (req.credentials !== CONFIG.rootPassword)
+      return next(new ldap.InvalidCredentialsError(req.dn.toString()));
 
-server = ldap.createServer(config);
-server.after(audit);
-
-server.bind(config.rootDN, function(req, res, next) {
-  if (req.version !== 3)
-    return next(new ldap.ProtocolError(req.version + ' is not v3'));
-
-  if (req.credentials !== config.rootPassword)
-    return next(new ldap.InvalidCredentialsError(req.dn.toString()));
-
-  res.end();
-  return next();
-});
-
-
-schema.load(__dirname + '/schema', function(err, _schema) {
-  if (err) {
-    log.warn('Error loading schema: ' + err.stack);
-    process.exit(1);
-  }
-
-  function addSchema(req, res, next) {
-    if (req.toObject)
-      req.object = req.toObject();
-
-    req.schema = _schema;
+    res.end();
     return next();
-  }
-
-  function authorize(req, res, next) {
-    var bindDN = req.connection.ldap.bindDN;
-
-    if (req.type === 'BindRequest' ||
-        bindDN.equals(config.rootDN) ||
-        bindDN.parentOf(req.dn) ||
-        bindDN.equals(req.dn) ||
-        bindDN.childOf('ou=operators, o=smartdc')) {
-      return next();
-    }
-
-    return next(new ldap.InsufficientAccessRightsError());
-  }
-
-  var pre = [authorize, addSchema];
-
-  Object.keys(config.trees).forEach(function(t) {
-    var tree = config.trees[t];
-    if (typeof(tree.riak) !== 'object') {
-      log.warn('Tree type %s is an invalid type. Ignoring %s', tree.type, t);
-      return;
-    }
-
-    tree.riak.log4js = log4js;
-    var be = ldapRiak.createBackend(tree.riak);
-    var timer;
-
-    function _init(callback) {
-      var operation = retry.operation({
-        retries: 10,
-        factor: 2,
-        minTimeout: 1000,
-        maxTimeout: Number.MAX_VALUE,
-        randomize: false
-      }); // Bake in the defaults, as they're fairly sane
-
-      operation.attempt(function(currentAttempt) {
-        be.init(function(err) {
-          if (err) {
-            log.warn('Error initializing backend(attempt=%d): %s',
-                     currentAttempt, err.toString());
-            if (operation.retry(err))
-              return;
-
-            return callback(operation.mainError());
-          }
-
-          return callback();
-        });
-      });
-    }
-
-    _init(function(err) {
-      if (err) {
-        log.fatal('Unable to initialize Riak backend, exiting');
-        process.exit(1);
-      }
-
-      log.info('Riak backend initialized');
-    });
-
-    server.add(t, be, pre, salt.add, keys.add, owner.add, schema.add, be.add());
-    server.bind(t, be, pre, be.bind(salt.bind));
-    server.compare(t, be, pre, be.compare(salt.compare));
-    server.del(t, be, pre, be.del());
-    server.modifyDN(t, be, pre, owner.modifyDN, be.modifyDN());
-    server.search(t, be, pre, owner.search, be.search(salt.search));
-    server.search('cn=changelog', be, pre, be.changelogSearch());
-
-    // Modify is the most complicated, since we have to go load the enttry
-    // to validate the schema
-    server.modify(t, be, pre, be.modify(
-      [
-       function (req, res, next) {
-         assert.ok(req.riak);
-         var client = req.riak.client;
-
-         client.get(req.riak.bucket, req.riak.key, function(err, entry) {
-           if (err) {
-             if (err.statusCode === 404)
-               return next(new ldap.NoSuchObjectError(req.dn.toString()));
-
-             log.warn('%s error talking to riak %s', req.logId, err.stack);
-             return next(new ldap.OperationsError('Riak: ' + err.message));
-           }
-
-           // store this so we don't go refetch it.
-           req.entry = entry;
-           req.riak.entry = entry;
-           return next();
-         });
-       },
-        schema.modify, salt.modify]));
   });
 
   // ldapwhoami -H ldap://localhost:1389 -x -D cn=root -w secret
@@ -316,10 +220,12 @@ schema.load(__dirname + '/schema', function(err, _schema) {
         '.0Z';
     }
 
+    var suffixes = trees.slice();
+    suffixes.push('cn=changelog');
     var entry = {
       dn: '',
       attributes: {
-        namingcontexts: ['o=smartdc', 'cn=changelog'],
+        namingcontexts: suffixes,
         supportedcontrol: ['1.3.6.1.4.1.38678.1'],
         supportedextension: ['1.3.6.1.4.1.4203.1.11.3'],
         supportedldapversion: 3,
@@ -333,10 +239,185 @@ schema.load(__dirname + '/schema', function(err, _schema) {
     return next();
   });
 
+  return server;
+}
+
+
+
+///--- Mainline
+
+log4js.setGlobalLogLevel('INFO');
+processConfig();
+
+schema.load(__dirname + '/schema', function(err, _schema) {
+  if (err) {
+    log.warn('Error loading schema: ' + err.stack);
+    process.exit(1);
+  }
+
+  var trees = Object.keys(CONFIG.trees);
+  var servers = [createServer(CONFIG, trees)];
+  // Ghetto!
+  var cert = CONFIG.certificate;
+  var key = CONFIG.key;
+  delete CONFIG.certificate;
+  delete CONFIG.key;
+  servers.push(createServer(CONFIG, trees));
+  CONFIG.certificate = cert;
+  CONFIG.key = key;
+
+  servers.forEach(function(server) {
+    trees.forEach(function(t) {
+      var suffix = ldap.parseDN(t);
+      var tree = CONFIG.trees[t];
+      if (typeof(tree.riak) !== 'object') {
+        log.warn('Tree type %s is an invalid type. Ignoring %s', tree.type, t);
+        return;
+      }
+
+      tree.riak.log4js = log4js;
+      var be = ldapRiak.createBackend(tree.riak);
+      var timer;
+
+      function _init(callback) {
+        var operation = retry.operation({
+          retries: 10,
+          factor: 2,
+          minTimeout: 1000,
+          maxTimeout: Number.MAX_VALUE,
+          randomize: false
+        }); // Bake in the defaults, as they're fairly sane
+
+        operation.attempt(function(currentAttempt) {
+          be.init(function(err) {
+            if (err) {
+              log.warn('Error initializing backend(attempt=%d): %s',
+                       currentAttempt, err.toString());
+              if (operation.retry(err))
+                return;
+
+              return callback(operation.mainError());
+            }
+
+            return callback();
+          });
+        });
+      }
+
+      function setup(req, res, next) {
+        if (req.toObject)
+          req.object = req.toObject();
+
+        req.schema = _schema;
+        req.suffix = suffix;
+
+        // Allows downstream code to easily check group membership
+        req.memberOf = function(groupdn, callback) {
+          return groupManager.memberOf(req.dn, groupdn, callback);
+        };
+
+        req.searchCallback = function(req, entry, callback) {
+          return groupManager.searchCallback(req, entry, callback);
+        };
+
+        return next();
+      }
+
+      function authorize(req, res, next) {
+        // Check the easy stuff first
+        if (req.type === 'BindRequest')
+          return next();
+
+        var bindDN = req.connection.ldap.bindDN;
+
+        if (bindDN.equals(CONFIG.rootDN) || bindDN.equals(req.dn) ||
+            bindDN.parentOf(req.dn))
+          return next();
+
+        // Otherwise check the backend
+        var operators = 'cn=operators, ou=groups, ' + t;
+        groupManager.memberOf(bindDN, operators, function(err, member) {
+          if (err)
+            return next(err);
+
+          return next(member ? null : new ldap.InsufficientAccessRightsError());
+        });
+      }
+
+      var pre = [setup, authorize];
+
+      server.add(t, be, pre, salt.add, keys.add, owner.add, schema.add,
+                 be.add());
+      server.bind(t, be, pre, be.bind(salt.bind));
+      server.compare(t, be, pre, be.compare(salt.compare));
+      server.del(t, be, pre, be.del());
+      server.modifyDN(t, be, pre, owner.modifyDN, be.modifyDN());
+      server.search(t, be, pre, owner.search, be.search(salt.search));
+      // This doesn't actually work with multiple backends...
+      server.search('cn=changelog', be, pre, be.changelogSearch());
+
+      // Modify is the most complicated, since we have to go load the enttry
+      // to validate the schema
+      server.modify(t, be, pre, be.modify(
+        [
+          function (req, res, next) {
+            assert.ok(req.riak);
+            var client = req.riak.client;
+
+            client.get(req.riak.bucket, req.riak.key, function(err, entry) {
+              if (err) {
+                if (err.statusCode === 404)
+                  return next(new ldap.NoSuchObjectError(req.dn.toString()));
+
+                log.warn('%s error talking to riak %s', req.logId, err.stack);
+                return next(new ldap.OperationsError('Riak: ' + err.message));
+              }
+
+              // store this so we don't go refetch it.
+              req.entry = entry;
+              req.riak.entry = entry;
+              return next();
+            });
+          },
+          schema.modify, salt.modify]));
+
+      // Go ahead and kick off backend initialization
+      _init(function(err) {
+        if (err) {
+          log.fatal('Unable to initialize Riak backend, exiting');
+          process.exit(1);
+        }
+
+        log.info('Riak backend initialized');
+      });
+    });
+  });
 
   // Rock 'n Roll
-  server.listen(config.port, function() {
-    log.info('UFDS listening at: %s\n\n', server.url);
+  servers[0].listen(CONFIG.port, function() {
+    log.info('UFDS listening at: %s\n\n', servers[0].url);
+  });
+  servers[1].listen(CONFIG.loopbackPath, function() {
+    log.info('UFDS listening at: %s\n\n', servers[1].url);
+    CLIENT = ldap.createClient({
+      socketPath: CONFIG.loopbackPath,
+      log4js: log4js
+    });
+
+    CLIENT.bind(CONFIG.rootDN, CONFIG.rootPassword, function(err) {
+      if (err) {
+        log.fatal('Unable to ldap_bind to: %s', CONFIG.loopbackPath);
+        process.exit(1);
+      }
+
+      groupManager = groups.createGroupManager({
+        cache: {
+          size: CONFIG.lruCacheSize,
+          age: CONFIG.lruCacheAge,
+        },
+        client: CLIENT
+      });
+    });
   });
 
 });
@@ -346,7 +427,7 @@ schema.load(__dirname + '/schema', function(err, _schema) {
 ///--- Serve up docs
 
 var file = new(nstatic.Server)('./docs/pkg');
-var docsPort = config.port < 1024 ? 80 : 9080;
+var docsPort = CONFIG.port < 1024 ? 80 : 9080;
 require('http').createServer(function (req, res) {
     req.addListener('end', function () {
         file.serve(req, res);

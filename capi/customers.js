@@ -369,6 +369,9 @@ module.exports = {
       case 'country':
         _key = k;
         break;
+      case 'phone_number':
+        _key = 'phone';
+        break;
       };
       if (!_key || !k || !req.params[k])
         return;

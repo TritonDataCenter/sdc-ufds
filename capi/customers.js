@@ -370,7 +370,7 @@ module.exports = {
         _key = k;
         break;
       };
-      if (!_key)
+      if (!_key || !k || !req.params[k])
         return;
 
       if (_key === 'address') {
@@ -390,7 +390,6 @@ module.exports = {
     });
 
     if (password.length) {
-      console.log('%j', password);
       if (password[0] !== password[1])
         return next(new restify.InvalidArgumentError(409,
                                                      'passwords do not match'));

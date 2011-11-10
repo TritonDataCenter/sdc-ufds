@@ -172,7 +172,9 @@ module.exports = {
         'postalcode',
         'country',
         'memberof',
-        'uuid'
+        'uuid',
+        'userpassword',
+        '_salt'
       ]
     };
     return ldap.search(base, opts, hidden, function(err, result) {

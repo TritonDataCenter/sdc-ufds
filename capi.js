@@ -254,7 +254,7 @@ client = ldap.createClient({
 });
 
 if (parsed.debug)
-  client.log4js.setLevel(((parsed.debug > 1) ? 'TRACE' : 'DEBUG'));
+  client.log4js.setLevel(((parsed.debug > 1) ? 'Trace' : 'Debug'));
 
 
 function initError(err) {

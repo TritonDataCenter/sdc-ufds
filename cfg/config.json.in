@@ -4,7 +4,33 @@
   "loopbackPath": "/tmp/.smartdc_ufds_loopback_socket",
   "certificate": "/opt/smartdc/ufds/ssl/cert.pem",
   "key": "/opt/smartdc/ufds/ssl/key.pem",
-  "logLevel": "INFO",
+  "loggers": {
+    "appenders": [
+      {
+        "type": "logLevelFilter",
+        "level": "INFO",
+        "appender": {
+          "type": "file",
+          "filename": "/var/log/ufds/server.log",
+          "maxLogSize": 104857600,
+          "backups": 3,
+          "pollInterval": 60
+        }
+      },
+      {
+        "category": "audit",
+        "layout": {
+          "type": "pattern",
+          "pattern": "[%d{yyyy-MM-ddThh:mm:ss.SSSO}] - %m%n"
+        },
+        "type": "file",
+        "filename": "/var/log/ufds/access.log",
+        "maxLogSize": 104857600,
+        "backups": 10,
+        "pollInterval": 10
+      }
+    ]
+  },
   "rootDN": "ROOTDN",
   "rootPassword": "ROOTPW",
   "lruCacheSize": 1000,
@@ -64,7 +90,7 @@
           "uniquemember": false
         },
         "client": {
-          "url": "RIAKIP",
+          "url": "https://RIAKIP:RIAKSSLPORT",
           "clientId": "ufds",
           "retry": {
             "retries": 3,

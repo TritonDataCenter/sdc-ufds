@@ -25,6 +25,7 @@ var schema = require('./lib/schema');
 var CLIENT = null;
 var CONFIG = null;
 
+var auditLogger = null;
 var log = log4js.getLogger('main');
 var groupManager = null;
 
@@ -80,8 +81,8 @@ function processConfig() {
     CONFIG = JSON.parse(fs.readFileSync(file, 'utf8'));
     CONFIG.log4js = log4js;
 
-    if (CONFIG.logLevel)
-      log4js.setGlobalLogLevel(CONFIG.logLevel);
+    if (CONFIG.loggers)
+      log4js.configure(CONFIG.loggers, {});
 
     if (CONFIG.certificate && CONFIG.key && !CONFIG.port)
       CONFIG.port = 636;
@@ -132,7 +133,17 @@ function processConfig() {
 
 
 function audit(req, res, next) {
-  var out = process.stderr;
+  function log() {
+    if (!auditLogger) {
+      // hack to ensure that this only outputs to the access log, and
+      // still use file rolling
+      auditLogger = log4js.getLogger('audit');
+      auditLogger.setLevel(log4js.levels.TRACE);
+    }
+
+    return auditLogger;
+  }
+
 
   var additional = '';
   switch (req.type) {
@@ -153,33 +164,15 @@ function audit(req, res, next) {
     break;
   }
 
-  function ISODateString(d){
-    if (!d)
-      d = new Date();
-
-    function pad(n) {
-      return n <10 ? '0' + n : n;
-    }
-    return d.getUTCFullYear() + '-'
-      + pad(d.getUTCMonth() + 1) + '-'
-      + pad(d.getUTCDate()) + 'T'
-      + pad(d.getUTCHours()) + ':'
-      + pad(d.getUTCMinutes()) + ':'
-      + pad(d.getUTCSeconds()) + 'Z';
-  }
-
-  var now = new Date();
-  out.write(ISODateString(now) + ' ' +
-            'clientip=' + req.connection.remoteAddress + ', ' +
-            'bindDN=' + req.connection.ldap.bindDN.toString() + ', ' +
-            'msgid=' + req.id + ', ' +
-            'request=' + req.type + ', ' +
-            'requestDN=' + req.dn.toString() + ', ' +
-            additional +
-            'status=' + res.status + ', ' +
-            'time=' + (now.getTime() - req.startTime) + 'ms, ' +
-            '\n'
-           );
+  log().trace('clientip=' + req.connection.remoteAddress + ', ' +
+              'bindDN=' + req.connection.ldap.bindDN.toString() + ', ' +
+              'msgid=' + req.id + ', ' +
+              'request=' + req.type + ', ' +
+              'requestDN=' + req.dn.toString() + ', ' +
+              additional +
+              'status=' + res.status + ', ' +
+              'time=' + (new Date().getTime() - req.startTime) + 'ms, '
+             );
 }
 
 

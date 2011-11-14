@@ -4,7 +4,29 @@
   "certificate": "./ssl/cert.pem",
   "key": "./ssl/key.pem",
   "loopbackPath": "./var/ufds.sock",
-  "logLevel": "TRACE",
+  "loggers": {
+    "appenders": [
+      {
+        "type": "logLevelFilter",
+        "level": "DEBUG",
+        "appender": {
+          "type": "console"
+        }
+      },
+      {
+        "category": "audit",
+        "layout": {
+          "type": "pattern",
+          "pattern": "[%d{yyyy-MM-ddThh:mm:ss.SSSO}] - %m%n"
+        },
+        "type": "file",
+        "filename": "access.log",
+        "maxLogSize": 10485760,
+        "backups": 1,
+        "pollInterval": 30
+      }
+    ]
+  },
   "rootDN": "cn=root",
   "rootPassword": "secret",
   "lruCacheSize": 1000,

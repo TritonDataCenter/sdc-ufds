@@ -83,11 +83,14 @@ $(RELEASE_TARBALL):
 	$(TAR) -cjf $(RELEASE_TARBALL) \
 	capi \
 	capi.js \
+	cfg \
+	docs/pkg \
 	lib \
 	main.js \
 	node_modules \
 	package.json \
-	schema
+	schema \
+	tools
 
 publish:
 	@if [[ -z "$(BITS_DIR)" ]]; then \

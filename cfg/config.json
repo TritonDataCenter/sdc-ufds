@@ -8,22 +8,10 @@
     "appenders": [
       {
         "type": "logLevelFilter",
-        "level": "DEBUG",
+        "level": "TRACE",
         "appender": {
           "type": "console"
         }
-      },
-      {
-        "category": "audit",
-        "layout": {
-          "type": "pattern",
-          "pattern": "[%d{yyyy-MM-ddThh:mm:ss.SSSO}] - %m%n"
-        },
-        "type": "file",
-        "filename": "access.log",
-        "maxLogSize": 10485760,
-        "backups": 1,
-        "pollInterval": 30
       }
     ]
   },

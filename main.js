@@ -79,7 +79,6 @@ function processConfig() {
     var file = parsed.file || './cfg/config.json';
 
     CONFIG = JSON.parse(fs.readFileSync(file, 'utf8'));
-    CONFIG.log4js = log4js;
 
     if (CONFIG.loggers)
       log4js.configure(CONFIG.loggers, {});
@@ -164,7 +163,8 @@ function audit(req, res, next) {
     break;
   }
 
-  log().trace('clientip=' + req.connection.remoteAddress + ', ' +
+  log().trace('clientip=' + (req.connection.remoteAddress || 'localhost') +
+              ', ' +
               'bindDN=' + req.connection.ldap.bindDN.toString() + ', ' +
               'msgid=' + req.id + ', ' +
               'request=' + req.type + ', ' +
@@ -433,3 +433,4 @@ require('http').createServer(function (req, res) {
 }).listen(docsPort, function() {
   log.info('Docs listener up at %d', docsPort);
 });
+

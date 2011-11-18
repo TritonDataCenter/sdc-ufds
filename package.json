@@ -15,9 +15,9 @@
     "node": ">=0.4.10"
   },
   "dependencies": {
-    "http-signature": "0.9.5",
+    "http-signature": "0.9.6",
     "ldapjs": "0.3.1",
-    "ldapjs-riak": "0.1.15",
+    "ldapjs-riak": "0.1.16",
     "log4js": "0.3.9",
     "lru-cache": "1.0.4",
     "node-static": "0.5.9",
@@ -29,6 +29,6 @@
     "sprintf": "0.1.1"
   },
   "devDependencies": {
-    "tap": "0.0.11"
+    "tap": "0.0.14"
   }
 }

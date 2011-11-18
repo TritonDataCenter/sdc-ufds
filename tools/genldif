@@ -196,21 +196,26 @@ function generate() {
       o: suffixDN.rdns[0].o
     });
 
-    writeEntry('ou=customers, ' + parsed.suffix, {
+    writeEntry('ou=users, ' + parsed.suffix, {
       objectclass: 'organizationalUnit',
-      ou: 'customers'
+      ou: 'users'
     });
 
-    writeEntry('ou=operators, ' + parsed.suffix, {
+    writeEntry('ou=groups, ' + parsed.suffix, {
       objectclass: 'organizationalUnit',
-      ou: 'operators'
+      ou: 'groups'
+    });
+
+    writeEntry('cn=operators, ou=groups, ' + parsed.suffix, {
+      cn: 'operators',
+      objectclass: 'groupofuniquenames'
     });
   }
 
   var _uuid;
   if (parsed.admin) {
     _uuid = uuid();
-    writeEntry('uuid=' + _uuid + ', ou=operators, ' + parsed.suffix, {
+    writeEntry('uuid=' + _uuid + ', ou=users, ' + parsed.suffix, {
       login: 'admin',
       uuid: _uuid,
       userpassword: 'joypass123',
@@ -226,11 +231,17 @@ function generate() {
       phone: '+1 415 400 0600',
       objectclass: 'sdcPerson'
     });
+    console.log();
+    console.log('dn: cn=operators, ou=groups, o=smartdc');
+    console.log('changetype: modify');
+    console.log('add: uniquemember');
+    console.log('uniquemember: uuid=' + _uuid +', ou=users, ' + parsed.suffix);
+    console.log();
   }
 
   for (var i = 0; i < parsed.number; i++) {
     _uuid = uuid();
-    var userDN = 'uuid=' + _uuid + ', ou=customers, ' + parsed.suffix;
+    var userDN = 'uuid=' + _uuid + ', ou=users, ' + parsed.suffix;
     writeEntry(userDN, {
       login: randomWord(true, 5),
       uuid: _uuid,

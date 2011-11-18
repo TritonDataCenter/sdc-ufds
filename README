@@ -316,15 +316,9 @@ But, here's some helpers for you:
 
 # TODO
 
-- Riak over SSL
 - load balancing Riak cluster
 - JSON error messages
 - port CloudAPI/Portal
 - change numbers as uuid
-- groups...
 - 6.5 upgrade
 - CloudAPI to use fingerprints instead of names
-- log rotation
-- npm build -> MG
-- `undefined` IP/Port in logs
-- Riak 1.0.1

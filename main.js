@@ -12,6 +12,7 @@ var ldapRiak = require('ldapjs-riak');
 var retry = require('retry');
 var nstatic = require('node-static');
 
+var blacklist = require('./lib/blacklist');
 var groups = require('./lib/groups');
 var keys = require('./lib/keys');
 var owner = require('./lib/owner');
@@ -82,6 +83,8 @@ function processConfig() {
 
     if (CONFIG.loggers)
       log4js.configure(CONFIG.loggers, {});
+    if (CONFIG.logLevel)
+      log4js.setGlobalLogLevel(CONFIG.logLevel);
 
     if (CONFIG.certificate && CONFIG.key && !CONFIG.port)
       CONFIG.port = 636;
@@ -244,7 +247,7 @@ processConfig();
 
 schema.load(__dirname + '/schema', function(err, _schema) {
   if (err) {
-    log.warn('Error loading schema: ' + err.stack);
+    log.fatal('Error loading schema: ' + err.stack);
     process.exit(1);
   }
 
@@ -301,8 +304,12 @@ schema.load(__dirname + '/schema', function(err, _schema) {
         if (req.toObject)
           req.object = req.toObject();
 
+        if (tree.blacklistRDN)
+          req.blacklistEmailDN = tree.blacklistRDN + ', ' + suffix;
+
         req.schema = _schema;
         req.suffix = suffix;
+        req.client = CLIENT;
 
         // Allows downstream code to easily check group membership
         req.memberOf = function(groupdn, callback) {
@@ -339,8 +346,8 @@ schema.load(__dirname + '/schema', function(err, _schema) {
 
       var pre = [setup, authorize];
 
-      server.add(t, be, pre, salt.add, keys.add, owner.add, schema.add,
-                 be.add());
+      server.add(t, be, pre, blacklist.add, salt.add, keys.add, owner.add,
+                 schema.add, be.add());
       server.bind(t, be, pre, be.bind(salt.bind));
       server.compare(t, be, pre, be.compare(salt.compare));
       server.del(t, be, pre, be.del());

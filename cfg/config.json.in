@@ -8,7 +8,7 @@
     "appenders": [
       {
         "type": "logLevelFilter",
-        "level": "INFO",
+        "level": "DEBUG",
         "appender": {
           "type": "file",
           "filename": "/var/log/ufds/server.log",
@@ -31,12 +31,14 @@
       }
     ]
   },
+  "logLevel": "INFO",
   "rootDN": "ROOTDN",
   "rootPassword": "ROOTPW",
   "lruCacheSize": 1000,
   "lruCacheAge": 60,
   "trees": {
     "o=smartdc": {
+      "blacklistRDN": "cn=blacklist",
       "riak": {
         "bucket": {
           "name": "ufds",

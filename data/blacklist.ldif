@@ -1,0 +1,20 @@
+version: 1
+
+dn: cn=blacklist, o=smartdc
+email: badguy@devnull.com
+objectclass: emailblacklist
+
+dn: uuid=2c071322-d9af-439b-ac29-885da314875f, ou=users, o=smartdc
+uuid: 2c071322-d9af-439b-ac29-885da314875f
+login: goodguy
+email: goodguy@devnull.com
+userpassword ok
+objectclass: sdcperson
+
+# This one is supposed to fail with LDAP(19) - Constraint violation
+dn: uuid=irrelevant, ou=users, o=smartdc
+uuid: irrelevant
+email: badguy@devnull.com
+login: badguy
+userpassword: secret
+objectclass: sdcperson

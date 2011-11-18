@@ -7,20 +7,18 @@
   "loggers": {
     "appenders": [
       {
-        "type": "logLevelFilter",
-        "level": "TRACE",
-        "appender": {
-          "type": "console"
-        }
+        "type": "console"
       }
     ]
   },
+  "logLevel": "TRACE",
   "rootDN": "cn=root",
   "rootPassword": "secret",
   "lruCacheSize": 1000,
   "lruCacheAge": 60,
   "trees": {
     "o=smartdc": {
+      "blacklistRDN": "cn=blacklist",
       "riak": {
         "bucket": {
           "name": "ufds",

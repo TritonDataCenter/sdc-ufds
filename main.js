@@ -180,6 +180,9 @@ function audit(req, res, next) {
 
 
 function createServer(config, trees) {
+  if (!config.log4js)
+    config.log4js = log4js;
+
   var server = ldap.createServer(config);
   server.after(audit);
 

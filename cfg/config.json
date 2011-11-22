@@ -69,7 +69,8 @@
           "state": false,
           "cn": false,
           "sn": false,
-          "uniquemember": false
+          "uniquemember": false,
+          "zone": false
         },
         "client": {
           "url": "http://localhost:8098",

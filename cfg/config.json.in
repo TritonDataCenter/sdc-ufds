@@ -89,7 +89,8 @@
           "state": false,
           "cn": false,
           "sn": false,
-          "uniquemember": false
+          "uniquemember": false,
+          "zone": false
         },
         "client": {
           "url": "https://RIAKIP:RIAKSSLPORT",

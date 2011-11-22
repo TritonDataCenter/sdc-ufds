@@ -216,6 +216,8 @@ module.exports = {
       customer.postalcode = req.params.postal_code;
     if (req.params.country)
       customer.country = req.params.country;
+    if (req.params.phone_number)
+      customer.phone = req.params.phone_number;
 
     var dn = sprintf('uuid=%s, ou=users, o=smartdc', customer.uuid);
     log.debug('CreateCustomer, saving: %s -> %o', dn, customer);

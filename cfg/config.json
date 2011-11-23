@@ -82,8 +82,8 @@
             "maxTimeout": 10000
           },
           "cache": {
-            "size": 1000,
-            "age": 60
+            "size": 100,
+            "age": 30
           }
         }
       }

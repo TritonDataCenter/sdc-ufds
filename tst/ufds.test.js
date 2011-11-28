@@ -262,8 +262,49 @@ test('lookup ssh key', function(t) {
   });
 });
 
-///--- End actual tests
 
+test('add a new customer', function(t) {
+  var id = uuid();
+  var dn = 'uuid=' + id + ', ou=users, o=smartdc';
+  var entry = {
+    login: 'unittest',
+    uuid: id,
+    userpassword: 'secret',
+    email: 'dev@null.com',
+    cn: 'Unit',
+    sn: 'Tester',
+    objectclass: 'sdcPerson'
+  };
+
+  client.add(dn, entry, function(err) {
+    t.ifError(err);
+    t.end();
+  });
+});
+
+
+test('attempt to add a taken username', function(t) {
+  var id = uuid();
+  var dn = 'uuid=' + id + ', ou=users, o=smartdc';
+  var entry = {
+    login: 'unittest',
+    uuid: id,
+    userpassword: 'secret',
+    email: 'dev@null.com',
+    cn: 'Unit',
+    sn: 'Tester',
+    objectclass: 'sdcPerson'
+  };
+
+  client.add(dn, entry, function(err) {
+    t.ok(err);
+    t.ok(err instanceof ldap.ConstraintViolationError);
+    t.end();
+  });
+});
+
+
+///--- End actual tests
 
 ///--- Teardown methods
 // Note riak deletion is where eventual consistency bites you in the ass, so
@@ -279,6 +320,7 @@ test('cleanup ssh key', function(t) {
   });
 });
 
+
 test('delete groups', function(t) {
   Object.keys(FIXTURES.groups).asyncForEach(function(k, callback) {
     client.del(k, callback);
@@ -291,12 +333,41 @@ test('delete groups', function(t) {
 
 
 test('delete users', function(t) {
-  Object.keys(FIXTURES.users).asyncForEach(function(k, callback) {
-    client.del(k, callback);
-  }, function(err) {
+  var entries = [];
+  var opts = {
+    scope: 'sub',
+    filter: '(login=*)',
+    attributes: ['dn']
+  }
+  client.search('o=smartdc', opts, function(err, res) {
     t.ifError(err);
-    setTimeout(function() { t.end(); },
-               (process.env.RIAK_DELETE_WAIT || 3) * 1000);
+
+    res.on('searchEntry', function(entry) {
+      entries.push(entry.dn);
+    });
+    res.on('error', function(err) {
+      t.fail(err);
+    });
+    res.on('end', function() {
+      t.ok(entries.length);
+      entries.sort(function(a, b) {
+        var dn = ldap.parseDN(a);
+        if (dn.childOf(b)) return -1;
+        if (dn.parentOf(b)) return 1;
+        return 0;
+      });
+
+      var i = 0;
+      function next(err) {
+        t.ifError(err);
+        if (++i < entries.length)
+          return client.del(entries[i], next);
+
+        setTimeout(function() { t.end(); },
+                   (process.env.RIAK_DELETE_WAIT || 3) * 1000);
+      }
+      client.del(entries[i], next);
+    })
   });
 });
 

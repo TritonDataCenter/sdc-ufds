@@ -3,7 +3,7 @@
   "port": 1636,
   "certificate": "./ssl/cert.pem",
   "key": "./ssl/key.pem",
-  "loopbackPath": "./var/ufds.sock",
+  "loopbackPath": "/tmp/ufds.sock",
   "loggers": {
     "appenders": [
       {

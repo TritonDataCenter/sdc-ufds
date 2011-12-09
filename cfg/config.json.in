@@ -93,7 +93,7 @@
           "zone": false
         },
         "client": {
-          "url": "https://RIAKIP:RIAKSSLPORT",
+          "url": "http://RIAKIP:RIAKPORT",
           "clientId": "ufds",
           "retry": {
             "retries": 3,

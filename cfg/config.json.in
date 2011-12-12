@@ -1,5 +1,5 @@
 {
-  "host": "HOSTNAME",
+  "host": "0.0.0.0",
   "port": 636,
   "loopbackPath": "/tmp/.smartdc_ufds_loopback_socket",
   "certificate": "/opt/smartdc/ufds/ssl/cert.pem",
@@ -93,7 +93,7 @@
           "zone": false
         },
         "client": {
-          "url": "http://RIAKIP:RIAKPORT",
+          "url": "http://RIAK_IP:RIAK_PORT",
           "clientId": "ufds",
           "retry": {
             "retries": 3,

@@ -34,7 +34,7 @@ function AmonProbe() {
       amonprobename: 1,
       type: 1,
       zone: 1,
-      data: 1
+      config: 1
     }
   });
 }

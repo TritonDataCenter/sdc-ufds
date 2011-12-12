@@ -32,7 +32,7 @@ function AmonProbe() {
     name: 'amonprobe',
     required: {
       amonprobename: 1,
-      urn: 1,
+      type: 1,
       zone: 1,
       data: 1
     }

@@ -90,7 +90,7 @@
           "cn": false,
           "sn": false,
           "uniquemember": false,
-          "zone": false
+          "machine": false
         },
         "client": {
           "url": "http://RIAK_IP:RIAK_PORT",

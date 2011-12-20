@@ -31,7 +31,7 @@ function AmonMonitor() {
   Validator.call(this, {
     name: 'amonmonitor',
     required: {
-      amonmonitorname: 1,
+      amonmonitor: 1,
       contact: 0  /* one or more (i.e. unbounded) */
     }
   });
@@ -44,8 +44,8 @@ AmonMonitor.prototype.validate = function(entry, callback) {
   var i;
   var errors = [];
 
-  if (!NAME_RE.test(attrs.amonmonitorname[0])) {
-    errors.push("monitor name: '" + attrs.amonmonitorname[0]
+  if (!NAME_RE.test(attrs.amonmonitor[0])) {
+    errors.push("monitor name: '" + attrs.amonmonitor[0]
       + "' is invalid (must be 1-32 chars, begin with alpha character "
       + "and include only alphanumeric '_', '.' and '-')");
   }

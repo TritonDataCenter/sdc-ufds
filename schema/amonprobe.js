@@ -31,7 +31,7 @@ function AmonProbe() {
   Validator.call(this, {
     name: 'amonprobe',
     required: {
-      amonprobename: 1,
+      amonprobe: 1,
       type: 1,
       machine: 1,
       config: 1
@@ -46,8 +46,8 @@ AmonProbe.prototype.validate = function(entry, callback) {
   var i;
   var errors = [];
 
-  if (!NAME_RE.test(attrs.amonprobename[0])) {
-    errors.push("probe name: '" + attrs.amonprobename[0]
+  if (!NAME_RE.test(attrs.amonprobe[0])) {
+    errors.push("probe name: '" + attrs.amonprobe[0]
       + "' is invalid (must be 1-32 chars, begin with alpha character "
       + "and include only alphanumeric '_', '.' and '-')");
   }

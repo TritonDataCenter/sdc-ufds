@@ -80,17 +80,7 @@ pkg: dep
 release: $(RELEASE_TARBALL)
 
 $(RELEASE_TARBALL):
-	$(TAR) -cjf $(RELEASE_TARBALL) \
-	capi \
-	capi.js \
-	cfg \
-	docs/pkg \
-	lib \
-	main.js \
-	node_modules \
-	package.json \
-	schema \
-	tools
+	TAR=$(TAR) bash package.sh $@
 
 publish:
 	@if [[ -z "$(BITS_DIR)" ]]; then \

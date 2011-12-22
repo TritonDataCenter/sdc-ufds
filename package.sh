@@ -28,6 +28,6 @@ mkdir -p ${tmpdir}/site
 ( cd ${tmpdir}/root/opt
     ${TAR} -jxf ${ROOT}/nodejs-0.4.12.tar.bz2 )
 
-( cd ${tmpdir}; tar -jcf ${RELEASE_TARBALL} root site)
+( cd ${tmpdir}; tar -jcf ${ROOT}/${RELEASE_TARBALL} root site)
 
 rm -rf ${tmpdir}

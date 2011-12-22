@@ -25,7 +25,7 @@ mkdir -p ${tmpdir}/site
           ${ROOT}/schema       \
             ${ROOT}/tools opt/smartdc/ufds/)
 
-( cd ${tmpdir}/root
+( cd ${tmpdir}/root/opt
     ${TAR} -jxf ${ROOT}/nodejs-0.4.12.tar.bz2 )
 
 ( cd ${tmpdir}; tar -jcf ${RELEASE_TARBALL} root site)

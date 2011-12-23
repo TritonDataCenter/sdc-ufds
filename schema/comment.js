@@ -13,7 +13,7 @@ function Comment() {
     name: 'comment',
     required: {
       commentid: 1,
-      author: 1,
+      author_uuid: 1,
       body: 1
     }
   });

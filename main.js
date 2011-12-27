@@ -431,7 +431,8 @@ schema.load(__dirname + '/schema', function(err, _schema) {
           size: CONFIG.lruCacheSize,
           age: CONFIG.lruCacheAge,
         },
-        client: CLIENT
+        client: CLIENT,
+        log4js: log4js
       });
     });
   });

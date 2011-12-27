@@ -38,7 +38,7 @@ RELEASE_TARBALL=ufds-pkg-$(UFDS_PUBLISH_VERSION).tar.bz2
 all:: dep pkg doc
 
 node_modules/.npm.installed:
-	$(NPM) install --dev --node-version=0.4.12
+	$(NPM) install --node-version=0.4.12
 	if [[ ! -d node_modules/.restdown ]]; then \
 		git clone git://github.com/trentm/restdown.git node_modules/.restdown; \
 	else \

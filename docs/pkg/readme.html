@@ -63,23 +63,16 @@ really just the SDC-specific uses of it.</p>
 <p>The directory tree is laid out as follows:</p>
 
 <pre><code>o=smartdc
-  +-ou=customers
+  +-ou=users
   |  +-uuid=:uuid
   |  | +-key=:fingerpring
   |  | +-metadata=:appkey
   |  | +-dclimit=:datacenter
-  +-ou=operators
-  |  +-uuid=:uuid
-  |  | +-key=:fingerpring
-  |  | +-metadata=:appkey
-  |  | +-dclimit=:datacenter
+  +-ou=groups
+  |  +-cn=:name
 </code></pre>
 
-<p>So, basically there are two "subtrees", one for customers and one for
-operators.  We could maintain a static group of operators in the tree,
-rather than separating it out.  However, then there is a burden to
-keep the tree and that group in sync (since "dynamic" LDAP groups are
-not yet supported).  But it's probably a better long-term approach.</p>
+<p>Basically there are two "subtrees", one for users and one for groups.</p>
 
 <h2 id="Entries/Schema"><span class="method name"><span class="name">Entries/Schema</span></span></h2>
 
@@ -88,12 +81,12 @@ et al. This is just high-level information on what you can look for.</p>
 
 <h3>sdcPerson</h3>
 
-<p>The <code>sdcPerson</code> type is one of the <code>uuid=:uuid, ou=customers, o=smartdc</code>
-entries (or operators), and contains all the attributes for a "user".
+<p>The <code>sdcPerson</code> type is one of the <code>uuid=:uuid, ou=users, o=smartdc</code>
+entries, and contains all the attributes for a "user".
 These objects should always be stored by uuid.  Here's the
 bootstrapped user:</p>
 
-<pre><code>dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators, o=smartdc
+<pre><code>dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc
 cn: Admin
 email: user@joyent.com
 login: admin
@@ -375,10 +368,8 @@ fire it up, just run <code>node capi.js -u ldaps://localhost:1636 -p 8080 -d 2</
 <ul>
 <li>load balancing Riak cluster</li>
 <li>JSON error messages</li>
-<li>port CloudAPI/Portal</li>
 <li>change numbers as uuid</li>
 <li>6.5 upgrade</li>
-<li>CloudAPI to use fingerprints instead of names</li>
 </ul>
 
     </div>

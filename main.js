@@ -226,6 +226,7 @@ function createServer(config, trees) {
       attributes: {
         namingcontexts: suffixes,
         supportedcontrol: ['1.3.6.1.4.1.38678.1'],
+        supportedcontrol: ['2.16.840.1.113730.3.4.3'],
         supportedextension: ['1.3.6.1.4.1.4203.1.11.3'],
         supportedldapversion: 3,
         currenttime: now(),
@@ -333,8 +334,10 @@ schema.load(__dirname + '/schema', function(err, _schema) {
 
         var bindDN = req.connection.ldap.bindDN;
 
-        if (bindDN.equals(CONFIG.rootDN) || bindDN.equals(req.dn) ||
-            bindDN.parentOf(req.dn))
+        if (bindDN.equals(CONFIG.rootDN))
+          return next();
+
+        if (bindDN.equals(req.dn) || bindDN.parentOf(req.dn))
           return next();
 
         // Otherwise check the backend
@@ -354,7 +357,7 @@ schema.load(__dirname + '/schema', function(err, _schema) {
       server.bind(t, be, pre, be.bind(salt.bind));
       server.compare(t, be, pre, be.compare(salt.compare));
       server.del(t, be, pre, be.del());
-      server.modifyDN(t, be, pre, owner.modifyDN, be.modifyDN());
+      // No modifyDN
       server.search(t, be, pre, owner.search, be.search(salt.search));
       // This doesn't actually work with multiple backends...
       server.search('cn=changelog', be, pre, be.changelogSearch());

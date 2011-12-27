@@ -321,6 +321,9 @@ schema.load(__dirname + '/schema', function(err, _schema) {
         };
 
         req.searchCallback = function(req, entry, callback) {
+          if (entry.attributes.userpassword)
+            delete entry.attributes.userpassword;
+
           return groupManager.searchCallback(req, entry, callback);
         };
 
@@ -334,8 +337,10 @@ schema.load(__dirname + '/schema', function(err, _schema) {
 
         var bindDN = req.connection.ldap.bindDN;
 
-        if (bindDN.equals(CONFIG.rootDN))
+        if (bindDN.equals(CONFIG.rootDN)) {
+          req.hidden = true;
           return next();
+        }
 
         if (bindDN.equals(req.dn) || bindDN.parentOf(req.dn))
           return next();

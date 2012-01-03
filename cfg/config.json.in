@@ -93,7 +93,9 @@
           "machine": false
         },
         "client": {
-          "url": "http://RIAK_IP:RIAK_PORT",
+          "url": [
+            "http://RIAK_IP:RIAK_PORT"
+          ],
           "clientId": "ufds",
           "retry": {
             "retries": 3,

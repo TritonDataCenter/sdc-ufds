@@ -39,9 +39,7 @@ mkdir -p ${lfds_tmpdir}/site
 
 (cd ${lfds_tmpdir}/root
     mkdir -p opt/smartdc/lfds
-    cp -r ${ROOT}/capi         \
-          ${ROOT}/capi.js      \
-          ${ROOT}/cfg          \
+    cp -r ${ROOT}/cfg          \
           ${ROOT}/docs/pkg     \
           ${ROOT}/lib          \
           ${ROOT}/main.js      \

@@ -78,7 +78,7 @@ test: dep lint
 
 pkg: dep
 
-release: 
+release:
 	TAR=$(TAR) bash package.sh $(UFDS_RELEASE_TARBALL) $(LFDS_RELEASE_TARBALL)
 
 publish:

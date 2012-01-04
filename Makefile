@@ -89,7 +89,7 @@ publish:
 	mkdir -p $(BITS_DIR)/ufds
 	cp $(UFDS_RELEASE_TARBALL) $(BITS_DIR)/ufds/$(UFDS_RELEASE_TARBALL)
 	mkdir -p $(BITS_DIR)/lfds
-	cp $(LFDS_RELEASE_TARBALL) $(BITS_DIR)/lfds/$(LFDS_RELEASE_TARBALL)
+	cp $(LFDS_RELEASE_TARBALL) $(BITS_DIR)/ufds/$(LFDS_RELEASE_TARBALL)
 
 clean:
 	@rm -fr ${DOCPKGDIR}/*.html ${DOCPKGDIR}/pkg/css \

@@ -28,7 +28,8 @@ UFDS_PUBLISH_VERSION := $(shell git symbolic-ref HEAD | \
 	awk -F / '{print $$3}')-$(TIMESTAMP)-g$(shell \
 	git describe --all --long | awk -F '-g' '{print $$NF}')
 
-RELEASE_TARBALL=ufds-pkg-$(UFDS_PUBLISH_VERSION).tar.bz2
+UFDS_RELEASE_TARBALL=ufds-pkg-$(UFDS_PUBLISH_VERSION).tar.bz2
+LFDS_RELEASE_TARBALL=lfds-pkg-$(UFDS_PUBLISH_VERSION).tar.bz2
 
 # make pkg release publish is the convention set forth by CA.
 # we use pkg to run npm install, release is a no-op and publish gets run on the
@@ -77,10 +78,8 @@ test: dep lint
 
 pkg: dep
 
-release: $(RELEASE_TARBALL)
-
-$(RELEASE_TARBALL):
-	TAR=$(TAR) bash package.sh $@
+release: 
+	TAR=$(TAR) bash package.sh $(UFDS_RELEASE_TARBALL) $(LFDS_RELEASE_TARBALL)
 
 publish:
 	@if [[ -z "$(BITS_DIR)" ]]; then \
@@ -88,8 +87,10 @@ publish:
 		exit 1; \
 	fi
 	mkdir -p $(BITS_DIR)/ufds
-	cp $(RELEASE_TARBALL) $(BITS_DIR)/ufds/$(RELEASE_TARBALL)
+	cp $(UFDS_RELEASE_TARBALL) $(BITS_DIR)/ufds/$(UFDS_RELEASE_TARBALL)
+	mkdir -p $(BITS_DIR)/lfds
+	cp $(LFDS_RELEASE_TARBALL) $(BITS_DIR)/lfds/$(LFDS_RELEASE_TARBALL)
 
 clean:
 	@rm -fr ${DOCPKGDIR}/*.html ${DOCPKGDIR}/pkg/css \
-		node_modules *.log *.tar.gz *.tar.bz2
+		node_modules *.log *.tar.gz lfds*.tar.bz2 ufds*.tar.bz2

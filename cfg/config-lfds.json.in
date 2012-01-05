@@ -34,7 +34,7 @@
   "logLevel": "INFO",
   "rootDN": "ROOTDN",
   "rootPassword": "ROOTPW",
-  "ufdsUrl": "REMOTEURL",
+  "ufdsUrl": "REMOTEPROTOCOL://REMOTEIP:REMOTEPORT",
   "lruCacheSize": 1000,
   "lruCacheAge": 60,
   "trees": {

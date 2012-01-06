@@ -1,9 +1,9 @@
 {
   "host": "0.0.0.0",
   "port": 636,
-  "loopbackPath": "/tmp/.smartdc_lfds_loopback_socket",
-  "certificate": "/opt/smartdc/lfds/ssl/cert.pem",
-  "key": "/opt/smartdc/lfds/ssl/key.pem",
+  "loopbackPath": "/tmp/.smartdc_ufds_loopback_socket",
+  "certificate": "/opt/smartdc/ufds/ssl/cert.pem",
+  "key": "/opt/smartdc/ufds/ssl/key.pem",
   "loggers": {
     "appenders": [
       {
@@ -11,7 +11,7 @@
         "level": "DEBUG",
         "appender": {
           "type": "file",
-          "filename": "/var/log/lfds/server.log",
+          "filename": "/var/log/ufds/server.log",
           "maxLogSize": 104857600,
           "backups": 3,
           "pollInterval": 60
@@ -24,7 +24,7 @@
           "pattern": "[%d{yyyy-MM-ddThh:mm:ss.SSSO}] - %m%n"
         },
         "type": "file",
-        "filename": "/var/log/lfds/access.log",
+        "filename": "/var/log/ufds/access.log",
         "maxLogSize": 104857600,
         "backups": 10,
         "pollInterval": 10

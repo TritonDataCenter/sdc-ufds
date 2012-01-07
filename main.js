@@ -321,9 +321,6 @@ schema.load(__dirname + '/schema', function(err, _schema) {
         };
 
         req.searchCallback = function(req, entry, callback) {
-          if (entry.attributes.userpassword)
-            delete entry.attributes.userpassword;
-
           return groupManager.searchCallback(req, entry, callback);
         };
 

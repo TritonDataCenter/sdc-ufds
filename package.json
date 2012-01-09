@@ -17,7 +17,7 @@
   "dependencies": {
     "http-signature": "0.9.7",
     "ldapjs": "0.4.2",
-    "ldapjs-riak": "0.2.4",
+    "ldapjs-riak": "0.2.5",
     "log4js": "0.4.1",
     "lru-cache": "1.0.5",
     "node-static": "0.5.9",

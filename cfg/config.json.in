@@ -90,7 +90,16 @@
           "cn": false,
           "sn": false,
           "uniquemember": false,
-          "machine": false
+          "machine": false,
+          "fwuuid": true,
+          "fromtag": false,
+          "totag": false,
+          "frommachine": false,
+          "tomachine": false,
+          "fromip": false,
+          "toip": false,
+          "fromsubnet": false,
+          "tosubnet": false
         },
         "client": {
           "url": [

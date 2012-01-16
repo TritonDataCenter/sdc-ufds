@@ -91,6 +91,7 @@
           "sn": false,
           "uniquemember": false,
           "machine": false,
+          "server": false,
           "fwuuid": true,
           "fromtag": false,
           "totag": false,

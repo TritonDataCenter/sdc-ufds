@@ -21,7 +21,7 @@ var log = log4js.getLogger('amonprobe');
 // An amonprobe name can be 1-32 chars, begins with alpha, rest are
 // alphanumeric or '_', '.' or '-'.
 var NAME_RE = /^[a-zA-Z][a-zA-Z0-9_\.-]{0,31}$/;
-
+var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 
 
 
@@ -33,8 +33,12 @@ function AmonProbe() {
     required: {
       amonprobe: 1,
       type: 1,
-      machine: 1,
       config: 1
+    },
+    optional: {
+      // Must have exactly one machine or one server value.
+      machine: 1,
+      server: 1
     }
   });
 }
@@ -50,6 +54,14 @@ AmonProbe.prototype.validate = function(entry, callback) {
     errors.push("probe name: '" + attrs.amonprobe[0]
       + "' is invalid (must be 1-32 chars, begin with alpha character "
       + "and include only alphanumeric '_', '.' and '-')");
+  }
+
+  var all = (attrs.machine || []).concat(attrs.server || []);
+  if (all.length !== 1) {
+    errors.push("probe must have exactly one 'machine' or 'server': "
+      + "probe=" + attrs.amonprobe[0]
+      + ", machine=" + attrs.machine
+      + ", server=" + attrs.server)
   }
 
   if (errors.length)

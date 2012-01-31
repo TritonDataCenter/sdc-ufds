@@ -51,10 +51,11 @@ function FWRule() {
   Validator.call(this, {
     name: 'fwrule',
     required: {
-      fwuuid: 1,
+      fwrule: 1,
       protocol: 1,
       port: 10,
-      action: 1
+      action: 1,
+      enabled: 1
     },
     optional: {
       fromtag: 0,
@@ -64,7 +65,9 @@ function FWRule() {
       fromip: 0,
       toip: 0,
       fromsubnet: 0,
-      tosubnet: 0
+      tosubnet: 0,
+      fromwildcard: 0,
+      towildcard: 0
     }
   });
 }
@@ -77,8 +80,8 @@ FWRule.prototype.validate = function(entry, callback) {
   var errors = [];
   var directions = ['from', 'to'];
 
-  if (!uuidRE.test(attrs.fwuuid)) {
-    errors.push("fwuuid: '" + attrs.fwuuid + "' is invalid "
+  if (!uuidRE.test(attrs.fwrule)) {
+    errors.push("fwrule uuid: '" + attrs.fwrule + "' is invalid "
         + "(must be a UUID)");
   }
 
@@ -112,6 +115,11 @@ FWRule.prototype.validate = function(entry, callback) {
   if (!actionRE.test(attrs.action)) {
     errors.push("action: '" + attrs.action + "' is invalid "
         + "(must be one of: allow,block)");
+  }
+
+  if (attrs.enabled != 'true' && attrs.enabled != 'false') {
+    errors.push("enabled: '" + attrs.enabled + "' is invalid "
+        + "(must be one of: true,false)");
   }
 
   if (!protocolRE.test(attrs.protocol)) {

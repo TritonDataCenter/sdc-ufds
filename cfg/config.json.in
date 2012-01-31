@@ -92,7 +92,7 @@
           "uniquemember": false,
           "machine": false,
           "server": false,
-          "fwuuid": true,
+          "fwrule": true,
           "fromtag": false,
           "totag": false,
           "frommachine": false,
@@ -100,7 +100,9 @@
           "fromip": false,
           "toip": false,
           "fromsubnet": false,
-          "tosubnet": false
+          "tosubnet": false,
+          "fromwildcard": false,
+          "towildcard": false
         },
         "client": {
           "url": [

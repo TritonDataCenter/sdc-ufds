@@ -5,7 +5,7 @@ ifeq ($(VERSION), "")
 endif
 
 # Set path for MG builds
-PATH := /opt/node/0.4/bin:${PATH}
+PATH=/opt/node/0.4/bin:$(PATH)
 SRC := $(shell pwd)
 TAR = tar
 UNAME := $(shell uname)

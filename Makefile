@@ -5,7 +5,7 @@ ifeq ($(VERSION), "")
 endif
 
 # Set path for MG builds
-PATH=/opt/node/0.4/bin:$(PATH)
+PATH := /opt/node/0.4/bin:/opt/npm/1.0/bin:/opt/local/bin:/usr/bin
 SRC := $(shell pwd)
 TAR = tar
 UNAME := $(shell uname)
@@ -41,7 +41,7 @@ LFDS_RELEASE_TARBALL=lfds-pkg-$(UFDS_PUBLISH_VERSION).tar.bz2
 all:: dep pkg doc
 
 node_modules/.npm.installed:
-	$(NPM) install --node-version=0.4.12
+	PATH=$(PATH) $(NPM) install --node-version=0.4.12
 	if [[ ! -d node_modules/.restdown ]]; then \
 		git clone git://github.com/trentm/restdown.git node_modules/.restdown; \
 	else \

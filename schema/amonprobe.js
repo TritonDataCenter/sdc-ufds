@@ -6,17 +6,12 @@
 // 
 
 var util = require('util');
-
 var ldap = require('ldapjs');
-var log4js = require('log4js');
-
 var Validator = require('../lib/schema/validator');
 
 
 
 ///--- Globals
-
-var log = log4js.getLogger('amonprobe');
 
 // An amonprobe name can be 1-32 chars, begins with alpha, rest are
 // alphanumeric or '_', '.' or '-'.
@@ -32,8 +27,7 @@ function AmonProbe() {
     name: 'amonprobe',
     required: {
       amonprobe: 1,
-      type: 1,
-      config: 1
+      type: 1
     },
     optional: {
       // Must have exactly one machine or one server value.

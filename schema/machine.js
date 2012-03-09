@@ -25,6 +25,11 @@ function validNumber(attr) {
   return (number > 0 ? true : false);
 }
 
+function validType(type) {
+  return (type == "zone" || type == "vm");
+}
+
+
 var NUMBER_ATTRS = {
   ram: "RAM",
   swap: "Swap",
@@ -42,6 +47,7 @@ function Machine() {
     name: 'machine',
     required: {
       machineid: 1,
+      type: 1,
       ram: 1,
       disk: 1,
       swap: 1,
@@ -85,6 +91,13 @@ Machine.prototype.validate = function(entry, callback) {
           + "(must be a positive number)");
     }
   }
+
+  if (attrs.type != undefined && typeof(attrs.type[0]) == "string"
+        && !validType(attrs.type[0])) {
+    errors.push("Machine type: '" + attrs.alias[0] + "' is invalid, "
+      + "must be either 'zone' or 'vm'");
+  }
+
 
   if (parseInt(attrs.swap[0]) < parseInt(attrs.ram[0])) {
     errors.push("Swap: '" + attrs.swap[0] + "' is invalid "

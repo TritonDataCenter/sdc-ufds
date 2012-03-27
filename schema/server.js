@@ -31,7 +31,7 @@ function Server() {
   Validator.call(this, {
     name: 'server',
     required: {
-      serverid: 1,
+      uuid: 1,
       hostname: 1,
       ram: 1,
       reserved: 1,
@@ -61,13 +61,13 @@ Server.prototype.validate = function(entry, callback) {
   var i;
   var errors = [];
 
-  if (!validUUID(attrs.serverid[0])) {
-    errors.push("Server UUID: '" + attrs.serverid[0] + "' is invalid "
+  if (!validUUID(attrs.uuid[0])) {
+    errors.push("Server UUID: '" + attrs.uuid[0] + "' is invalid "
         + "(must be a UUID)");
   }
 
   if (!validHost(attrs.hostname[0])) {
-    errors.push("Hostname: '" + attrs.serverid[0] + "' is invalid");
+    errors.push("Hostname: '" + attrs.hostname[0] + "' is invalid");
   }
 
   if (!validNumber(attrs.ram[0])) {

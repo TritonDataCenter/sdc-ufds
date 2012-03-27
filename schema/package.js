@@ -46,7 +46,7 @@ function Package() {
   Validator.call(this, {
     name: 'sdcpackage',
     required: {
-      packageid: 1,
+      uuid: 1,
       urn: 1,
       name: 1,
       version: 1,
@@ -71,8 +71,8 @@ Package.prototype.validate = function(entry, callback) {
   var i;
   var errors = [];
 
-  if (!validUUID(attrs.packageid[0])) {
-    errors.push("Package uuid: '" + attrs.packageid[0] + "' is invalid "
+  if (!validUUID(attrs.uuid[0])) {
+    errors.push("Package uuid: '" + attrs.uuid[0] + "' is invalid "
         + "(must be a UUID)");
   }
 

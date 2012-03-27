@@ -46,18 +46,25 @@ function Machine() {
   Validator.call(this, {
     name: 'machine',
     required: {
-      machineid: 1,
+      uuid: 1,
       type: 1,
+      brand: 1,
       ram: 1,
       disk: 1,
       swap: 1,
       lwps: 1,
       cpucap: 1,
       cpushares: 1,
-      zfsiopriority: 1
+      zfsiopriority: 1,
     },
     optional: {
       alias: 1,
+      zonepath: 1,
+      datasetuuid: 1,
+      serveruuid: 1,
+      autoboot: 1,
+      datasets: 0,
+      nics: 0,
       internalmetadata: 1,
       customermetadata: 1,
       delegatedataset: 1,
@@ -78,8 +85,8 @@ Machine.prototype.validate = function(entry, callback) {
   var i;
   var errors = [];
 
-  if (!validUUID(attrs.machineid[0])) {
-    errors.push("Machine uuid: '" + attrs.machineid[0] + "' is invalid "
+  if (!validUUID(attrs.uuid[0])) {
+    errors.push("Machine uuid: '" + attrs.uuid[0] + "' is invalid "
         + "(must be a UUID)");
   }
 

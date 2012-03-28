@@ -12,6 +12,10 @@ dn: ou=groups, o=smartdc
 objectclass: organizationalUnit
 ou: groups
 
+dn: ou=config, o=smartdc
+objectclass: organizationalUnit
+ou: config
+
 dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc
 login: admin
 uuid: 930896af-bf8c-48d4-885c-6573a94b1853

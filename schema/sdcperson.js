@@ -18,7 +18,7 @@ var log = log4js.getLogger('sdcperson');
 // "root@localhost". The effective result is an RFC2822-compliant check
 // before the "@", then more loose checking after: to allow "@localhost",
 // "@foo.museum", "@foo.example.com", "@127.0.0.1".
-var EMAIL_RE = /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@[a-z0-9.]+/i;
+var EMAIL_RE = /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@[a-z0-9.]+$/i;
 var LOGIN_RE = /^[a-zA-Z][a-zA-Z0-9_\.@]+$/;
 
 var RESERVED_LOGINS = [

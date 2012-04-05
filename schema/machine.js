@@ -35,7 +35,6 @@ var NUMBER_ATTRS = {
   swap: "Swap",
   disk: "Disk",
   lwps: "Lightweight Processes",
-  cpucap: "CPU Cap",
   cpushares: "CPU Shares",
   zfsiopriority: "ZFS IO Priority"
 };
@@ -53,7 +52,6 @@ function Machine() {
       disk: 1,
       swap: 1,
       lwps: 1,
-      cpucap: 1,
       cpushares: 1,
       zfsiopriority: 1,
     },
@@ -70,6 +68,7 @@ function Machine() {
       delegatedataset: 1,
       disks: 0,
       vcpus: 1,
+      cpucap: 1,
       status: 1,
       setup: 1,
       destroyed: 1
@@ -123,6 +122,11 @@ Machine.prototype.validate = function(entry, callback) {
 
   if (attrs.vcpus != undefined && !validNumber(attrs.vcpus[0])) {
     errors.push("Virtual CPUs: '" + attrs.vcpus[0] + "' is invalid "
+        + "(must be a positive number)");
+  }
+
+  if (attrs.cpucap != undefined && !validNumber(attrs.cpucap[0])) {
+    errors.push("CPU Cap: '" + attrs.cpucap[0] + "' is invalid "
         + "(must be a positive number)");
   }
 

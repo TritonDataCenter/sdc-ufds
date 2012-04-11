@@ -26,7 +26,7 @@ function validNumber(attr) {
 }
 
 function validBrand(brand) {
-  return (type == "joyent" || type == "kvm");
+  return (brand == "joyent" || brand == "kvm");
 }
 
 

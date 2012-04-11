@@ -25,8 +25,8 @@ function validNumber(attr) {
   return (number > 0 ? true : false);
 }
 
-function validType(type) {
-  return (type == "zone" || type == "vm");
+function validBrand(brand) {
+  return (type == "joyent" || type == "kvm");
 }
 
 
@@ -46,7 +46,6 @@ function Machine() {
     name: 'machine',
     required: {
       uuid: 1,
-      type: 1,
       brand: 1,
       ram: 1,
       disk: 1,
@@ -98,10 +97,10 @@ Machine.prototype.validate = function(entry, callback) {
     }
   }
 
-  if (attrs.type != undefined && typeof(attrs.type[0]) == "string"
-        && !validType(attrs.type[0])) {
-    errors.push("Machine type: '" + attrs.alias[0] + "' is invalid, "
-      + "must be either 'zone' or 'vm'");
+  if (attrs.brand != undefined && typeof(attrs.brand[0]) == "string"
+        && !validBrand(attrs.brand[0])) {
+    errors.push("Machine brand: '" + attrs.alias[0] + "' is invalid, "
+      + "must be either 'joyent' or 'kvm'");
   }
 
 

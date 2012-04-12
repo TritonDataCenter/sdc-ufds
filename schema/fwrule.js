@@ -7,7 +7,6 @@ var util = require('util');
 var net = require('net');
 
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 
 var Validator = require('../lib/schema/validator');
 
@@ -15,7 +14,6 @@ var Validator = require('../lib/schema/validator');
 
 ///--- Globals
 
-var log = log4js.getLogger('fwrule');
 var uuidRE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 var protocolRE = /^(tcp|udp|icmp)$/;
 var actionRE = /^(allow|block)$/;

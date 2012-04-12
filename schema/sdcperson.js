@@ -4,7 +4,6 @@ var assert = require('assert');
 var util = require('util');
 
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 
 var Validator = require('../lib/schema/validator');
 
@@ -12,9 +11,11 @@ var Validator = require('../lib/schema/validator');
 
 ///--- Globals
 
-var log = log4js.getLogger('sdcperson');
-
-var EMAIL_RE = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
+// Adapted from <www.regular-expressions.info/email.html> to allow, e.g.
+// "root@localhost". The effective result is an RFC2822-compliant check
+// before the "@", then more loose checking after: to allow "@localhost",
+// "@foo.museum", "@foo.example.com", "@127.0.0.1".
+var EMAIL_RE = /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@[a-z0-9.]+$/i;
 var LOGIN_RE = /^[a-zA-Z][a-zA-Z0-9_\.@]+$/;
 
 var RESERVED_LOGINS = [

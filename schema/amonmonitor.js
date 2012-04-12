@@ -1,22 +1,19 @@
-// Copyright 2011 Joyent, Inc.  All rights reserved.
+// Copyright 2012 Joyent, Inc.  All rights reserved.
 //
 // A monitor for the Amon (SDC monitoring) system. An "amonmonitor" is meant
 // to be a child of an "sdcperson".
 //
-// 
+//
 
 var util = require('util');
 
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 
 var Validator = require('../lib/schema/validator');
 
 
 
 ///--- Globals
-
-var log = log4js.getLogger('amonmonitor');
 
 // An amonmonitor name can be 1-32 chars, begins with alpha, rest are
 // alphanumeric or '_', '.' or '-'.

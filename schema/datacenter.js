@@ -1,18 +1,12 @@
-// Copyright 2011 Joyent, Inc.  All rights reserved.
+// Copyright 2012 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var util = require('util');
 
 var ldap = require('ldapjs');
-var log4js = require('log4js');
 
 var Validator = require('../lib/schema/validator');
 
-
-
-///--- Globals
-
-var log = log4js.getLogger('datacenter');
 
 
 ///--- API

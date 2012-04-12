@@ -17,24 +17,31 @@
 #
 # Tools
 #
-TAP		:= ./node_modules/.bin/tap
+NODEUNIT	:= ./node_modules/.bin/nodeunit
 
 #
 # Files
 #
-DOC_FILES	 = index.restdown boilerplateapi.restdown
+DOC_FILES	 = index.restdown
 JS_FILES	:= $(shell ls *.js) $(shell find lib test -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
-JSSTYLE_FLAGS    = -o indent=4,doxygen,unparenthesized-return=0
-#REPO_MODULES	 = src/node-dummy
+JSSTYLE_FLAGS    = -f tools/jsstyle.conf
+SHRINKWRAP	 = npm-shrinkwrap.json
 SMF_MANIFESTS_IN = smf/manifests/ufds.xml.in
+
+CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 
 include ./tools/mk/Makefile.defs
 include ./tools/mk/Makefile.node.defs
 include ./tools/mk/Makefile.node_deps.defs
 include ./tools/mk/Makefile.smf.defs
+
+#
+# Env vars
+#
+PATH	:= $(NODE_INSTALL)/bin:${PATH}
 
 #
 # Repo-specific targets
@@ -43,14 +50,12 @@ include ./tools/mk/Makefile.smf.defs
 all: $(SMF_MANIFESTS) | $(TAP) $(REPO_DEPS)
 	$(NPM) rebuild
 
-$(TAP): | $(NPM_EXEC)
+$(NODEUNIT): | $(NPM_EXEC)
 	$(NPM) install
 
-CLEAN_FILES += $(TAP) ./node_modules/tap
-
 .PHONY: test
-test: $(TAP)
-	TAP=1 $(TAP) test/*.test.js
+test: $(NODEUNIT)
+	$(NODEUNIT) test/*.test.js --reporter tap
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.node.targ

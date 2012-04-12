@@ -7,7 +7,7 @@ var path = require('path');
 
 var Logger = require('bunyan');
 var ldap = require('ldapjs');
-var moray = require('moray-client');
+var morayClient = require('moray-client');
 var nopt = require('nopt');
 var retry = require('retry');
 var uuid = require('node-uuid');
@@ -80,7 +80,7 @@ function errorAndExit(err, message) {
 
 
 function processConfig() {
-    var config;
+    var _config;
     var parsed = nopt(OPTS, SHORT_OPTS, process.argv, 2);
     var file = parsed.file || __dirname + '/etc/ufds.config.json';
 
@@ -91,13 +91,13 @@ function processConfig() {
 
     try {
 
-        config = JSON.parse(fs.readFileSync(file, 'utf8'));
+        _config = JSON.parse(fs.readFileSync(file, 'utf8'));
 
-        if (config.certificate && config.key && !config.port)
-            config.port = 636;
+        if (_config.certificate && _config.key && !_config.port)
+            _config.port = 636;
 
-        if (!config.port)
-            config.port = 389;
+        if (!_config.port)
+            _config.port = 389;
 
     } catch (e) {
         console.error('Unable to parse configuration file: ' + e.message);
@@ -105,24 +105,24 @@ function processConfig() {
     }
 
     if (parsed.port)
-        config.port = parsed.port;
+        _config.port = parsed.port;
 
     if (parsed.debug)
         LOG.level(parsed.debug > 1 ? 'trace' : 'debug');
 
     if (parsed.certificate)
-        config.certificate = parsed.certificate;
+        _config.certificate = parsed.certificate;
     if (parsed.key)
-        config.key = parsed.key;
+        _config.key = parsed.key;
 
-    if (config.certificate)
-        config.certificate = fs.readFileSync(config.certificate, 'utf8');
-    if (config.key)
-        config.key = fs.readFileSync(config.key, 'utf8');
+    if (_config.certificate)
+        _config.certificate = fs.readFileSync(_config.certificate, 'utf8');
+    if (_config.key)
+        _config.key = fs.readFileSync(_config.key, 'utf8');
 
-    LOG.debug('config processed: %j', config);
-    config.log = LOG;
-    return config;
+    LOG.debug('config processed: %j', _config);
+    _config.log = LOG;
+    return _config;
 }
 
 
@@ -145,6 +145,8 @@ function audit(req, res, next) {
             'attributes=' + (req.attributes.join() || '[]') + ', ' +
             'sentEntries=' + res.sentEntries + ', ';
         break;
+    default:
+        break;
     }
 
     LOG.info('clientip=' + (req.connection.remoteAddress || 'localhost') +
@@ -155,37 +157,36 @@ function audit(req, res, next) {
              'requestDN=' + req.dn.toString() + ', ' +
              additional +
              'status=' + res.status + ', ' +
-             'time=' + (new Date().getTime() - req.startTime) + 'ms, '
-            );
+             'time=' + (new Date().getTime() - req.startTime) + 'ms, ');
 }
 
 
-function createMorayClient(config) {
-    assert.ok(config);
+function createMorayClient(options) {
+    assert.ok(options);
 
-    return moray.createClient({
-        url: config.moray.url,
+    return morayClient.createClient({
+        url: options.moray.url,
         log: LOG.child({
             component: 'moray'
         }),
-        retry: config.moray.retry || false,
-        connectTimeout: config.moray.connectTimeout || 1000
+        retry: options.moray.retry || false,
+        connectTimeout: options.moray.connectTimeout || 1000
     });
 }
 
 
-function createServer(config) {
-    assert.ok(config);
+function createServer(options) {
+    assert.ok(options);
 
-    var server = ldap.createServer(config);
-    server.after(audit);
+    var _server = ldap.createServer(options);
+    _server.after(audit);
 
     // Admin bind
-    server.bind(config.rootDN, function(req, res, next) {
+    _server.bind(options.rootDN, function (req, res, next) {
         if (req.version !== 3)
             return next(new ldap.ProtocolError(req.version + ' is not v3'));
 
-        if (req.credentials !== config.rootPassword)
+        if (req.credentials !== options.rootPassword)
             return next(new ldap.InvalidCredentialsError(req.dn.toString()));
 
         res.end();
@@ -194,14 +195,14 @@ function createServer(config) {
 
     // ldapwhoami -H ldap://localhost:1389 -x -D cn=root -w secret
     // cn=root
-    server.exop('1.3.6.1.4.1.4203.1.11.3', function(req, res, next) {
+    _server.exop('1.3.6.1.4.1.4203.1.11.3', function (req, res, next) {
         res.responseValue = req.connection.ldap.bindDN.toString();
         res.end();
         return next();
     });
 
     // RootDSE
-    server.search('', function(req, res, next) {
+    _server.search('', function (req, res, next) {
         function now() {
             function pad(n) { return ((n < 10) ? '0' + n : n); }
             var d = new Date();
@@ -214,7 +215,7 @@ function createServer(config) {
                 '.0Z';
         }
 
-        var suffixes = config.trees.keys();
+        var suffixes = options.trees.keys();
         suffixes.push('cn=changelog');
         var entry = {
             dn: '',
@@ -234,13 +235,13 @@ function createServer(config) {
         return next();
     });
 
-    return server;
+    return _server;
 }
 
 
-function listen(server) {
-    return server.listen(config.port, config.host, function () {
-        LOG.info('UFDS listening at: %s\n\n', server.url);
+function listen(_server) {
+    return _server.listen(config.port, config.host, function () {
+        LOG.info('UFDS listening at: %s\n\n', _server.url);
     });
 }
 
@@ -268,9 +269,9 @@ server.use(function setup(req, res, next) {
 });
 
 var clog = config.changelog;
-return moray.putBucket(clog.bucket, {schema: clog.schema}, function (err) {
-    if (err)
-        errorAndExit(err, 'Unable to set changelog bucket');
+moray.putBucket(clog.bucket, {schema: clog.schema}, function (clogErr) {
+    if (clogErr)
+        errorAndExit(clogErr, 'Unable to set changelog bucket');
 
     server.search('cn=changelog', be.search(function (req, res, next) {
         req.bucket = clog.bucket;
@@ -320,202 +321,3 @@ return moray.putBucket(clog.bucket, {schema: clog.schema}, function (err) {
         });
     });
 });
-
-
-    /*
-    var trees = Object.keys(config.trees);
-    var servers = [createServer(config, trees)];
-    // Ghetto!
-    var cert = CONFIG.certificate;
-    var key = CONFIG.key;
-    delete CONFIG.certificate;
-    delete CONFIG.key;
-    servers.push(createServer(CONFIG, trees));
-    CONFIG.certificate = cert;
-    CONFIG.key = key;
-
-    servers.forEach(function(server) {
-        trees.forEach(function(t) {
-            var suffix = ldap.parseDN(t);
-            var tree = CONFIG.trees[t];
-            if (typeof(tree.riak) !== 'object') {
-                log.warn('Tree type %s is an invalid type. Ignoring %s', tree.type, t);
-                return;
-            }
-
-            tree.riak.log4js = log4js;
-            var be = ldapRiak.createBackend(tree.riak);
-            var timer;
-
-            function _init(callback) {
-                var operation = retry.operation({
-                    retries: 10,
-                    factor: 2,
-                    minTimeout: 1000,
-                    maxTimeout: Number.MAX_VALUE,
-                    randomize: false
-                }); // Bake in the defaults, as they're fairly sane
-
-                operation.attempt(function(currentAttempt) {
-                    be.init(function(err) {
-                        if (err) {
-                            log.warn('Error initializing backend(attempt=%d): %s',
-                                     currentAttempt, err.toString());
-                            if (operation.retry(err))
-                                return;
-
-                            return callback(operation.mainError());
-                        }
-
-                        return callback();
-                    });
-                });
-            }
-
-            function setup(req, res, next) {
-                if (req.toObject)
-                    req.object = req.toObject();
-
-                if (tree.blacklistRDN)
-                    req.blacklistEmailDN = tree.blacklistRDN + ', ' + suffix;
-
-                req.schema = _schema;
-                req.suffix = suffix;
-                req.client = CLIENT;
-
-                // Allows downstream code to easily check group membership
-                req.memberOf = function(groupdn, callback) {
-                    return groupManager.memberOf(req.dn, groupdn, callback);
-                };
-
-                req.searchCallback = function(req, entry, callback) {
-                    return groupManager.searchCallback(req, entry, callback);
-                };
-
-                return next();
-            }
-
-            function authorize(req, res, next) {
-                // Check the easy stuff first
-                if (req.type === 'BindRequest')
-                    return next();
-
-                var bindDN = req.connection.ldap.bindDN;
-
-                if (bindDN.equals(CONFIG.rootDN)) {
-                    req.hidden = true;
-                    return next();
-                }
-
-                if (bindDN.equals(req.dn) || bindDN.parentOf(req.dn))
-                    return next();
-
-                // Otherwise check the backend
-                var operators = 'cn=operators, ou=groups, ' + t;
-                groupManager.memberOf(bindDN, operators, function(err, member) {
-                    if (err)
-                        return next(err);
-
-                    return next(member ? null : new ldap.InsufficientAccessRightsError());
-                });
-            }
-
-            var pre = [setup, authorize];
-
-            server.add(t, be, pre, blacklist.add, salt.add, keys.add, owner.add,
-                       schema.add, be.add());
-            server.bind(t, be, pre, be.bind(salt.bind));
-            server.compare(t, be, pre, be.compare(salt.compare));
-            server.del(t, be, pre, be.del());
-            // No modifyDN
-            server.search(t, be, pre, owner.search, be.search(salt.search));
-            // This doesn't actually work with multiple backends...
-            server.search('cn=changelog', be, pre, be.changelogSearch());
-
-            // Modify is the most complicated, since we have to go load the enttry
-            // to validate the schema
-            server.modify(t, be, pre, be.modify(
-                [
-                    function (req, res, next) {
-                        assert.ok(req.riak);
-                        var client = req.riak.client;
-
-                        client.get(req.riak.bucket, req.riak.key, function(err, entry) {
-                            if (err) {
-                                if (err.statusCode === 404)
-                                    return next(new ldap.NoSuchObjectError(req.dn.toString()));
-
-                                log.warn('%s error talking to riak %s', req.logId, err.stack);
-                                return next(new ldap.OperationsError('Riak: ' + err.message));
-                            }
-
-                            // store this so we don't go refetch it.
-                            req.entry = entry;
-                            req.riak.entry = entry;
-                            return next();
-                        });
-                    },
-                    schema.modify, salt.modify]));
-
-            // Go ahead and kick off backend initialization
-            _init(function(err) {
-                if (err) {
-                    log.fatal('Unable to initialize Riak backend, exiting');
-                    process.exit(1);
-                }
-
-                log.info('Riak backend initialized');
-            });
-        });
-    });
-
-    // Rock 'n Roll
-    servers[0].listen(CONFIG.port, function() {
-        log.info('UFDS listening at: %s\n\n', servers[0].url);
-    });
-    servers[1].listen(CONFIG.loopbackPath, function() {
-        log.info('UFDS listening at: %s\n\n', servers[1].url);
-        CLIENT = ldap.createClient({
-            socketPath: CONFIG.loopbackPath,
-            log4js: log4js
-        });
-
-        CLIENT.once('error', function(err) {
-            log.fatal('Error connecting: %s', err.stack);
-            process.exit(1);
-        });
-
-        CLIENT.bind(CONFIG.rootDN, CONFIG.rootPassword, function(err) {
-            if (err) {
-                log.fatal('Unable to bind to: %s: %s', CONFIG.loopbackPath, err.stack);
-                process.exit(1);
-            }
-
-            groupManager = groups.createGroupManager({
-                cache: {
-                    size: CONFIG.lruCacheSize,
-                    age: CONFIG.lruCacheAge,
-                },
-                client: CLIENT,
-                log4js: log4js
-            });
-        });
-    });
-
-});
-*/
-
-
-
-///--- Serve up docs
-
-// var file = new(nstatic.Server)('./docs/pkg');
-// var docsPort = CONFIG.port < 1024 ? 80 : 9080;
-// require('http').createServer(function (req, res) {
-//     req.addListener('end', function () {
-//         file.serve(req, res);
-//     });
-// }).listen(docsPort, function() {
-//     log.info('Docs listener up at %d', docsPort);
-// });
-

@@ -82,12 +82,14 @@ function errorAndExit(err, message) {
 function processConfig() {
     var config;
     var parsed = nopt(OPTS, SHORT_OPTS, process.argv, 2);
+    var file = parsed.file || __dirname + '/etc/ufds.config.json';
 
     if (parsed.help)
         usage(0);
 
+    LOG.info({file: file}, 'Processing configuration file');
+
     try {
-        var file = parsed.file || __dirname + '/etc/ufds.config.json';
 
         config = JSON.parse(fs.readFileSync(file, 'utf8'));
 
@@ -260,42 +262,62 @@ server.use(function setup(req, res, next) {
     req.log = LOG.child({req_id: req.req_id}, true);
     req.moray = moray;
     req.schema = SCHEMA;
+    req.config = config;
 
     return next();
 });
 
-return Object.keys(trees).forEach(function (t) {
-    LOG.debug({
-        bucket: trees[t].bucket,
-        schema: trees[t].schema,
-        suffix: t
-    }, 'Configuring UFDS bucket');
+var clog = config.changelog;
+return moray.putBucket(clog.bucket, {schema: clog.schema}, function (err) {
+    if (err)
+        errorAndExit(err, 'Unable to set changelog bucket');
 
-    var bucket = trees[t].bucket;
-    var cfg = {
-        schema: trees[t].schema
-        // TODO Changelog Post function
-    };
+    server.search('cn=changelog', be.search(function (req, res, next) {
+        req.bucket = clog.bucket;
+        req.suffix = 'cn=changelog';
+        return next();
+    }));
 
-    return moray.putBucket(bucket, cfg, function (err) {
-        if (err)
-            errorAndExit(err, 'Unable to set Moray bucket');
+    return Object.keys(trees).forEach(function (t) {
+        LOG.debug({
+            bucket: trees[t].bucket,
+            schema: trees[t].schema,
+            suffix: t
+        }, 'Configuring UFDS bucket');
 
-        function _setup(req, res, next) {
-            req.bucket = trees[t].bucket;
-            req.suffix = t;
+        var bucket = trees[t].bucket;
+        var cfg = {
+            schema: trees[t].schema,
+            post: [
+                be.changelog.add,
+                be.changelog.mod,
+                be.changelog.del
+            ]
+        };
 
-            return next();
-        }
+        return moray.putBucket(bucket, cfg, function (err) {
+            if (err)
+                errorAndExit(err, 'Unable to set Moray bucket');
 
-        server.add(t, be.add(_setup));
-        server.bind(t, be.bind(_setup));
-        server.compare(t, be.compare(_setup));
-        server.del(t, be.del(_setup));
-        server.modify(t, be.modify(_setup));
-        server.search(t, be.search(_setup));
+            function _setup(req, res, next) {
+                req.bucket = trees[t].bucket;
+                req.suffix = t;
 
-        return ++finished === Object.keys(trees).length ? listen(server) : 0;
+                return next();
+            }
+
+            server.add(t, be.add(_setup));
+            server.bind(t, be.bind(_setup));
+            server.compare(t, be.compare(_setup));
+            server.del(t, be.del(_setup));
+            server.modify(t, be.modify(_setup));
+            server.search(t, be.search(_setup));
+
+            if (++finished < Object.keys(trees).length)
+                return false;
+
+            return listen(server);
+        });
     });
 });
 

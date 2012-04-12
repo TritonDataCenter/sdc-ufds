@@ -39,6 +39,24 @@ include ./tools/mk/Makefile.node_deps.defs
 include ./tools/mk/Makefile.smf.defs
 
 #
+# Variables
+#
+
+# Mountain Gorilla-spec'd versioning.
+# Need GNU awk for multi-char arg to "-F".
+AWK := $(shell (which gawk 2>/dev/null | grep -v "^no ") || (which nawk 2>/dev/null | grep -v "^no ") || which awk)
+BRANCH := $(shell git symbolic-ref HEAD | $(AWK) -F/ '{print $$3}')
+ifeq ($(TIMESTAMP),)
+	TIMESTAMP := $(shell date -u "+%Y%m%dT%H%M%SZ")
+endif
+GITDESCRIBE := g$(shell git describe --all --long --dirty | $(AWK) -F'-g' '{print $$NF}')
+STAMP := $(BRANCH)-$(TIMESTAMP)-$(GITDESCRIBE)
+
+ROOT                    := $(shell pwd)
+RELEASE_TARBALL         := ufds-pkg-$(STAMP).tar.bz2
+TMPDIR                  := /tmp/$(STAMP)
+
+#
 # Env vars
 #
 PATH	:= $(NODE_INSTALL)/bin:${PATH}
@@ -48,7 +66,7 @@ PATH	:= $(NODE_INSTALL)/bin:${PATH}
 #
 .PHONY: all
 all: $(SMF_MANIFESTS) | $(TAP) $(REPO_DEPS)
-	$(NPM) rebuild
+	$(NPM) install
 
 $(NODEUNIT): | $(NPM_EXEC)
 	$(NPM) install
@@ -56,6 +74,35 @@ $(NODEUNIT): | $(NPM_EXEC)
 .PHONY: test
 test: $(NODEUNIT)
 	$(NODEUNIT) test/*.test.js --reporter tap
+
+
+.PHONY: release
+release: all $(SMF_MANIFESTS)
+	@echo "Building $(RELEASE_TARBALL)"
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds
+	@mkdir -p $(TMPDIR)/site
+	@touch $(TMPDIR)/site/.do-not-delete-me
+	@mkdir -p $(TMPDIR)/root
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds/ssl
+	cp -r   $(ROOT)/build \
+		$(ROOT)/lib \
+		$(ROOT)/main.js \
+		$(ROOT)/node_modules \
+		$(ROOT)/package.json \
+		$(ROOT)/smf \
+		$(TMPDIR)/root/opt/smartdc/ufds/
+	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
+	@rm -rf $(TMPDIR)
+
+.PHONY: publish
+publish: release
+	@if [[ -z "$(BITS_DIR)" ]]; then \
+		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
+		exit 1; \
+	fi
+	mkdir -p $(BITS_DIR)/ufds
+	cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/ufds/$(RELEASE_TARBALL)
+
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.node.targ

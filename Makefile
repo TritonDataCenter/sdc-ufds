@@ -75,6 +75,8 @@ $(NODEUNIT): | $(NPM_EXEC)
 test: $(NODEUNIT)
 	$(NODEUNIT) test/*.test.js --reporter tap
 
+.PHONY: pkg
+pkg:   # NOOP
 
 .PHONY: release
 release: all $(SMF_MANIFESTS)

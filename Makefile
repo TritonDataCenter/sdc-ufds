@@ -65,7 +65,7 @@ PATH	:= $(NODE_INSTALL)/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) | $(TAP) $(REPO_DEPS)
+all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS)
 	$(NPM) install
 
 $(NODEUNIT): | $(NPM_EXEC)

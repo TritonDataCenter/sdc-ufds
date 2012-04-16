@@ -64,6 +64,7 @@ function Machine() {
       nics: 0,
       internalmetadata: 1,
       customermetadata: 1,
+      tags: 1,
       delegatedataset: 1,
       disks: 0,
       vcpus: 1,

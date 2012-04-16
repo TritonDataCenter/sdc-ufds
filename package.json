@@ -21,6 +21,7 @@
         "retry": "0.6.0"
     },
     "devDependencies": {
-        "nodeunit": "0.7.4"
+        "nodeunit": "0.7.4",
+        "node.extend": "1.0.0"
     }
 }

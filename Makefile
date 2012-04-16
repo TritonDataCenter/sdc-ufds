@@ -59,7 +59,7 @@ TMPDIR                  := /tmp/$(STAMP)
 #
 # Env vars
 #
-PATH	:= $(NODE_INSTALL)/bin:${PATH}
+PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 
 #
 # Repo-specific targets

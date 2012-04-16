@@ -76,6 +76,7 @@ test: $(NODEUNIT)
 	$(NODEUNIT) test/add.test.js --reporter tap
 	$(NODEUNIT) test/bind.test.js --reporter tap
 	$(NODEUNIT) test/compare.test.js --reporter tap
+	$(NODEUNIT) test/del.test.js --reporter tap
 
 .PHONY: pkg
 pkg: all

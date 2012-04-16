@@ -73,7 +73,9 @@ $(NODEUNIT): | $(NPM_EXEC)
 
 .PHONY: test
 test: $(NODEUNIT)
-	$(NODEUNIT) test/*.test.js --reporter tap
+	$(NODEUNIT) test/add.test.js --reporter tap
+	$(NODEUNIT) test/bind.test.js --reporter tap
+	$(NODEUNIT) test/compare.test.js --reporter tap
 
 .PHONY: pkg
 pkg: all

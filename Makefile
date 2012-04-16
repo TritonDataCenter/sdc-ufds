@@ -91,8 +91,12 @@ del_test: $(NODEUNIT)
 mod_test: $(NODEUNIT)
 	$(NODEUNIT) test/mod.test.js --reporter tap
 
+.PHONY: search_test
+search_test: $(NODEUNIT)
+	$(NODEUNIT) test/search.test.js --reporter tap
+
 .PHONY: test
-test: add_test bind_test compare_test del_test mod_test
+test: add_test bind_test compare_test del_test mod_test search_test
 
 .PHONY: pkg
 pkg: all

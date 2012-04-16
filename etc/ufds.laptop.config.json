@@ -25,6 +25,7 @@
         "o=smartdc": {
             "blacklistRDN": "cn=blacklist",
             "bucket": "ufds_o_smartdc",
+            "administratorsGroupRDN": "cn=operators, ou=groups",
             "schema": {
                 "login": {
                     "type": "string",

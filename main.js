@@ -273,11 +273,13 @@ moray.putBucket(clog.bucket, {schema: clog.schema}, function (clogErr) {
     if (clogErr)
         errorAndExit(clogErr, 'Unable to set changelog bucket');
 
-    server.search('cn=changelog', be.search(function (req, res, next) {
-        req.bucket = clog.bucket;
-        req.suffix = 'cn=changelog';
-        return next();
-    }));
+    server.search('cn=changelog',
+                  function _setup(req, res, next) {
+                      req.bucket = clog.bucket;
+                      req.suffix = 'cn=changelog';
+                      return next();
+                  },
+                  be.search());
 
     return Object.keys(trees).forEach(function (t) {
         LOG.debug({
@@ -307,12 +309,12 @@ moray.putBucket(clog.bucket, {schema: clog.schema}, function (clogErr) {
                 return next();
             }
 
-            server.add(t, be.add(_setup));
-            server.bind(t, be.bind(_setup));
-            server.compare(t, be.compare(_setup));
-            server.del(t, be.del(_setup));
-            server.modify(t, be.modify(_setup));
-            server.search(t, be.search(_setup));
+            server.add(t, _setup, be.add());
+            server.bind(t, _setup, be.bind());
+            server.compare(t, _setup, be.compare());
+            server.del(t, _setup, be.del());
+            server.modify(t, _setup, be.modify());
+            server.search(t, _setup, be.search());
 
             if (++finished < Object.keys(trees).length)
                 return false;

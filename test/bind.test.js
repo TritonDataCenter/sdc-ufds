@@ -50,8 +50,8 @@ test('add fixtures', function (t) {
             userpassword: 'secret',
             objectclass: 'sdcperson'
         };
-        CLIENT.add(USER_DN, user, function (err) {
-            t.ifError(err);
+        CLIENT.add(USER_DN, user, function (err2) {
+            t.ifError(err2);
             t.done();
         });
     });
@@ -59,7 +59,7 @@ test('add fixtures', function (t) {
 
 
 test('bind invalid password', function (t) {
-    CLIENT.bind (USER_DN, 'secre', function (err) {
+    CLIENT.bind(USER_DN, 'secre', function (err) {
         t.ok(err);
         t.equal(err.name, 'InvalidCredentialsError');
         t.done();

@@ -33,7 +33,7 @@ var USER = {
 ///--- Helpers
 
 function get(callback) {
-    CLIENT.search(USER_DN, '(objectclass=*)', function (err, res) {
+    return CLIENT.search(USER_DN, '(objectclass=*)', function (err, res) {
         if (err)
             return callback(err);
 
@@ -52,7 +52,7 @@ function get(callback) {
             return callback(err2);
         });
 
-        res.on('end', function (result) {
+        return res.on('end', function (result) {
             return callback(null, obj);
         });
     });
@@ -80,8 +80,8 @@ test('add fixtures', function (t) {
     CLIENT.add(SUFFIX, suffix, function (err) {
         t.ifError(err);
 
-        CLIENT.add(USER_DN, USER, function (err) {
-            t.ifError(err);
+        CLIENT.add(USER_DN, USER, function (err2) {
+            t.ifError(err2);
             t.done();
         });
     });
@@ -98,8 +98,8 @@ test('modify add ok', function (t) {
     CLIENT.modify(USER_DN, change, function (err) {
         t.ifError(err);
 
-        get(function (err, entry) {
-            t.ifError(err);
+        get(function (err2, entry) {
+            t.ifError(err2);
             t.ok(entry);
             t.deepEqual(extend(USER, change.modification), entry);
             t.done();
@@ -118,8 +118,8 @@ test('modify replace ok', function (t) {
     CLIENT.modify(USER_DN, change, function (err) {
         t.ifError(err);
 
-        get(function (err, entry) {
-            t.ifError(err);
+        get(function (err2, entry) {
+            t.ifError(err2);
             t.ok(entry);
             t.deepEqual(extend(USER, change.modification), entry);
             t.done();
@@ -138,8 +138,8 @@ test('modify delete ok', function (t) {
     CLIENT.modify(USER_DN, change, function (err) {
         t.ifError(err);
 
-        get(function (err, entry) {
-            t.ifError(err);
+        get(function (err2, entry) {
+            t.ifError(err2);
             t.ok(entry);
             t.deepEqual(USER, entry);
             t.done();
@@ -159,7 +159,7 @@ test('modify non-existent entry', function (t) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
         t.done();
-  });
+    });
 });
 
 

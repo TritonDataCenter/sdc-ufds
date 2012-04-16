@@ -60,17 +60,17 @@ test('add suffix', function (t) {
 });
 
 
-test('add child missing parent', function(t) {
+test('add child missing parent', function (t) {
     var entry = {
         cn: 'unit',
         objectClass: 'organization',
         o: 'test'
     };
-    CLIENT.add('cn=fail, ou=fail, ' + SUFFIX, entry, function(err) {
+    CLIENT.add('cn=fail, ou=fail, ' + SUFFIX, entry, function (err) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
         t.done();
-  });
+    });
 });
 
 

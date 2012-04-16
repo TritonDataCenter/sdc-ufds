@@ -71,13 +71,28 @@ all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS)
 $(NODEUNIT): | $(NPM_EXEC)
 	$(NPM) install
 
-.PHONY: test
-test: $(NODEUNIT)
+.PHONY: add_test
+add_test: $(NODEUNIT)
 	$(NODEUNIT) test/add.test.js --reporter tap
+
+.PHONY: bind_test
+bind_test: $(NODEUNIT)
 	$(NODEUNIT) test/bind.test.js --reporter tap
+
+.PHONY: compare_test
+compare_test: $(NODEUNIT)
 	$(NODEUNIT) test/compare.test.js --reporter tap
+
+.PHONY: del_test
+del_test: $(NODEUNIT)
 	$(NODEUNIT) test/del.test.js --reporter tap
+
+.PHONY: mod_test
+mod_test: $(NODEUNIT)
 	$(NODEUNIT) test/mod.test.js --reporter tap
+
+.PHONY: test
+test: add_test bind_test compare_test del_test mod_test
 
 .PHONY: pkg
 pkg: all

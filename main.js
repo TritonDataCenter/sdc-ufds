@@ -302,19 +302,19 @@ moray.putBucket(clog.bucket, {schema: clog.schema}, function (clogErr) {
             if (err)
                 errorAndExit(err, 'Unable to set Moray bucket');
 
-            function _setup(req, res, next) {
+            function __setup(req, res, next) {
                 req.bucket = trees[t].bucket;
                 req.suffix = t;
 
                 return next();
             }
 
-            server.add(t, _setup, be.add());
-            server.bind(t, _setup, be.bind());
-            server.compare(t, _setup, be.compare());
-            server.del(t, _setup, be.del());
-            server.modify(t, _setup, be.modify());
-            server.search(t, _setup, be.search());
+            server.add(t, __setup, be.add());
+            server.bind(t, __setup, be.bind());
+            server.compare(t, __setup, be.compare());
+            server.del(t, __setup, be.del());
+            server.modify(t, __setup, be.modify());
+            server.search(t, __setup, be.search());
 
             if (++finished < Object.keys(trees).length)
                 return false;

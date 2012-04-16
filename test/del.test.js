@@ -47,10 +47,10 @@ test('add fixtures', function (t) {
         for (var i = 0; i < 2; i++) {
             var entry = {
                 ou: 'child' + i,
-                objectclass: 'organizationalunit',
+                objectclass: 'organizationalunit'
             };
-            CLIENT.add('ou=child' + i + ',' + SUFFIX, entry, function (err) {
-                t.ifError(err);
+            CLIENT.add('ou=child' + i + ',' + SUFFIX, entry, function (err2) {
+                t.ifError(err2);
 
                 if (++finished === 2)
                     t.done();

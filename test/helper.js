@@ -65,7 +65,7 @@ module.exports = {
 
             var dn = process.env.UFDS_BIND_DN || 'cn=root';
             var pw = process.env.UFDS_BIND_PW || 'secret';
-            client.bind(dn, pw, function (err) {
+            return client.bind(dn, pw, function (err) {
                 if (err)
                     return callback(err);
 
@@ -104,8 +104,7 @@ module.exports = {
             keys.forEach(function (k) {
                 client.del(bucket, k, function (err) {
                     assert.ifError(err);
-                    if (++finished === keys.length)
-                        return callback(null);
+                    return (++finished === keys.length ? callback() : false);
                 });
             });
         });

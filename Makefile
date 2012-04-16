@@ -76,10 +76,10 @@ test: $(NODEUNIT)
 	$(NODEUNIT) test/*.test.js --reporter tap
 
 .PHONY: pkg
-pkg:   # NOOP
+pkg: all
 
 .PHONY: release
-release: all $(SMF_MANIFESTS)
+release: pkg
 	@echo "Building $(RELEASE_TARBALL)"
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds
 	@mkdir -p $(TMPDIR)/site

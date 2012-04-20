@@ -11,29 +11,22 @@ var Validator = require('../lib/schema/validator');
 
 ///--- API
 
-function DataCenter() {
+function Config() {
     Validator.call(this, {
-        name: 'datacenter',
+        name: 'config',
         required: {
-            datacenter: 1
+            svc: 1
         },
         optional: {
-            company: 1,
-            address: 1
+            cfg: 0
         }
     });
 }
-util.inherits(DataCenter, Validator);
+util.inherits(Config, Validator);
 
 
-DataCenter.prototype.validate = function validate(entry, callback) {
-    var attrs = entry.attributes;
+Config.prototype.validate = function validate(entry, callback) {
     var errors = [];
-
-    if (attrs.datacenter[0].length > 255) {
-        errors.push('datacenter name: ' + attrs.datacenter[0] + ' is invalid');
-    }
-    // Add validation for optional fields?
 
     if (errors.length)
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
@@ -47,7 +40,7 @@ DataCenter.prototype.validate = function validate(entry, callback) {
 module.exports = {
 
     createInstance: function createInstance() {
-        return new DataCenter();
+        return new Config();
     }
 
 };

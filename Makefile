@@ -23,7 +23,8 @@ NODEUNIT	:= ./node_modules/.bin/nodeunit
 # Files
 #
 DOC_FILES	 = index.restdown
-JS_FILES	:= $(shell ls *.js) $(shell find lib capi test -name '*.js')
+JS_FILES	:= $(shell ls *.js) \
+                   $(shell find lib capi schema test -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)

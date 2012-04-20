@@ -8,16 +8,16 @@ var Validator = require('../lib/schema/validator');
 
 ///--- API
 
-function Organization() {
+function Referral() {
     Validator.call(this, {
-        name: 'organization',
+        name: 'referral',
         required: {
-            o: 1
+            ref: 1
         },
         strict: true
     });
 }
-util.inherits(Organization, Validator);
+util.inherits(Referral, Validator);
 
 
 
@@ -25,6 +25,6 @@ util.inherits(Organization, Validator);
 
 module.exports = {
     createInstance: function createInstance() {
-        return new Organization();
+        return new Referral();
     }
 };

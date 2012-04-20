@@ -100,6 +100,7 @@ release: all docs
 	@mkdir -p $(TMPDIR)/site
 	@touch $(TMPDIR)/site/.do-not-delete-me
 	@mkdir -p $(TMPDIR)/root
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds/etc
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds/ssl
 	cp -r   $(ROOT)/build \
                 $(ROOT)/capi \
@@ -112,6 +113,7 @@ release: all docs
 		$(ROOT)/schema \
 		$(ROOT)/smf \
 		$(TMPDIR)/root/opt/smartdc/ufds/
+	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(TMPDIR)
 

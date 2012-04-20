@@ -1,11 +1,10 @@
-// Copyright 2011 Joyent, Inc.  All rights reserved.
+// Copyright 2012 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
-
+var sprintf = require('util').format;
 
 var ldap = require('ldapjs');
 var restify = require('restify');
-var sprintf = require('sprintf').sprintf;
 var uuid = require('node-uuid');
 
 var util = require('./util');
@@ -17,57 +16,58 @@ var util = require('./util');
 var MD_DN = 'metadata=%s, %s';
 
 var Change = ldap.Change;
-var log = restify.log;
 
 
 
 ///--- Helpers
 
 function loadMetadata(req, notFoundOk, callback) {
-  if (typeof(notFoundOk) !== 'boolean') {
-    callback = notFoundOk;
-    notFoundOk = false;
-  }
-  var base = sprintf(MD_DN, req.uriParams.appkey, req.customer.dn.toString());
-  var opts = {
-    filter: '(objectclass=capimetadata)',
-    scope: 'base'
-  }
-  req.ldap.search(base, opts, function(err, _res) {
-    var done = false;
-    if (err) {
-      done = true;
-      return callback(new restify.InternalError(err.toString()));
+    if (typeof (notFoundOk) !== 'boolean') {
+        callback = notFoundOk;
+        notFoundOk = false;
     }
+    var base = sprintf(MD_DN, req.params.appkey, req.customer.dn.toString());
+    var opts = {
+        filter: '(objectclass=capimetadata)',
+        scope: 'base'
+    };
+    req.ldap.search(base, opts, function (err, _res) {
+        var done = false;
+        if (err) {
+            done = true;
+            return callback(err);
+        }
 
-    var entry = {};
-    _res.on('error', function(err) {
-      if (done)
-        return;
-      done = true;
-      if (err instanceof ldap.NoSuchObjectError) {
-        if (notFoundOk)
-          return callback(null);
+        var entry = {};
+        _res.on('error', function (err2) {
+            if (done)
+                return;
+            done = true;
+            if (err2 instanceof ldap.NoSuchObjectError) {
+                if (notFoundOk)
+                    return callback();
 
-        return callback(new restify.ResourceNotFoundError(req.url));
-      }
+                return callback(new restify.ResourceNotFoundError(req.url));
+            }
 
-      return callback(new restify.InternalError(err.toString()));
+            return callback(err);
+        });
+
+        _res.on('searchEntry', function (_entry) {
+            entry = _entry.toObject();
+            // clear out the stuff we don't need
+            delete entry.dn;
+            delete entry.cn;
+            delete entry.objectclass;
+        });
+
+        _res.on('end', function (result) {
+            if (done)
+                return;
+            done = true;
+            return callback(null, entry);
+        });
     });
-    _res.on('searchEntry', function(_entry) {
-      entry = _entry.toObject();
-      // clear out the stuff we don't need
-      delete entry.dn;
-      delete entry.cn;
-      delete entry.objectclass;
-    });
-    _res.on('end', function(result) {
-      if (done)
-        return;
-      done = true;
-      return callback(null, entry);
-    });
-  });
 }
 
 
@@ -76,135 +76,144 @@ function loadMetadata(req, notFoundOk, callback) {
 
 module.exports = {
 
-  list: function(req, res, next) {
-    assert.ok(req.customer);
-    assert.ok(req.ldap);
+    list: function list(req, res, next) {
+        assert.ok(req.customer);
+        assert.ok(req.ldap);
 
-    log.debug('GetMetadataKeys %s/%s entered',
-              req.uriParams.uuid, req.uriParams.appkey);
+        var log = req.log;
 
-    return loadMetadata(req, function(err, entry) {
-      if (err)
-        return next(err);
+        log.debug('GetMetadataKeys %s/%s entered',
+                  req.params.uuid, req.params.appkey);
 
-      var keys = Object.keys(entry);
+        return loadMetadata(req, function (err, entry) {
+            if (err)
+                return next(err);
 
-      if (req.xml)
-        keys = { keys: { key: keys } };
+            var keys = Object.keys(entry);
 
-      log.debug('GetMetadataKeys %s/%s -> %o',
-                req.uriParams.uuid, req.uriParams.appkey, keys);
-      res.send(200, keys);
-      return next();
-    });
-  },
+            if (req.xml)
+                keys = { keys: { key: keys } };
 
-  put: function(req, res, next) {
-    assert.ok(req.ldap);
-
-    var dn = sprintf(MD_DN, req.uriParams.appkey, req.customer.dn.toString());
-
-    log.debug('PutMetadataKey %s/%s/%s entered',
-              req.uriParams.uuid, req.uriParams.appkey, req.uriParams.key);
-    return loadMetadata(req, true, function(err, entry) {
-      if (err)
-        return next(err);
-
-      if (!entry) {
-        log.debug('PutMetadataKey %s/%s/%s: need to add', req.uriParams.uuid,
-                  req.uriParams.appkey, req.uriParams.key);
-        entry = {
-          cn: [req.uriParams.appkey],
-          objectclass: ['capimetadata']
-        };
-        entry[req.uriParams.key] = [req.body];
-        return req.ldap.add(dn, entry, function(err) {
-          if (err)
-            return next(new restify.InternalError(err.toString()));
-
-          log.debug('PutMetadataKey %s/%s/%s: added', req.uriParams.uuid,
-                    req.uriParams.appkey, req.uriParams.key);
-          res.send(201);
-          return next();
+            log.debug('GetMetadataKeys %s/%s -> %j',
+                      req.params.uuid, req.params.appkey, keys);
+            res.send(200, keys);
+            return next();
         });
-      }
+    },
 
-      var mod = {};
-      mod[req.uriParams.key] = [req.body];
-      var change = new Change({
-        type: 'replace',
-        modification: mod
-      });
+    put: function put(req, res, next) {
+        assert.ok(req.ldap);
 
-      log.debug('PutMetadataKey %s/%s/%s: updating', req.uriParams.uuid,
-                req.uriParams.appkey, req.uriParams.key);
-      return req.ldap.modify(dn, change, function(err) {
-        if (err)
-          return next(new restify.InternalError(err.toString()));
+        var dn = sprintf(MD_DN, req.params.appkey, req.customer.dn.toString());
+        var log = req.log;
 
-        log.debug('PutMetadataKey %s/%s/%s: updated', req.uriParams.uuid,
-                  req.uriParams.appkey, req.uriParams.key);
-        res.send(entry[req.uriParams.key] ? 200 : 201);
-        return next();
-      });
-    });
-  },
+        log.debug('PutMetadataKey %s/%s/%s entered',
+                  req.params.uuid, req.params.appkey, req.params.key);
+        return loadMetadata(req, true, function (err, entry) {
+            if (err)
+                return next(err);
 
-  get: function(req, res, next) {
-    assert.ok(req.ldap);
+            if (!entry) {
+                log.debug('PutMetadataKey %s/%s/%s: need to add',
+                          req.params.uuid, req.params.appkey, req.params.key);
+                entry = {
+                    cn: [req.params.appkey],
+                    objectclass: ['capimetadata']
+                };
+                entry[req.params.key] = [req.body];
+                return req.ldap.add(dn, entry, function (err2) {
+                    if (err2)
+                        return next(err2);
 
-    log.debug('GetMetadataKey %s/%s/%s entered',
-              req.uriParams.uuid, req.uriParams.appkey, req.uriParams.key);
-    return loadMetadata(req, function(err, entry) {
-      if (err)
-        return next(err);
+                    log.debug('PutMetadataKey %s/%s/%s: added', req.params.uuid,
+                              req.params.appkey, req.params.key);
+                    res.send(201);
+                    return next();
+                });
+            }
 
-      if (!entry[req.uriParams.key])
-        return next(new restify.ResourceNotFoundError(req.uriParams.key));
+            var mod = {};
+            mod[req.params.key] = [req.body];
+            var change = new Change({
+                type: 'replace',
+                modification: mod
+            });
 
-      // force this on the client, like a true CAPI would!
-      res._accept = 'text/plain';
-      var value = entry[req.uriParams.key];
-      log.debug('GetMetadataKey %s/%s/%s -> %s',
-                req.uriParams.uuid, req.uriParams.appkey, req.uriParams.key,
-                value);
-      res.send(200, value);
-      return next();
-    });
-  },
+            log.debug('PutMetadataKey %s/%s/%s: updating', req.params.uuid,
+                      req.params.appkey, req.params.key);
+            return req.ldap.modify(dn, change, function (err2) {
+                if (err2)
+                    return next(err2);
 
-  del: function(req, res, next) {
-    assert.ok(req.customer);
-    assert.ok(req.ldap);
+                log.debug('PutMetadataKey %s/%s/%s: updated', req.params.uuid,
+                          req.params.appkey, req.params.key);
+                res.send(entry[req.params.key] ? 200 : 201);
+                return next();
+            });
+        });
+    },
 
-    log.debug('DeleteMetadataKey %s/%s/%s entered',
-              req.uriParams.uuid, req.uriParams.appkey, req.uriParams.key);
+    get: function get(req, res, next) {
+        assert.ok(req.ldap);
 
-    return loadMetadata(req, function(err, entry) {
-      if (err)
-        return next(err);
+        var log = req.log;
 
-      if (!entry[req.uriParams.key])
-        return next(new restify.ResourceNotFoundError(req.uriParams.key));
+        log.debug('GetMetadataKey %s/%s/%s entered',
+                  req.params.uuid, req.params.appkey, req.params.key);
+        return loadMetadata(req, function (err, entry) {
+            if (err)
+                return next(err);
 
-      var mod = {};
-      mod[req.uriParams.key] = entry[req.uriParams.key];
-      var change = new Change({
-        type: 'delete',
-        modification: mod
-      });
+            if (!entry[req.params.key])
+                return next(new restify.ResourceNotFoundError(req.params.key));
 
-      var dn = sprintf(MD_DN, req.uriParams.appkey, req.customer.dn.toString());
-      log.debug('DeletMetadataKey %s: deleting %s', dn, req.uriParams.key);
-      return req.ldap.modify(dn, change, function(err) {
-        if (err)
-          return next(new restify.InternalError(err.toString()));
+            // force this on the client, like a true CAPI would!
+            res._accept = 'text/plain';
+            var value = entry[req.params.key];
+            log.debug('GetMetadataKey %s/%s/%s -> %s',
+                      req.params.uuid, req.params.appkey, req.params.key,
+                      value);
+            res.send(200, value);
+            return next();
+        });
+    },
 
-        log.debug('DeleteMetadataKey %s deleted %s', dn, req.uriParams.key);
-        res.send(200);
-        return next();
-      });
-    });
-  },
+    del: function del(req, res, next) {
+        assert.ok(req.customer);
+        assert.ok(req.ldap);
+
+        var log = req.log;
+
+        log.debug('DeleteMetadataKey %s/%s/%s entered',
+                  req.params.uuid, req.params.appkey, req.params.key);
+
+        return loadMetadata(req, function (err, entry) {
+            if (err)
+                return next(err);
+
+            if (!entry[req.params.key])
+                return next(new restify.ResourceNotFoundError(req.params.key));
+
+            var mod = {};
+            mod[req.params.key] = entry[req.params.key];
+            var change = new Change({
+                type: 'delete',
+                modification: mod
+            });
+
+            var dn = sprintf(MD_DN, req.params.appkey,
+                             req.customer.dn.toString());
+            log.debug('DeletMetadataKey %s: deleting %s', dn, req.params.key);
+            return req.ldap.modify(dn, change, function (err2) {
+                if (err2)
+                    return next(err2);
+
+                log.debug('DeleteMetadataKey %s deleted %s', dn,
+                          req.params.key);
+                res.send(200);
+                return next();
+            });
+        });
+    }
 
 };

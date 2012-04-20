@@ -1,11 +1,11 @@
-// Copyright 2011 Joyent, Inc.  All rights reserved.
+// Copyright 2012 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
+var sprintf = require('util').format;
 
 
 var ldap = require('ldapjs');
 var restify = require('restify');
-var sprintf = require('sprintf').sprintf;
 var uuid = require('node-uuid');
 
 
@@ -15,62 +15,59 @@ var uuid = require('node-uuid');
 var LIMIT_DN = 'dclimit=%s, %s';
 
 var Change = ldap.Change;
-var log = restify.log;
 
 
 
 ///--- Helpers
 
 function loadLimits(req, callback) {
-  var opts = {
-    filter: '(objectclass=capilimit)',
-    scope: 'one'
-  }
-  var base = req.customer.dn.toString();
-  return req.ldap.search(base, opts, function(err, res) {
-    var done = false;
-    if (err) {
-      done = true;
-      return callback(new restify.InternalError(err.toString()));
-    }
+    var opts = {
+        filter: '(objectclass=capilimit)',
+        scope: 'one'
+    };
+    var base = req.customer.dn.toString();
+    return req.ldap.search(base, opts, function (err, res) {
+        var done = false;
+        if (err) {
+            done = true;
+            return callback(err);
+        }
 
-    var entries = [];
-    res.on('error', function(err) {
-      if (done)
-        return;
-      done = true;
-      if (err instanceof ldap.NoSuchObjectError) {
-        if (notFoundOk)
-          return callback(null);
+        var entries = [];
+        res.on('error', function (err2) {
+            if (done)
+                return;
+            done = true;
+            if (err2 instanceof ldap.NoSuchObjectError)
+                return callback(new restify.ResourceNotFoundError(req.url));
 
-        return callback(new restify.ResourceNotFoundError(req.url));
-      }
-
-      return callback(new restify.InternalError(err.toString()));
-    });
-    res.on('searchEntry', function(entry) {
-      var e = entry.toObject();
-
-      delete e.dn;
-      delete e.objectclass;
-      Object.keys(e).forEach(function(k) {
-        if (k === 'datacenter' || /^_.*/.test(k))
-          return;
-
-        entries.push({
-          data_center: e.datacenter,
-          zone_type: k,
-          limit: parseInt(e[k], 10)
+            return callback(err2);
         });
-      });
+
+        res.on('searchEntry', function (entry) {
+            var e = entry.toObject();
+
+            delete e.dn;
+            delete e.objectclass;
+            Object.keys(e).forEach(function (k) {
+                /* JSSTYLED */
+                if (k === 'datacenter' || /^_.*/.test(k))
+                    return;
+
+                entries.push({
+                    data_center: e.datacenter,
+                    zone_type: k,
+                    limit: parseInt(e[k], 10)
+                });
+            });
+        });
+        res.on('end', function (result) {
+            if (done)
+                return;
+            done = true;
+            return callback(null, entries);
+        });
     });
-    res.on('end', function(result) {
-      if (done)
-        return;
-      done = true;
-      return callback(null, entries);
-    });
-  });
 }
 
 
@@ -80,115 +77,121 @@ function loadLimits(req, callback) {
 
 module.exports = {
 
-  list: function(req, res, next) {
-    assert.ok(req.customer);
-    assert.ok(req.ldap);
+    list: function list(req, res, next) {
+        assert.ok(req.customer);
+        assert.ok(req.ldap);
 
-    log.debug('ListLimits %s/%s entered', req.uriParams.uuid);
+        var log = req.log;
 
-    return loadLimits(req, function(err, entries) {
-      if (err)
-        return next(err);
+        log.debug('ListLimits %s/%s entered', req.params.uuid);
 
-      if (req.xml)
-        entries = { limits: { limit: entries } };
+        return loadLimits(req, function (err, entries) {
+            if (err)
+                return next(err);
 
-      log.debug('ListLimits %s/%s -> %o', req.uriParams.uuid, entries);
-      res.send(200, entries);
-      return next();
-    });
-  },
+            if (req.xml)
+                entries = { limits: { limit: entries } };
 
-  put: function(req, res, next) {
-    assert.ok(req.customer);
-    assert.ok(req.ldap);
-
-    log.debug('PutLimit /%s/%s/%s entered', req.uriParams.uuid,
-              req.uriParams.dc, req.uriParams.dataset);
-
-    var dn = sprintf(LIMIT_DN, req.uriParams.dc, req.customer.dn.toString());
-    return loadLimits(req, function(err, entries) {
-      if (err)
-        return next(err);
-
-      var exists = false;
-      entries.forEach(function(e) {
-        if (e.data_center === req.uriParams.dc)
-          exists = e;
-      });
-
-      if (exists) {
-        var mod = {};
-        mod[req.uriParams.dataset] = req.body;
-        var change = new Change({
-          type: 'replace',
-          modification: mod
+            log.debug('ListLimits %s/%s -> %o', req.params.uuid, entries);
+            res.send(200, entries);
+            return next();
         });
-        return req.ldap.modify(dn, change, function(err) {
-          if (err)
-            return next(new restify.InternalError(err.message));
+    },
 
-          log.debug('PutLimit %s modified -> %s', dn, req.body);
-          res.send(200);
-          return next();
+    put: function put(req, res, next) {
+        assert.ok(req.customer);
+        assert.ok(req.ldap);
+
+        var log = req.log;
+
+        log.debug('PutLimit /%s/%s/%s entered', req.params.uuid,
+                  req.params.dc, req.params.dataset);
+
+        var dn = sprintf(LIMIT_DN, req.params.dc, req.customer.dn.toString());
+        return loadLimits(req, function (err, entries) {
+            if (err)
+                return next(err);
+
+            var exists = false;
+            entries.forEach(function (e) {
+                if (e.data_center === req.params.dc)
+                    exists = e;
+            });
+
+            if (exists) {
+                var mod = {};
+                mod[req.params.dataset] = req.body;
+                var change = new Change({
+                    type: 'replace',
+                    modification: mod
+                });
+                return req.ldap.modify(dn, change, function (err2) {
+                    if (err2)
+                        return next(err2);
+
+                    log.debug('PutLimit %s modified -> %s', dn, req.body);
+                    res.send(200);
+                    return next();
+                });
+            }
+
+            var entry = {
+                datacenter: req.params.dc,
+                objectclass: 'capilimit'
+            };
+            entry[req.params.dataset] = req.body;
+            return req.ldap.add(dn, entry, function (err2) {
+                if (err2)
+                    return next(err2);
+
+                log.debug('PutLimit %s created -> %s', dn, req.body);
+                res.send(201);
+                return next();
+            });
         });
-      }
-
-      var entry = {
-        datacenter: req.uriParams.dc,
-        objectclass: 'capilimit'
-      };
-      entry[req.uriParams.dataset] = req.body;
-      return req.ldap.add(dn, entry, function(err) {
-        if (err)
-          return next(new restify.InternalError(err.message));
-
-        log.debug('PutLimit %s created -> %s', dn, req.body);
-        res.send(201);
-        return next();
-      });
-    });
-  },
+    },
 
 
-  del: function(req, res, next) {
-    assert.ok(req.customer);
-    assert.ok(req.ldap);
+    del: function del(req, res, next) {
+        assert.ok(req.customer);
+        assert.ok(req.ldap);
 
-    log.debug('DeleteLimit %s/%s/%s entered',
-              req.uriParams.uuid, req.uriParams.dc, req.uriParams.dataset);
+        var log = req.log;
 
-    var dn = sprintf(LIMIT_DN, req.uriParams.dc, req.customer.dn.toString());
-    return loadLimits(req, function(err, entries) {
-      if (err)
-        return next(err);
+        log.debug('DeleteLimit %s/%s/%s entered',
+                  req.params.uuid, req.params.dc, req.params.dataset);
 
-      var exists = false;
-      entries.forEach(function(e) {
-        if (e.data_center === req.uriParams.dc &&
-            e.zone_type === req.uriParams.dataset)
-          exists = e;
-      });
+        var dn = sprintf(LIMIT_DN, req.params.dc, req.customer.dn.toString());
+        return loadLimits(req, function (err, entries) {
+            if (err)
+                return next(err);
 
-      if (!exists)
-        return next(new restify.ResourceNotFoundError(dn));
+            var exists = false;
+            entries.forEach(function (e) {
+                if (e.data_center === req.params.dc &&
+                    e.zone_type === req.params.dataset)
+                    exists = e;
+            });
 
-      console.log(exists);
-      var mod = {};
-      mod[req.uriParams.dataset] = exists.limit;
-      var change = new Change({
-        type: 'delete',
-        modification: mod
-      });
-      return req.ldap.modify(dn, change, function(err) {
-        if (err)
-          return next(new restify.InternalError(err.message));
+            if (!exists)
+                return next(new restify.ResourceNotFoundError(dn));
 
-        log.debug('DeleteLimit %s: %s deleted', dn, req.uriParams.dataset);
-        res.send(200);
-        return next();
-      });
-    });
-  }
+            console.log(exists);
+            var mod = {};
+            mod[req.params.dataset] = exists.limit;
+            var change = new Change({
+                type: 'delete',
+                modification: mod
+            });
+            return req.ldap.modify(dn, change, function (err2) {
+                if (err2)
+                    return next(err2);
+
+                log.debug('DeleteLimit %s: %s deleted', dn, req.params.dataset);
+                res.send(200);
+                return next();
+            });
+        });
+    }
 
 };

@@ -1,97 +1,136 @@
-NAME=ufds
+#
+# Copyright (c) 2012, Joyent, Inc. All rights reserved.
+#
+# Makefile: basic Makefile for template API service
+#
+# This Makefile is a template for new repos. It contains only repo-specific
+# logic and uses included makefiles to supply common targets (javascriptlint,
+# jsstyle, restdown, etc.), which are used by other repos as well. You may well
+# need to rewrite most of this file, but you shouldn't need to touch the
+# included makefiles.
+#
+# If you find yourself adding support for new targets that could be useful for
+# other projects too, you should add these to the original versions of the
+# included Makefiles (in eng.git) so that other teams can use them too.
+#
 
-ifeq ($(VERSION), "")
-	@echo "Use gmake"
-endif
+#
+# Tools
+#
+NODEUNIT	:= ./node_modules/.bin/nodeunit
 
-# Set path for MG builds
-PATH := /opt/node/0.4/bin:/opt/npm/1.0/bin:/opt/local/bin:/usr/bin
-SRC := $(shell pwd)
-TAR = tar
-UNAME := $(shell uname)
-ifeq ($(UNAME), SunOS)
-	TAR = gtar
-endif
+#
+# Files
+#
+DOC_FILES	 = index.restdown
+JS_FILES	:= $(shell ls *.js) \
+                   $(shell find lib capi schema test -name '*.js')
+JSL_CONF_NODE	 = tools/jsl.node.conf
+JSL_FILES_NODE   = $(JS_FILES)
+JSSTYLE_FILES	 = $(JS_FILES)
+JSSTYLE_FLAGS    = -f tools/jsstyle.conf
+SHRINKWRAP	 = npm-shrinkwrap.json
+SMF_MANIFESTS_IN = smf/manifests/ufds-master.xml.in \
+                   smf/manifests/ufds-capi.xml.in
 
-HAVE_GJSLINT := $(shell which gjslint >/dev/null && echo yes || echo no)
-NPM := npm_config_tar=$(TAR) npm
+CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 
-DOCPKGDIR = ./docs/pkg
-RESTDOWN = ./node_modules/.restdown/bin/restdown \
-	-b ./node_modules/.restdown/brand/ohthejoy \
-	-m ${DOCPKGDIR}
+include ./tools/mk/Makefile.defs
+include ./tools/mk/Makefile.node.defs
+include ./tools/mk/Makefile.node_deps.defs
+include ./tools/mk/Makefile.smf.defs
 
+#
+# Variables
+#
 
-ifeq ($(TIMESTAMP),)
-	TIMESTAMP=$(shell date -u "+%Y%m%dT%H%M%SZ")
-endif
+# Mountain Gorilla-spec'd versioning.
 
-UFDS_PUBLISH_VERSION := $(shell git symbolic-ref HEAD | \
-	awk -F / '{print $$3}')-$(TIMESTAMP)-g$(shell \
-	git describe --all --long | awk -F '-g' '{print $$NF}')
+ROOT                    := $(shell pwd)
+RELEASE_TARBALL         := ufds-pkg-$(STAMP).tar.bz2
+TMPDIR                  := /tmp/$(STAMP)
 
-UFDS_RELEASE_TARBALL=ufds-pkg-$(UFDS_PUBLISH_VERSION).tar.bz2
-LFDS_RELEASE_TARBALL=lfds-pkg-$(UFDS_PUBLISH_VERSION).tar.bz2
+#
+# Env vars
+#
+PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 
-# make pkg release publish is the convention set forth by CA.
-# we use pkg to run npm install, release is a no-op and publish gets run on the
-# build machine
-.PHONY:  dep lint test doc clean all pkg release publish
+#
+# Repo-specific targets
+#
+.PHONY: all
+all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS)
+	$(NPM) install
 
-all:: dep pkg doc
+$(NODEUNIT): | $(NPM_EXEC)
+	$(NPM) install
 
-node_modules/.npm.installed:
-	PATH=$(PATH) $(NPM) install --node-version=0.4.12
-	if [[ ! -d node_modules/.restdown ]]; then \
-		git clone git://github.com/trentm/restdown.git node_modules/.restdown; \
-	else \
-		(cd node_modules/.restdown && git fetch origin); \
-	fi
-	@(cd ./node_modules/.restdown && git checkout $(RESTDOWN_VERSION))
-	@touch ./node_modules/.npm.installed
+.PHONY: add_test
+add_test: $(NODEUNIT)
+	$(NODEUNIT) test/add.test.js --reporter tap
 
-dep:	./node_modules/.npm.installed
+.PHONY: bind_test
+bind_test: $(NODEUNIT)
+	$(NODEUNIT) test/bind.test.js --reporter tap
 
-gjslint:
-	gjslint --nojsdoc -r lib -r tst
+.PHONY: compare_test
+compare_test: $(NODEUNIT)
+	$(NODEUNIT) test/compare.test.js --reporter tap
 
-ifeq ($(HAVE_GJSLINT), yes)
-lint: gjslint
-else
-lint:
-	@echo "* * *"
-	@echo "* Warning: Cannot lint with gjslint. Install it from:"
-	@echo "*    http://code.google.com/closure/utilities/docs/linter_howto.html"
-	@echo "* * *"
-endif
+.PHONY: del_test
+del_test: $(NODEUNIT)
+	$(NODEUNIT) test/del.test.js --reporter tap
 
+.PHONY: mod_test
+mod_test: $(NODEUNIT)
+	$(NODEUNIT) test/mod.test.js --reporter tap
 
-doc: dep
-	@rm -rf ${DOCPKGDIR}/readme.html
-	@mkdir -p ${DOCPKGDIR}
-	${RESTDOWN} -m ${DOCPKGDIR} ./README
-	@rm README.json
-	@mv README.html ${DOCPKGDIR}/readme.html
-	(cd ${DOCPKGDIR} && $(TAR) -czf ${SRC}/${NAME}-docs-`git log -1 --pretty='format:%h'`.tar.gz *)
+.PHONY: search_test
+search_test: $(NODEUNIT)
+	$(NODEUNIT) test/search.test.js --reporter tap
 
+.PHONY: test
+test: add_test bind_test compare_test del_test mod_test search_test
 
-test: dep lint
-	$(NPM) test
+.PHONY: pkg
+pkg:
 
-pkg: dep
+.PHONY: release
+release: all docs
+	@echo "Building $(RELEASE_TARBALL)"
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds
+	@mkdir -p $(TMPDIR)/site
+	@touch $(TMPDIR)/site/.do-not-delete-me
+	@mkdir -p $(TMPDIR)/root
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds/etc
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds/ssl
+	cp -r   $(ROOT)/build \
+                $(ROOT)/capi \
+                $(ROOT)/capi.js \
+                $(ROOT)/data \
+		$(ROOT)/lib \
+		$(ROOT)/main.js \
+		$(ROOT)/node_modules \
+		$(ROOT)/package.json \
+		$(ROOT)/schema \
+		$(ROOT)/smf \
+		$(TMPDIR)/root/opt/smartdc/ufds/
+	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
+	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
+	@rm -rf $(TMPDIR)
 
-release:
-	TAR=$(TAR) bash package.sh $(UFDS_RELEASE_TARBALL) $(LFDS_RELEASE_TARBALL)
-
-publish:
+.PHONY: publish
+publish: release
 	@if [[ -z "$(BITS_DIR)" ]]; then \
 		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
 		exit 1; \
 	fi
 	mkdir -p $(BITS_DIR)/ufds
-	cp $(UFDS_RELEASE_TARBALL) $(BITS_DIR)/ufds/$(UFDS_RELEASE_TARBALL)
-	cp $(LFDS_RELEASE_TARBALL) $(BITS_DIR)/ufds/$(LFDS_RELEASE_TARBALL)
+	cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/ufds/$(RELEASE_TARBALL)
 
-clean:
-	@rm -fr ${DOCPKGDIR}/*.html ${DOCPKGDIR}/pkg/css \
-		node_modules *.log *.tar.gz lfds*.tar.bz2 ufds*.tar.bz2
+
+include ./tools/mk/Makefile.deps
+include ./tools/mk/Makefile.node.targ
+include ./tools/mk/Makefile.node_deps.targ
+include ./tools/mk/Makefile.smf.targ
+include ./tools/mk/Makefile.targ

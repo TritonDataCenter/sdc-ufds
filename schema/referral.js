@@ -9,13 +9,13 @@ var Validator = require('../lib/schema/validator');
 ///--- API
 
 function Referral() {
-  Validator.call(this, {
-    name: 'referral',
-    required: {
-      ref: 1
-    },
-    strict: true
-  });
+    Validator.call(this, {
+        name: 'referral',
+        required: {
+            ref: 1
+        },
+        strict: true
+    });
 }
 util.inherits(Referral, Validator);
 
@@ -24,7 +24,7 @@ util.inherits(Referral, Validator);
 ///--- Exports
 
 module.exports = {
-  createInstance: function() {
-    return new Referral();
-  }
+    createInstance: function createInstance() {
+        return new Referral();
+    }
 };

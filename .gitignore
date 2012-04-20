@@ -1,6 +1,8 @@
+bin
+build
 node_modules
 var/*
 *.tar.gz
 *.tar.bz2
 *.log
-
+smf/manifests/*.xml

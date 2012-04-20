@@ -1,13 +1,15 @@
-// Copyright 2011 Joyent, Inc.  All rights reserved.
+// Copyright 2012 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var fs = require('fs');
 var http = require('http');
+var path = require('path');
+var sprintf = require('util').format;
 
+var Logger = require('bunyan');
 var ldap = require('ldapjs');
 var nopt = require('nopt');
 var restify = require('restify');
-var sprintf = require('sprintf').sprintf;
 var uuid = require('node-uuid');
 
 var customers = require('./capi/customers');
@@ -22,28 +24,28 @@ var utils = require('./capi/util');
 ///--- Globals
 
 var client;
-var log = restify.log;
+var log;
 var server;
 
 var opts = {
-  'certificate': String,
-  'config': String,
-  'debug': Number,
-  'file': String,
-  'key': String,
-  'port': Number,
-  'ufds': String,
-  'help': Boolean
+    'certificate': String,
+    'config': String,
+    'debug': Boolean,
+    'file': String,
+    'key': String,
+    'port': Number,
+    'ufds': String,
+    'help': Boolean
 };
 
 var shortOpts = {
-  'c': ['--certiifcate'],
-  'd': ['--debug'],
-  'f': ['--file'],
-  'k': ['--key'],
-  'p': ['--port'],
-  'h': ['--help'],
-  'u': ['--ufds']
+    'c': ['--certiifcate'],
+    'd': ['--debug'],
+    'f': ['--file'],
+    'k': ['--key'],
+    'p': ['--port'],
+    'h': ['--help'],
+    'u': ['--ufds']
 };
 
 
@@ -51,40 +53,38 @@ var shortOpts = {
 ///--- Helpers
 
 function usage(code, message) {
-  var _opts = '';
-  Object.keys(shortOpts).forEach(function(k) {
-    var longOpt = shortOpts[k][0].replace('--', '');
-    var type = opts[longOpt].name || 'string';
-    if (type && type === 'boolean') type = '';
-    type = type.toLowerCase();
+    var _opts = '';
+    Object.keys(shortOpts).forEach(function (k) {
+        var longOpt = shortOpts[k][0].replace('--', '');
+        var type = opts[longOpt].name || 'string';
+        if (type && type === 'boolean') type = '';
+        type = type.toLowerCase();
 
-    _opts += ' [--' + longOpt + ' ' + type + ']';
-  });
-  _opts += ' dn attribute value(s)';
+        _opts += ' [--' + longOpt + ' ' + type + ']';
+    });
+    _opts += ' dn attribute value(s)';
 
-  var msg = (message ? message + '\n' : '') +
-    'usage: ' + path.basename(process.argv[1]) + _opts;
+    var msg = (message ? message + '\n' : '') +
+        'usage: ' + path.basename(process.argv[1]) + _opts;
 
-  process.stderr.write(msg + '\n');
-  process.exit(code);
+    process.stderr.write(msg + '\n');
+    process.exit(code);
 }
 
 
 function before(req, res, next) {
-  // Some sweet, sweet hacking!
-  var accept = req.headers.accept;
-  if (!accept || accept.search('application/json') === -1) {
-    res._accept = 'application/xml';
-    req.xml = true;
-  }
+    req.ldap = client;
 
-  if (/.*\.json$/.test(req.url)) {
-    res._accept = 'application/json';
-    req.xml = false;
-  }
+    res.sendError = function sendError(errors) {
+        if (req.xml) {
+            errors = { errors: { error: errors } };
+        } else {
+            errors = { errors: errors };
+        }
+        res.send(409, errors);
+    };
 
-  req.ldap = client;
-  return next();
+    return next();
 }
 
 
@@ -92,185 +92,154 @@ function before(req, res, next) {
 
 var parsed = nopt(opts, shortOpts, process.argv, 2);
 if (parsed.help)
-  usage(0);
-
-if (parsed.debug) {
-  if (parsed.debug > 1) {
-    log.level(log.Level.Trace);
-  } else {
-    log.level(log.Level.Debug);
-  }
-}
+    usage(0);
 
 if (process.env.PORT)
-  port = process.env.PORT;
+    parsed.port = process.env.PORT;
 
 if (!parsed.port)
-  parsed.port = 8080;
-
-try {
-  var cfg = fs.readFileSync((parsed.file || './cfg/config.json'), 'utf8');
-  config = JSON.parse(cfg);
-} catch (e) {
-  console.log(e.message);
-  process.exit(1);
-}
-
-server = restify.createServer({
-  serverName: 'CAPI',
-  accept: ['application/xml', 'application/json', 'text/plain'],
-  fullErrors: (parsed.debug && parsed.debug >= 3),
-  cert: parsed.certificate ? fs.readFileSync(parsed.certificate, 'ascii') : null,
-  key: parsed.key ? fs.readFileSync(parsed.key, 'ascii') : null,
-  formatError: function(res, e) {
-    e = { errors: [e.message] };
-    if (res._accept === 'application/xml')
-      e = { errors: { error: e } };
-    return e;
-  },
-  contentHandlers: {
-    'text/plain': function(obj) {
-      return {
-        body: obj + ''
-      };
-    }
-  },
-  contentWriters: {
-    'text/plain': function(obj) {
-      switch (typeof(obj)) {
-      case 'string':
-      case 'number':
-      case 'boolean':
-      case 'null':
-        return obj + '';
-      case 'object':
-      case 'function':
-        return JSON.stringify(obj);
-      }
-    }
-  }
-});
-
+    parsed.port = 8080;
 
 
 ///--- CAPI shim
 
-var loadBefore = [before, utils.loadCustomer];
+log = new Logger({
+    name: 'capi',
+    streams: [
+        {
+            level: (parsed.debug ? 'debug' : 'info'),
+            stream: process.stdout
+        }
+    ]
+});
+
+server = restify.createServer({
+    name: 'capi',
+    log: log
+});
+
+server.use(restify.acceptParser(server.acceptable));
+server.use(restify.dateParser());
+server.use(restify.queryParser());
+server.use(restify.bodyParser());
+
+server.on('after', restify.auditLogger({
+    body: true,
+    log: new Logger({
+        name: 'audit',
+        streams: [
+            {
+                level: 'info',
+                stream: process.stdout
+            }
+        ]
+    })
+}));
+
+server.use(before);
 
 // Show
-server.get('/customers', [before], customers.list, [log.w3c]);
-server.head('/customers', [before], customers.list, [log.w3c]);
-server.get('/customers.json', [before], customers.list, [log.w3c]);
-server.get('/customers.xml', [before], customers.list, [log.w3c]);
+server.get('/customers', customers.list);
+server.head('/customers', customers.list);
 
 // CreateCustomer
-server.post('/customers', [before], customers.create, [log.w3c]);
+server.post('/customers', customers.create);
 
 // UpdateCustomer
 server.put('/customers/:uuid',
-           loadBefore,
+           before,
+           utils.loadCustomer,
            customers.update,
            utils.loadCustomer,
            function respond(req, res, next) {
-             var customer = utils.translateCustomer(req.customer.toObject());
-             if (req.xml)
-               customer = { customer: customer };
-             res.send(200, customer);
-             return next();
-           },
-           [log.w3c]);
+               var customer = utils.translateCustomer(req.customer.toObject());
+               res.send(200, customer);
+               return next();
+           });
 
 // GetCustomer
-server.get('/customers/:uuid', loadBefore, customers.get, [log.w3c]);
-server.get('/customers/:uuid.json', loadBefore, customers.get, [log.w3c]);
-server.get('/customers/:uuid.xml', loadBefore, customers.get, [log.w3c]);
+server.get('/customers/:uuid', utils.loadCustomer, customers.get);
+server.head('/customers/:uuid', utils.loadCustomer, customers.get);
 
 // DeleteCustomer
-server.del('/customers/:uuid', [before], customers.del, [log.w3c]);
+server.del('/customers/:uuid', customers.del);
 
 // GetSalt
-server.get('/login/:login', [before], login.getSalt, [log.w3c]);
-server.get('/login/:login.json', [before], login.getSalt, [log.w3c]);
-server.get('/login/:login.xml', [before], login.getSalt, [log.w3c]);
+server.get('/login/:login', login.getSalt);
+server.head('/login/:login', login.getSalt);
 
 // Login
-server.post('/login', [before], login.login, [log.w3c]);
-server.post('/login.json', [before], login.login, [log.w3c]);
-server.post('/login.xml', [before], login.login, [log.w3c]);
+server.post('/login', login.login);
 
 // ForgotPassword
-server.post('/auth/forgot_password', [before], login.forgotPassword, [log.w3c]);
+server.post('/auth/forgot_password', login.forgotPassword);
+
+server.use(utils.loadCustomer);
 
 /// Metadata
-server.get('/auth/customers/:uuid/metadata/:appkey',
-           loadBefore, metadata.list, [log.w3c]);
-server.get('/auth/customers/:uuid/metadata/:appkey.json',
-           loadBefore, metadata.list, [log.w3c]);
-server.get('/auth/customers/:uuid/metadata/:appkey.xml',
-           loadBefore, metadata.list, [log.w3c]);
-server.put('/auth/customers/:uuid/metadata/:appkey/:key',
-           loadBefore, metadata.put, [log.w3c]);
-server.get('/auth/customers/:uuid/metadata/:appkey/:key',
-           loadBefore, metadata.get, [log.w3c]);
-server.del('/auth/customers/:uuid/metadata/:appkey/:key',
-           loadBefore, metadata.del, [log.w3c]);
+server.get('/auth/customers/:uuid/metadata/:appkey', metadata.list);
+server.put('/auth/customers/:uuid/metadata/:appkey/:key', metadata.put);
+server.get('/auth/customers/:uuid/metadata/:appkey/:key', metadata.get);
+server.del('/auth/customers/:uuid/metadata/:appkey/:key', metadata.del);
 
 /// Keys
-server.post('/customers/:uuid/keys', loadBefore, keys.post, [log.w3c]);
-server.get('/customers/:uuid/keys', loadBefore, keys.list, [log.w3c]);
-server.get('/customers/:uuid/keys.json', loadBefore, keys.list, [log.w3c]);
-server.get('/customers/:uuid/keys.xml', loadBefore, keys.list, [log.w3c]);
-server.get('/customers/:uuid/keys/:id', loadBefore, keys.get, [log.w3c]);
-server.get('/customers/:uuid/keys/:id.json', loadBefore, keys.get, [log.w3c]);
-server.get('/customers/:uuid/keys/:id.xml', loadBefore, keys.get, [log.w3c]);
-server.put('/customers/:uuid/keys/:id', loadBefore, keys.put, [log.w3c]);
-server.put('/customers/:uuid/keys/:id.json', loadBefore, keys.put, [log.w3c]);
-server.put('/customers/:uuid/keys/:id.xml', loadBefore, keys.put, [log.w3c]);
-server.del('/customers/:uuid/keys/:id', loadBefore, keys.del, [log.w3c]);
+server.post('/customers/:uuid/keys', keys.post);
+server.get('/customers/:uuid/keys', keys.list);
+server.get('/customers/:uuid/keys/:id', keys.get);
+server.put('/customers/:uuid/keys/:id', keys.put);
+server.del('/customers/:uuid/keys/:id', keys.del);
 
 /// Smartlogin
 
-server.post('/customers/:uuid/ssh_sessions',
-            loadBefore, keys.smartlogin, [log.w3c]);
+server.post('/customers/:uuid/ssh_sessions', keys.smartlogin);
 
 /// Limits
 
-server.get('/customers/:uuid/limits', loadBefore, limits.list, [log.w3c]);
-server.put('/customers/:uuid/limits/:dc/:dataset',
-           loadBefore, limits.put, [log.w3c]);
-server.del('/customers/:uuid/limits/:dc/:dataset',
-           loadBefore, limits.del, [log.w3c]);
-
+server.get('/customers/:uuid/limits', limits.list);
+server.put('/customers/:uuid/limits/:dc/:dataset', limits.put);
+server.del('/customers/:uuid/limits/:dc/:dataset', limits.del);
 
 
 
 ///-- Start up
 
-if (!parsed.ufds)
-  parsed.ufds = 'ldaps://localhost:636';
-
-client = ldap.createClient({
-  url: parsed.ufds
-});
-
-if (parsed.debug)
-  client.log4js.setLevel(((parsed.debug > 1) ? 'Trace' : 'Debug'));
-
-
 function initError(err) {
-  log.fatal('Unable to bind to UFDS: %s', err.stack);
-  process.exit(1);
+    process.stderr.write('Unable to bind to UFDS: ');
+    process.stderr.write(err.stack);
+    process.stderr.write('\n');
+    process.exit(1);
 }
 
-client.once('error', initError);
-
-client.bind(config.rootDN, config.rootPassword, function(err) {
-  assert.ifError(err);
-
-  server.listen(parsed.port, function() {
-    client.removeListener('error', initError);
-    log.info('CAPI listening on port %d', parsed.port);
-  });
-});
 
 
+try {
+    if (!parsed.file)
+        parsed.file = './etc/config.json';
+    if (!parsed.ufds)
+        parsed.ufds = 'ldaps://localhost:636';
+
+    var config = JSON.parse(fs.readFileSync(parsed.file, 'utf8'));
+
+
+    client = ldap.createClient({
+        url: parsed.ufds,
+        log: log
+    });
+    client.once('error', initError);
+    client.on('connect', function () {
+        client.bind(config.rootDN, config.rootPassword, function (err) {
+            if (err) {
+                console.error('Unable to bind to UFDS: ' + err.stack);
+                process.exit(1);
+            }
+
+            server.listen(parsed.port, function () {
+                client.removeListener('error', initError);
+                console.error('CAPI listening on port %d', parsed.port);
+            });
+        });
+    });
+} catch (e) {
+    console.error(e.stack);
+    process.exit(1);
+}

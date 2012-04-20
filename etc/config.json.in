@@ -7,7 +7,7 @@
     "key": "/opt/smartdc/ufds/ssl/key.pem",
     "logLevel": "warn",
     "moray": {
-        "url": "http://127.0.0.1:8080",
+        "url": "MORAY_URL",
         "connectTimeout": 1000,
         "retry": {
             "retries": 1,

@@ -1,11 +1,11 @@
 // Copyright 2012 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
+var sprintf = require('util').format;
 
 var httpSignature = require('http-signature');
 var ldap = require('ldapjs');
 var restify = require('restify');
-var sprintf = require('sprintf').sprintf;
 var uuid = require('node-uuid');
 
 var util = require('./util');

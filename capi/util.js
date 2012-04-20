@@ -2,10 +2,10 @@
 
 var assert = require('assert');
 var crypto = require('crypto');
+var sprintf = require('util').format;
 
 var ldap = require('ldapjs');
 var restify = require('restify');
-var sprintf = require('sprintf').sprintf;
 var uuid = require('node-uuid');
 
 

@@ -1,9 +1,10 @@
 // Copyright 2012 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
+var sprintf = require('util').format;
 
 var restify = require('restify');
-var sprintf = require('sprintf').sprintf;
+
 
 var util = require('./util');
 

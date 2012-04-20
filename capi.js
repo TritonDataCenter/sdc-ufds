@@ -214,7 +214,7 @@ function initError(err) {
 
 try {
     if (!parsed.file)
-        parsed.file = './etc/ufds.config.json';
+        parsed.file = './etc/config.json';
     if (!parsed.ufds)
         parsed.ufds = 'ldaps://localhost:636';
 

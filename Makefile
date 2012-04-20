@@ -29,7 +29,7 @@ JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -f tools/jsstyle.conf
 SHRINKWRAP	 = npm-shrinkwrap.json
-SMF_MANIFESTS_IN = smf/manifests/ufds.xml.in
+SMF_MANIFESTS_IN = smf/manifests/ufds-master.xml.in
 
 CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files
 
@@ -43,14 +43,6 @@ include ./tools/mk/Makefile.smf.defs
 #
 
 # Mountain Gorilla-spec'd versioning.
-# Need GNU awk for multi-char arg to "-F".
-AWK := $(shell (which gawk 2>/dev/null | grep -v "^no ") || (which nawk 2>/dev/null | grep -v "^no ") || which awk)
-BRANCH := $(shell git symbolic-ref HEAD | $(AWK) -F/ '{print $$3}')
-ifeq ($(TIMESTAMP),)
-	TIMESTAMP := $(shell date -u "+%Y%m%dT%H%M%SZ")
-endif
-GITDESCRIBE := g$(shell git describe --all --long --dirty | $(AWK) -F'-g' '{print $$NF}')
-STAMP := $(BRANCH)-$(TIMESTAMP)-$(GITDESCRIBE)
 
 ROOT                    := $(shell pwd)
 RELEASE_TARBALL         := ufds-pkg-$(STAMP).tar.bz2
@@ -99,10 +91,10 @@ search_test: $(NODEUNIT)
 test: add_test bind_test compare_test del_test mod_test search_test
 
 .PHONY: pkg
-pkg: all
+pkg:
 
 .PHONY: release
-release: pkg
+release: all docs
 	@echo "Building $(RELEASE_TARBALL)"
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds
 	@mkdir -p $(TMPDIR)/site
@@ -110,10 +102,14 @@ release: pkg
 	@mkdir -p $(TMPDIR)/root
 	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds/ssl
 	cp -r   $(ROOT)/build \
+                $(ROOT)/capi \
+                $(ROOT)/capi.js \
+                $(ROOT)/data \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \
 		$(ROOT)/package.json \
+		$(ROOT)/schema \
 		$(ROOT)/smf \
 		$(TMPDIR)/root/opt/smartdc/ufds/
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)

@@ -1,20 +1,36 @@
 {
-    "host": "127.0.0.1",
-    "port": 1389,
-    "rootDN": "cn=root",
-    "rootPassword": "secret",
+    "host": "UFDS_ADMIN_IP",
+    "port": 636,
+    "rootDN": "ROOT_DN",
+    "rootPassword": "ROOT_PW",
+    "certificate": "/opt/smartdc/ufds/ssl/cert.pem",
+    "key": "/opt/smartdc/ufds/ssl/key.pem",
+    "logLevel": "warn",
     "moray": {
-        "url": "http://localhost:8080",
+        "url": "http://127.0.0.1:8080",
         "connectTimeout": 1000,
         "retry": {
             "retries": 1,
             "minTimeout": 1000
         }
     },
+    "changelog": {
+        "bucket": "ufds_cn_changelog",
+        "schema": {
+            "changenumber": {
+                "type": "number",
+                "unique": true
+            },
+            "targetdn": {
+                "type": "string"
+            }
+        }
+    },
     "trees": {
         "o=smartdc": {
             "blacklistRDN": "cn=blacklist",
             "bucket": "ufds_o_smartdc",
+            "administratorsGroupRDN": "cn=operators, ou=groups",
             "schema": {
                 "login": {
                     "type": "string",
@@ -52,8 +68,5 @@
                 "_parent": { "type": "string" }
             }
         }
-    },
-    "changelog": {
-
     }
 }

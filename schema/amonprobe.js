@@ -27,12 +27,11 @@ function AmonProbe() {
         name: 'amonprobe',
         required: {
             amonprobe: 1,
-            type: 1
+            type: 1,
+            agent: 1
         },
         optional: {
-            // Must have exactly one machine or one server value.
-            machine: 1,
-            server: 1
+            machine: 1
         }
     });
 }
@@ -49,18 +48,17 @@ AmonProbe.prototype.validate = function validate(entry, callback) {
                     ' character and include only alphanumeric' +
                     ' \'_\', \'.\' and \'-\')');
     }
-
-    var all = (attrs.machine || []).concat(attrs.server || []);
-    if (all.length !== 1) {
-        errors.push('probe must have exactly one \'machine\' or \'server\': '
-                    + 'probe=' + attrs.amonprobe[0]
-                    + ', machine=' + attrs.machine
-                    + ', server=' + attrs.server);
+    if (!UUID_RE.test(attrs.agent[0])) {
+        errors.push('probe agent: \'' + attrs.agent[0] +
+                    '\' is invalid (must be a UUID)');
+    }
+    if (attrs.machine.length && !UUID_RE.test(attrs.machine[0])) {
+        errors.push('probe machine: \'' + attrs.machine[0] +
+                    '\' is invalid (must be a UUID)');
     }
 
     if (errors.length)
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
-
     return callback();
 };
 

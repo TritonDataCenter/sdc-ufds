@@ -39,6 +39,7 @@
                     "type": "string",
                     "unique": true
                 },
+                "objectclass": { "type": "string" },
                 "fingerprint": { "type": "string" },
                 "cn": { "type": "string" },
                 "sn": { "type": "string" },

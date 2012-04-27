@@ -215,7 +215,7 @@ function createServer(options) {
                 '.0Z';
         }
 
-        var suffixes = options.trees.keys();
+        var suffixes = Object.keys(options.trees);
         suffixes.push('cn=changelog');
         var entry = {
             dn: '',

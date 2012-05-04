@@ -35,12 +35,12 @@ function validBrand(brand) {
 
 
 var NUMBER_ATTRS = {
-    ram: 'RAM',
-    swap: 'Swap',
-    disk: 'Disk',
-    lwps: 'Lightweight Processes',
-    cpushares: 'CPU Shares',
-    zfsiopriority: 'ZFS IO Priority'
+    max_physical_memory: 'Max. Physical Memory',
+    max_swap: 'Swap',
+    max_lwps: 'Lightweight Processes',
+    quota: 'Disk',
+    cpu_shares: 'CPU Shares',
+    zfs_io_priority: 'ZFS IO Priority'
 };
 
 
@@ -53,31 +53,34 @@ function Machine() {
         required: {
             uuid: 1,
             brand: 1,
-            ram: 1,
-            disk: 1,
-            swap: 1,
-            lwps: 1,
-            cpushares: 1,
-            zfsiopriority: 1
+            max_physical_memory: 1,
+            max_swap: 1,
+            max_lwps: 1,
+            quota: 1,
+            cpu_shares: 1,
+            zfs_io_priority: 1
         },
         optional: {
             alias: 1,
+            ram: 1,
             zonepath: 1,
-            datasetuuid: 1,
-            serveruuid: 1,
+            dataset_uuid: 1,
+            server_uuid: 1,
             autoboot: 1,
             datasets: 0,
             nics: 0,
-            internalmetadata: 1,
-            customermetadata: 1,
+            internal_metadata: 1,
+            customer_metadata: 1,
             tags: 1,
             delegatedataset: 1,
             disks: 0,
             vcpus: 1,
-            cpucap: 1,
-            status: 1,
-            setup: 1,
-            destroyed: 1
+            cpu_cap: 1,
+            state: 1,
+            create_timestamp: 1,
+            last_modified: 1,
+            destroyed: 1,
+            zpool: 1
         }
     });
 }
@@ -113,13 +116,20 @@ Machine.prototype.validate = function validate(entry, callback) {
     }
 
 
-    if (parseInt(attrs.swap[0], 10) < parseInt(attrs.ram[0], 10)) {
-        errors.push('Swap: \'' + attrs.swap[0] + '\' is invalid '
-                    + '(cannot be less than RAM: ' + attrs.ram[0] + ')');
+    if (parseInt(attrs.max_swap[0], 10) <
+            parseInt(attrs.max_physical_memory[0], 10)) {
+        errors.push('Swap: \'' + attrs.max_swap[0] + '\' is invalid '
+                    + '(cannot be less than Max. Physical Memory: ' +
+                    attrs.max_physical_memory[0] + ')');
     }
 
-    if (attrs.zfsiopriority[0] > MAX_ZFS_IO) {
-        errors.push('ZFS IO Priority: \'' + attrs.zfsiopriority[0] +
+    if (attrs.ram !== undefined && !validNumber(attrs.ram[0])) {
+        errors.push('RAM: \'' + attrs.ram[0] +
+                    '\' is invalid (must be a positive number)');
+    }
+
+    if (attrs.zfs_io_priority[0] > MAX_ZFS_IO) {
+        errors.push('ZFS IO Priority: \'' + attrs.zfs_io_priority[0] +
                     '\' is invalid (cannot be greater than ' + MAX_ZFS_IO +
                     ')');
     }
@@ -136,8 +146,8 @@ Machine.prototype.validate = function validate(entry, callback) {
                     '\' is invalid (must be a positive number)');
     }
 
-    if (attrs.cpucap !== undefined && !validNumber(attrs.cpucap[0])) {
-        errors.push('CPU Cap: \'' + attrs.cpucap[0] +
+    if (attrs.cpu_cap !== undefined && !validNumber(attrs.cpu_cap[0])) {
+        errors.push('CPU Cap: \'' + attrs.cpu_cap[0] +
                     '\' is invalid (must be a positive number)');
     }
 

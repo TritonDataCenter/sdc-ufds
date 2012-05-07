@@ -76,6 +76,7 @@ function Machine() {
             disks: 0,
             vcpus: 1,
             cpu_cap: 1,
+            zone_state: 1,
             state: 1,
             create_timestamp: 1,
             last_modified: 1,

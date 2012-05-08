@@ -36,19 +36,13 @@ function Server() {
         name: 'server',
         required: {
             uuid: 1,
+            datacenter: 1,
+            sysinfo: 1,
             hostname: 1,
-            ram: 1,
             reserved: 1,
-            cpucores: 1,
-            os: 1,
-            cpuvirtualization: 1,
             status: 1,
-            vendornumber: 1,
-            vendormodel: 1,
-            manufacturer: 1,
             headnode: 1,
-            lastboot: 1,
-            bootargs: 1
+            lastupdated: 1
         },
         optional: {
             swap: 1,
@@ -72,17 +66,6 @@ Server.prototype.validate = function validate(entry, callback) {
     if (!validHost(attrs.hostname[0])) {
         errors.push('Hostname: \'' + attrs.hostname[0] + '\' is invalid');
     }
-
-    if (!validNumber(attrs.ram[0])) {
-        errors.push('RAM: \'' + attrs.ram[0] +
-                    '\' is invalid (must be a positive number)');
-    }
-
-    if (!validNumber(attrs.cpucores[0])) {
-        errors.push('CPU cores: \'' + attrs.cpucores[0] +
-                    '\' is invalid (must be a positive number)');
-    }
-
 
     if (errors.length)
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));

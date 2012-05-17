@@ -11,12 +11,6 @@ var Validator = require('../lib/schema/validator');
 
 ///--- Globals
 
-// Adapted from <www.regular-expressions.info/email.html> to allow, e.g.
-// "root@localhost". The effective result is an RFC2822-compliant check
-// before the "@", then more loose checking after: to allow "@localhost",
-// "@foo.museum", "@foo.example.com", "@127.0.0.1".
-/* JSSTYLED */
-var EMAIL_RE = /^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@[a-z0-9.]+$/i;
 var LOGIN_RE = /^[a-zA-Z][a-zA-Z0-9_\.@]+$/;
 
 var RESERVED_LOGINS = [
@@ -65,11 +59,6 @@ SDCPerson.prototype.validate = function validate(entry, callback) {
         attrs.login[0].length > 32 ||
         RESERVED_LOGINS.indexOf(attrs.login[0]) !== -1) {
         errors.push('login: ' + attrs.login[0] + ' is invalid');
-    }
-
-    for (i = 0; i < attrs.email.length; i++) {
-        if (!EMAIL_RE.test(attrs.email[i]))
-            errors.push(attrs.email[i] + ' is invalid');
     }
 
     if (errors.length)

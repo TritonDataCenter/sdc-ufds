@@ -30,7 +30,7 @@ function validNumber(attr) {
 }
 
 function validBrand(brand) {
-    return (brand == 'joyent' || brand == 'kvm');
+    return (brand == 'joyent-minimal' || brand == 'joyent' || brand == 'kvm');
 }
 
 

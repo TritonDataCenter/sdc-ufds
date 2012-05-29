@@ -112,8 +112,9 @@ Machine.prototype.validate = function validate(entry, callback) {
         typeof (attrs.brand[0]) === 'string' &&
         !validBrand(attrs.brand[0])) {
 
-        errors.push('Machine brand: \'' + attrs.alias[0] + '\' is invalid, '
-                    + 'must be either \'joyent\' or \'kvm\'');
+        errors.push('Machine brand: \'' + attrs.brand[0] + '\' is invalid, '
+                    + 'must be either \'joyent\', \'joyent-minimal\' '
+                    + 'or \'kvm\'');
     }
 
 

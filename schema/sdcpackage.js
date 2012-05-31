@@ -51,16 +51,15 @@ function Package() {
         name: 'sdcpackage',
         required: {
             uuid: 1,
-            urn: 1,
             name: 1,
             version: 1,
-        default: 1,
-            ram: 1,
-            disk: 1,
-            swap: 1,
-            cpucap: 1,
-            lwps: 1,
-            zfsiopriority: 1
+            default: 1,
+            max_physical_memory: 1,
+            quota: 1,
+            max_swap: 1,
+            cpu_cap: 1,
+            max_lwps: 1,
+            zfs_io_priority: 1
         },
         optional: {
             vcpus: 1
@@ -84,39 +83,39 @@ Package.prototype.validate = function validate(entry, callback) {
                     '\' is invalid (must be a URN)');
     }
 
-    if (!validNumber(attrs.ram[0], MIN_RAM)) {
-        errors.push('RAM: \'' + attrs.ram[0] + '\' is invalid ' +
+    if (!validNumber(attrs.max_physical_memory[0], MIN_RAM)) {
+        errors.push('RAM: \'' + attrs.max_physical_memory[0] + '\' is invalid ' +
                     '(must be greater or equal than ' + MIN_RAM + ')');
     }
 
-    if (!validNumber(attrs.swap[0], MIN_SWAP)) {
-        errors.push('Swap: \'' + attrs.swap[0] + '\' is invalid ' +
+    if (!validNumber(attrs.max_swap[0], MIN_SWAP)) {
+        errors.push('Swap: \'' + attrs.max_swap[0] + '\' is invalid ' +
                     '(must be greater or equal than ' + MIN_SWAP + ')');
     }
 
-    if (parseInt(attrs.swap[0], 10) < parseInt(attrs.ram[0], 10)) {
-        errors.push('Swap: \'' + attrs.swap[0] + '\' is invalid ' +
-                    '(cannot be less than RAM: ' + attrs.ram[0] + ')');
+    if (parseInt(attrs.max_swap[0], 10) < parseInt(attrs.max_physical_memory[0], 10)) {
+        errors.push('Swap: \'' + attrs.max_swap[0] + '\' is invalid ' +
+                    '(cannot be less than RAM: ' + attrs.max_physical_memory[0] + ')');
     }
 
-    if (!validNumber(attrs.disk[0], MIN_DISK)) {
-        errors.push('Disk: \'' + attrs.disk[0] + '\' is invalid ' +
+    if (!validNumber(attrs.quota[0], MIN_DISK)) {
+        errors.push('Disk: \'' + attrs.quota[0] + '\' is invalid ' +
                     '(must be greater or equal than ' + MIN_DISK + ')');
     }
 
-    if (!validNumber(attrs.cpucap[0], MIN_CPUCAP)) {
-        errors.push('CPU Cap: \'' + attrs.cpucap[0] + '\' is invalid ' +
+    if (!validNumber(attrs.cpu_cap[0], MIN_CPUCAP)) {
+        errors.push('CPU Cap: \'' + attrs.cpu_cap[0] + '\' is invalid ' +
                     '(must be greater or equal than ' + MIN_CPUCAP + ')');
     }
 
-    if (!validNumber(attrs.lwps[0], MIN_LWPS)) {
-        errors.push('Lightweight Processes: \'' + attrs.lwps[0] +
+    if (!validNumber(attrs.max_lwps[0], MIN_LWPS)) {
+        errors.push('Lightweight Processes: \'' + attrs.max_lwps[0] +
                     '\' is invalid (must be greater or equal than ' +
                     MIN_LWPS + ')');
     }
 
-    if (!validNumber(attrs.zfsiopriority[0], 0, MAX_ZFSIO)) {
-        errors.push('ZFS IO Priority: \'' + attrs.zfsiopriority[0] +
+    if (!validNumber(attrs.zfs_io_priority[0], 0, MAX_ZFSIO)) {
+        errors.push('ZFS IO Priority: \'' + attrs.zfs_io_priority[0] +
                     '\' is invalid (must be greater or equal than 0 and less ' +
                     ' than ' + MAX_ZFSIO + ')');
     }

@@ -47,9 +47,9 @@ var NUMBER_ATTRS = {
 
 ///--- API
 
-function Machine() {
+function VM() {
     Validator.call(this, {
-        name: 'machine',
+        name: 'vm',
         required: {
             uuid: 1,
             brand: 1,
@@ -85,17 +85,17 @@ function Machine() {
         }
     });
 }
-util.inherits(Machine, Validator);
+util.inherits(VM, Validator);
 
 
-Machine.prototype.validate = function validate(entry, callback) {
+VM.prototype.validate = function validate(entry, callback) {
     var keys = Object.keys(NUMBER_ATTRS);
     var attrs = entry.attributes;
     var i;
     var errors = [];
 
     if (!validUUID(attrs.uuid[0])) {
-        errors.push('Machine uuid: \'' + attrs.uuid[0] + '\' is invalid '
+        errors.push('VM uuid: \'' + attrs.uuid[0] + '\' is invalid '
                     + '(must be a UUID)');
     }
 
@@ -112,7 +112,7 @@ Machine.prototype.validate = function validate(entry, callback) {
         typeof (attrs.brand[0]) === 'string' &&
         !validBrand(attrs.brand[0])) {
 
-        errors.push('Machine brand: \'' + attrs.brand[0] + '\' is invalid, '
+        errors.push('VM brand: \'' + attrs.brand[0] + '\' is invalid, '
                     + 'must be either \'joyent\', \'joyent-minimal\' '
                     + 'or \'kvm\'');
     }
@@ -140,7 +140,7 @@ Machine.prototype.validate = function validate(entry, callback) {
         typeof (attrs.alias[0]) == 'string' &&
         !validAlias(attrs.alias[0])) {
 
-        errors.push('Machine alias: \'' + attrs.alias[0] + '\' is invalid');
+        errors.push('VM alias: \'' + attrs.alias[0] + '\' is invalid');
     }
 
     if (attrs.vcpus !== undefined && !validNumber(attrs.vcpus[0])) {
@@ -166,6 +166,6 @@ Machine.prototype.validate = function validate(entry, callback) {
 
 module.exports = {
     createInstance: function createInstance() {
-        return new Machine();
+        return new VM();
     }
 };

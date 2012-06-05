@@ -203,43 +203,57 @@ server.del('/customers/:uuid/limits/:dc/:dataset', limits.del);
 
 ///-- Start up
 
-function initError(err) {
-    process.stderr.write('Unable to bind to UFDS: ');
-    process.stderr.write(err.stack);
-    process.stderr.write('\n');
-    process.exit(1);
-}
-
-
-
-try {
-    if (!parsed.file)
-        parsed.file = './etc/config.json';
-    if (!parsed.ufds)
-        parsed.ufds = 'ldaps://localhost:636';
-
-    var config = JSON.parse(fs.readFileSync(parsed.file, 'utf8'));
-
-
+function connect() {
     client = ldap.createClient({
         url: parsed.ufds,
         log: log
     });
-    client.once('error', initError);
+    client.on('error', initError);
     client.on('connect', function () {
         client.bind(config.rootDN, config.rootPassword, function (err) {
+            client.removeListener('error', initError);
             if (err) {
                 console.error('Unable to bind to UFDS: ' + err.stack);
                 process.exit(1);
             }
 
             server.listen(parsed.port, function () {
-                client.removeListener('error', initError);
                 console.error('CAPI listening on port %d', parsed.port);
             });
         });
     });
+}
+
+
+// hack to get backoff+retry
+var _attempt = 0;
+var _sleep = 1000;
+var _try = 10;
+
+function initError(err) {
+    process.stderr.write('Unable to bind to UFDS: ');
+    process.stderr.write(err.stack);
+    process.stderr.write('\n');
+    if (++_attempt <= _try) {
+        setTimeout(connect, _sleep);
+    } else {
+        process.stderr.write('Giving up trying to connect to UFDS\n');
+        process.exit(1);
+    }
+}
+
+
+var config;
+try {
+    if (!parsed.file)
+        parsed.file = './etc/config.json';
+    if (!parsed.ufds)
+        parsed.ufds = 'ldaps://localhost:636';
+
+    config = JSON.parse(fs.readFileSync(parsed.file, 'utf8'));
 } catch (e) {
     console.error(e.stack);
     process.exit(1);
 }
+
+connect();

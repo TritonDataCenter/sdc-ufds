@@ -42,7 +42,7 @@ function Server() {
             reserved: 1,
             status: 1,
             headnode: 1,
-            lastupdated: 1
+            last_updated: 1
         },
         optional: {
             swap: 1,

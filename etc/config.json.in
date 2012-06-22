@@ -65,7 +65,8 @@
                 "fromwildcard": { "type": "string" },
                 "towildcard": { "type": "string" },
                 "_owner": { "type": "string" },
-                "_parent": { "type": "string" }
+                "_parent": { "type": "string" },
+                "urn": {"type": "string"}
             }
         }
     }

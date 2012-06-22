@@ -61,7 +61,10 @@
                 "towildcard": { "type": "string" },
                 "_owner": { "type": "string" },
                 "_parent": { "type": "string" },
-                "urn": {"type": "string"}
+                "urn": {
+                    "type": "string",
+                    "unique": true
+                }
             }
         }
     }

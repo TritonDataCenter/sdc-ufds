@@ -21,7 +21,24 @@ var O = SUFFIX.split('=')[1];
 
 var test = helper.test;
 
-
+// Different than the real DN, which uses 'ou=packages':
+var PACKAGE_DN = 'ou=pkg, ' + SUFFIX;
+var PACKAGE = {
+    name: 'regular_128',
+    version: '1.0.0',
+    max_physical_memory: 128,
+    quota: 5120,
+    max_swap: 256,
+    cpu_cap: 350,
+    max_lwps: 2000,
+    zfs_io_priority: 1,
+    'default': true,
+    active: false,
+    vcpus: 1,
+    urn: 'sdc::regular_128:1.0.0',
+    uuid: uuid(),
+    objectclass: 'sdcpackage'
+};
 
 ///--- Tests
 
@@ -52,8 +69,12 @@ test('add fixtures', function (t) {
             CLIENT.add('ou=child' + i + ',' + SUFFIX, entry, function (err2) {
                 t.ifError(err2);
 
-                if (++finished === 2)
-                    t.done();
+                if (++finished === 2) {
+                    CLIENT.add(PACKAGE_DN, PACKAGE, function (err3, pkg) {
+                        t.ifError(err3);
+                        t.done();
+                    });
+                }
             });
         }
     });
@@ -81,6 +102,15 @@ test('delete non-leaf entry', function (t) {
     CLIENT.del(SUFFIX, function (err) {
         t.ok(err);
         t.equal(err.name, 'NotAllowedOnNonLeafError');
+        t.done();
+    });
+});
+
+
+test('delete immutable entity', function (t) {
+    CLIENT.del(PACKAGE_DN, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'NotAllowedOnRdnError');
         t.done();
     });
 });

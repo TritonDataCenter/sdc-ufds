@@ -53,25 +53,38 @@ function Package() {
             uuid: 1,
             name: 1,
             version: 1,
-            default: 1,
+            'default': 1,
             max_physical_memory: 1,
             quota: 1,
             max_swap: 1,
             cpu_cap: 1,
             max_lwps: 1,
-            zfs_io_priority: 1
+            zfs_io_priority: 1,
+            active: 1
         },
         optional: {
             vcpus: 1
-        }
+        },
+        immutable: [
+            'uuid',
+            'name',
+            'version',
+            'quota',
+            'max_swap',
+            'max_physical_memory',
+            'cpu_cap',
+            'max_lwp',
+            'zfs_io_priority',
+            'vcpus'
+        ]
     });
 }
 util.inherits(Package, Validator);
 
 
 Package.prototype.validate = function validate(entry, callback) {
-    var attrs = entry.attributes;
-    var errors = [];
+    var attrs = entry.attributes,
+        errors = [];
 
     if (!validUUID(attrs.uuid[0])) {
         errors.push('Package uuid: \'' + attrs.uuid[0] +
@@ -125,7 +138,7 @@ Package.prototype.validate = function validate(entry, callback) {
 
         errors.push('Virtual CPUs: \'' + attrs.vcpus[0] + '\' is invalid ' +
                     '(must be greater or equal than ' + MIN_VCPUS +
-                    ' and less or equal than ' + MAX_VCPUS +')');
+                    ' and less or equal than ' + MAX_VCPUS + ')');
     }
 
 

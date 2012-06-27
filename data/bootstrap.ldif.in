@@ -43,3 +43,19 @@ dn: ou=config, o=smartdc
 ou: config
 objectclass: organizationalUnit
 
+dn: uuid=5968a8a4-5bff-4c5e-8034-d79de962e7f6, ou=packages, o=smartdc
+uuid: 5968a8a4-5bff-4c5e-8034-d79de962e7f6
+active: true
+cpu_cap: 100
+default: true
+max_lwps: 1000
+max_physical_memory: 128
+max_swap: 256
+name: sdc_128
+quota: 10240
+urn: sdc:UFDS_ADMIN_UUID:sdc_128:1.0.0
+vcpus: 1
+version: 1.0.0
+zfs_io_priority: 10
+objectclass: sdcpackage
+

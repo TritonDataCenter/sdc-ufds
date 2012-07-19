@@ -15,9 +15,9 @@ var Validator = require('../lib/schema/validator');
 
 ///--- Globals
 
-// An amonmonitor name can be 1-32 chars, begins with alpha, rest are
+// An amonmonitor name can be 1-512 chars, begins with alpha, rest are
 // alphanumeric or '_', '.' or '-'.
-var NAME_RE = /^[a-zA-Z][a-zA-Z0-9_\.-]{0,31}$/;
+var NAME_RE = /^[a-zA-Z][a-zA-Z0-9_\.-]{0,511}$/;
 
 
 

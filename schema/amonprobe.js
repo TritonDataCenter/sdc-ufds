@@ -13,9 +13,9 @@ var Validator = require('../lib/schema/validator');
 
 ///--- Globals
 
-// An amonprobe name can be 1-32 chars, begins with alpha, rest are
+// An amonprobe name can be 1-512 chars, begins with alpha, rest are
 // alphanumeric or '_', '.' or '-'.
-var NAME_RE = /^[a-zA-Z][a-zA-Z0-9_\.-]{0,31}$/;
+var NAME_RE = /^[a-zA-Z][a-zA-Z0-9_\.-]{0,511}$/;
 var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 
 

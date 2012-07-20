@@ -15,9 +15,9 @@ var Validator = require('../lib/schema/validator');
 
 ///--- Globals
 
-// An amonmonitor name can be 1-512 chars, begins with alpha, rest are
+// An amonmonitor name can be 1-512 chars, begins with alphanumeric, rest are
 // alphanumeric or '_', '.' or '-'.
-var NAME_RE = /^[a-zA-Z][a-zA-Z0-9_\.-]{0,511}$/;
+var NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9_\.-]{0,511}$/;
 
 
 
@@ -42,8 +42,8 @@ AmonMonitor.prototype.validate = function validate(entry, callback) {
 
     if (!NAME_RE.test(attrs.amonmonitor[0])) {
         errors.push('monitor name: \'' + attrs.amonmonitor[0] +
-                    '\' is invalid (must be 1-32 chars, begin with ' +
-                    ' alpha character and include only alphanumeric' +
+                    '\' is invalid (must be 1-512 chars, begin with ' +
+                    ' alphanumeric character and include only alphanumeric, ' +
                     '\'_\', \'.\' and \'-\')');
     }
 

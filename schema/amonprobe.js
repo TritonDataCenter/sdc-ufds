@@ -13,9 +13,9 @@ var Validator = require('../lib/schema/validator');
 
 ///--- Globals
 
-// An amonprobe name can be 1-512 chars, begins with alpha, rest are
+// An amonprobe name can be 1-512 chars, begins with alphanumeric, rest are
 // alphanumeric or '_', '.' or '-'.
-var NAME_RE = /^[a-zA-Z][a-zA-Z0-9_\.-]{0,511}$/;
+var NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9_\.-]{0,511}$/;
 var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 
 
@@ -44,8 +44,8 @@ AmonProbe.prototype.validate = function validate(entry, callback) {
 
     if (!NAME_RE.test(attrs.amonprobe[0])) {
         errors.push('probe name: \'' + attrs.amonprobe[0] +
-                    '\' is invalid (must be 1-32 chars, begin with alpha' +
-                    ' character and include only alphanumeric' +
+                    '\' is invalid (must be 1-512 chars, begin with ' +
+                    ' alphanumeric character and include only alphanumeric, ' +
                     ' \'_\', \'.\' and \'-\')');
     }
     if (!UUID_RE.test(attrs.agent[0])) {

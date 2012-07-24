@@ -4,10 +4,7 @@
 
 /* Test the Boilerplate API endpoints */
 
-var test = require('tap').test;
-
-
-test('douglas adams', function (t) {
+exports.douglas = function(t) {
     t.ok(42, 'the answer to life the universe and everything');
-    t.end();
-});
+    t.done();
+};

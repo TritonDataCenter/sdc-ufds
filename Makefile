@@ -46,7 +46,7 @@ CLEAN_FILES += $(NODEUNIT) ./node_modules/tap
 
 .PHONY: test
 test: $(NODEUNIT)
-	$(NODEUNIT) test/*.test.js
+	$(NODEUNIT) test/replicator.test.js
 
 include ./tools/mk/Makefile.deps
 include ./tools/mk/Makefile.targ

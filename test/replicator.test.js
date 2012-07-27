@@ -31,7 +31,9 @@ var REPLICATOR_OPTS = {
 
 exports.initReplicator = function(t) {
 	REPLICATOR = new Replicator(REPLICATOR_OPTS);
-        t.done();
+        REPLICATOR.once('started', function () {
+                t.done();
+        });
 };
 
 exports.step = function(t) {
@@ -39,5 +41,8 @@ exports.step = function(t) {
 };
 
 exports.cleanup = function(t) {
+        REPLICATOR.once('stopped', function () {
+                t.done();
+        });
         REPLICATOR.stop();
 };

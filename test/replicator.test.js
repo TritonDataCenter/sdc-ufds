@@ -14,7 +14,7 @@ var LOG = bunyan.createLogger({
 	name: 'replicator-test',
         stream: process.stdout,
         serializers: bunyan.stdSerializers,
-	level: 'trace'
+	level: 'debug'
 });
 
 var REMOTE_UFDS = {
@@ -38,3 +38,6 @@ exports.step = function(t) {
         t.done();
 };
 
+exports.cleanup = function(t) {
+        REPLICATOR.stop();
+};

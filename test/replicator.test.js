@@ -8,17 +8,17 @@
 var Replicator = require('../lib/index');
 var REPLICATOR;
 
-var Logger = require('bunyan');
+var bunyan = require('bunyan');
 
-var LOG = new Logger({
+var LOG = bunyan.createLogger({
 	name: 'replicator-test',
-    stream: process.stdout,
-    serializers: Logger.stdSerializers,
+        stream: process.stdout,
+        serializers: bunyan.stdSerializers,
 	level: 'trace'
 });
 
 var REMOTE_UFDS = {
-	url: 'ldaps://10.99.99.14',
+	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14'),
 	maxConnections: 1,
 	bindDN: 'cn=root',
 	bindCredentials: 'secret'
@@ -31,10 +31,10 @@ var REPLICATOR_OPTS = {
 
 exports.initReplicator = function(t) {
 	REPLICATOR = new Replicator(REPLICATOR_OPTS);
-    t.done();
+        t.done();
 };
 
 exports.step = function(t) {
-    t.done();
+        t.done();
 };
 

@@ -18,7 +18,7 @@ var LOG = bunyan.createLogger({
 });
 
 var REMOTE_UFDS = {
-	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14/ou=users,%20o=smartdc'),
+	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14/ou=users,%20o=smartdc??sub?(!(objectclass=vm))'),
 	maxConnections: 1,
 	bindDN: 'cn=root',
 	bindCredentials: 'secret'

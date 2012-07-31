@@ -17,6 +17,13 @@ var LOG = bunyan.createLogger({
 	level: 'debug'
 });
 
+var LOCAL_UFDS = {
+	url: 'ldap://' + (process.env.LOCAL_UFDS_IP || '127.0.0.1:1389'),
+	maxConnections: 1,
+	bindDN: 'cn=root',
+	bindCredentials: 'secret'
+};
+
 var REMOTE_UFDS = {
 	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14/ou=users,%20o=smartdc??sub?(!(objectclass=vm))'),
 	maxConnections: 1,
@@ -26,23 +33,26 @@ var REMOTE_UFDS = {
 
 var REPLICATOR_OPTS = {
 	log: LOG,
-	remoteUfds: REMOTE_UFDS
+	localUfds: LOCAL_UFDS,
+	remoteUfds: REMOTE_UFDS,
+	checkpointDn: 'cn=replicator, datacenter=coal, o=smartdc'
 };
 
 exports.initReplicator = function(t) {
 	REPLICATOR = new Replicator(REPLICATOR_OPTS);
-        REPLICATOR.once('started', function () {
-                t.done();
-        });
+	REPLICATOR.once('started', function () {
+	    t.done();
+	});
 };
 
 exports.step = function(t) {
-        t.done();
+    t.done();
 };
 
 exports.cleanup = function(t) {
-        REPLICATOR.once('stopped', function () {
-                t.done();
-        });
-        REPLICATOR.stop();
+    REPLICATOR.once('stopped', function () {
+        t.done();
+    });
+
+    REPLICATOR.stop();
 };

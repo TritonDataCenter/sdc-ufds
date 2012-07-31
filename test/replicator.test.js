@@ -46,8 +46,11 @@ exports.initReplicator = function(t) {
 };
 
 exports.step = function(t) {
-    t.done();
+	setTimeout(function () {
+    	t.done();
+	}, 2000);
 };
+
 
 exports.cleanup = function(t) {
     REPLICATOR.once('stopped', function () {

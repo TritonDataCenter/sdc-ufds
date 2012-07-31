@@ -40,6 +40,8 @@ var REPLICATOR_OPTS = {
 
 exports.initReplicator = function(t) {
 	REPLICATOR = new Replicator(REPLICATOR_OPTS);
+	REPLICATOR.init();
+
 	REPLICATOR.once('started', function () {
 	    t.done();
 	});

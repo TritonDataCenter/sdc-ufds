@@ -5,6 +5,8 @@
 /* Test the Boilerplate API endpoints */
 
 
+var assert = require('assert-plus');
+
 var Replicator = require('../lib/index');
 var REPLICATOR;
 
@@ -16,6 +18,8 @@ var LOG = bunyan.createLogger({
         serializers: bunyan.stdSerializers,
 	level: 'debug'
 });
+
+var CUSTOMER_DN = 'uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc';
 
 var LOCAL_UFDS = {
 	url: 'ldap://' + (process.env.LOCAL_UFDS_IP || '127.0.0.1:1389'),
@@ -59,5 +63,13 @@ exports.cleanup = function(t) {
         t.done();
     });
 
-    REPLICATOR.stop();
+    // Cleanup the test replication
+    REPLICATOR.localUfds.del(CUSTOMER_DN, function (err, res) {
+		assert.ifError(err);
+
+    	REPLICATOR.checkpoint.set(0, function(err) {
+			assert.ifError(err);
+    		REPLICATOR.stop();
+    	});
+    });
 };

@@ -1,0 +1,19 @@
+version: 1
+
+# Use this file to bootstrap a minimal UFDS client tree for replication
+
+dn: o=smartdc
+objectclass: organization
+o: smartdc
+
+dn: ou=users, o=smartdc
+objectclass: organizationalUnit
+ou: users
+
+dn: ou=groups, o=smartdc
+objectclass: organizationalUnit
+ou: groups
+
+dn: ou=config, o=smartdc
+objectclass: organizationalUnit
+ou: config

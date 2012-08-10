@@ -20,7 +20,7 @@ var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 
 function AmonProbeGroup() {
     Validator.call(this, {
-        name: 'amonprobe',
+        name: 'amonprobegroup',
         required: {
             uuid: 1
         },

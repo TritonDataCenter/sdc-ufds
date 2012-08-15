@@ -37,7 +37,6 @@ function Server() {
         required: {
             uuid: 1,
             datacenter: 1,
-            sysinfo: 1,
             hostname: 1,
             reserved: 1,
             status: 1,
@@ -45,6 +44,7 @@ function Server() {
             last_updated: 1
         },
         optional: {
+            sysinfo: 1,
             swap: 1,
             hardwareuuid: 1,
             setup: 1

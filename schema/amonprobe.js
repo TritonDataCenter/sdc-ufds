@@ -48,7 +48,9 @@ AmonProbe.prototype.validate = function validate(entry, callback) {
         errors.push('probe agent: \'' + attrs.agent[0] +
                     '\' is invalid (must be a UUID)');
     }
-    if (attrs.machine.length && !UUID_RE.test(attrs.machine[0])) {
+    if (attrs.machine && attrs.machine.length
+        && !UUID_RE.test(attrs.machine[0]))
+    {
         errors.push('probe machine: \'' + attrs.machine[0] +
                     '\' is invalid (must be a UUID)');
     }

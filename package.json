@@ -8,7 +8,7 @@
     "private": true,
     "main": "./main.js",
     "engines": {
-        "node": ">=0.7"
+        "node": ">=0.8"
     },
     "dependencies": {
         "bunyan": "0.13.0",
@@ -18,7 +18,7 @@
         "nopt": "1.0.10",
         "restify": "1.4.0",
         "retry": "0.6.0",
-        "moray": "git+ssh://git@git.joyent.com:node-moray.git#4af3f443a8256783f1367e195942969b29e6b8fa"
+        "moray": "git+ssh://git@git.joyent.com:node-moray.git#b2ab3c72c2748742496597d8df6f9e34ccce486c"
     },
     "devDependencies": {
         "nodeunit": "0.7.4",

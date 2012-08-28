@@ -7,7 +7,7 @@ var path = require('path');
 
 var Logger = require('bunyan');
 var ldap = require('ldapjs');
-var morayClient = require('moray-client');
+var morayClient = require('moray');
 var nopt = require('nopt');
 var retry = require('retry');
 var uuid = require('node-uuid');
@@ -169,6 +169,7 @@ function createMorayClient(options) {
         log: LOG.child({
             component: 'moray'
         }),
+        noCache: true,
         retry: options.moray.retry || false,
         connectTimeout: options.moray.connectTimeout || 1000
     });
@@ -258,6 +259,10 @@ var moray = createMorayClient(config);
 var server = createServer(config);
 var trees = config.trees;
 
+moray.once('error', function (err) {
+    errorAndExit(err, 'Moray Error');
+});
+
 server.use(function setup(req, res, next) {
     req.req_id = uuid();
     req.log = LOG.child({req_id: req.req_id}, true);
@@ -268,58 +273,62 @@ server.use(function setup(req, res, next) {
     return next();
 });
 
-var clog = config.changelog;
-moray.putBucket(clog.bucket, {schema: clog.schema}, function (clogErr) {
-    if (clogErr)
-        errorAndExit(clogErr, 'Unable to set changelog bucket');
+moray.on('connect', function () {
+    var clog = config.changelog;
+    moray.putBucket(clog.bucket, {index: clog.schema}, function (clogErr) {
+        if (clogErr) {
+            errorAndExit(clogErr, 'Unable to set changelog bucket');
+        }
 
-    server.search('cn=changelog',
-                  function _setup(req, res, next) {
-                      req.bucket = clog.bucket;
-                      req.suffix = 'cn=changelog';
-                      return next();
-                  },
-                  be.search());
+        server.search('cn=changelog',
+                      function _setup(req, res, next) {
+                            req.bucket = clog.bucket;
+                            req.suffix = 'cn=changelog';
+                            return next();
+                      },
+                      be.search());
 
-    return Object.keys(trees).forEach(function (t) {
-        LOG.debug({
-            bucket: trees[t].bucket,
-            schema: trees[t].schema,
-            suffix: t
-        }, 'Configuring UFDS bucket');
+        return Object.keys(trees).forEach(function (t) {
+            LOG.debug({
+                bucket: trees[t].bucket,
+                schema: trees[t].schema,
+                suffix: t
+            }, 'Configuring UFDS bucket');
 
-        var bucket = trees[t].bucket;
-        var cfg = {
-            schema: trees[t].schema,
-            post: [
-                be.changelog.add,
-                be.changelog.mod,
-                be.changelog.del
-            ]
-        };
+            var bucket = trees[t].bucket,
+                cfg = {
+                    index: trees[t].schema,
+                    post: [
+                        be.changelog.add,
+                        be.changelog.mod,
+                        be.changelog.del
+                    ]
+                };
 
-        return moray.putBucket(bucket, cfg, function (err) {
-            if (err)
-                errorAndExit(err, 'Unable to set Moray bucket');
+            return moray.putBucket(bucket, cfg, function (err) {
+                if (err) {
+                    errorAndExit(err, 'Unable to set Moray bucket');
+                }
 
-            function __setup(req, res, next) {
-                req.bucket = trees[t].bucket;
-                req.suffix = t;
+                function __setup(req, res, next) {
+                    req.bucket = trees[t].bucket;
+                    req.suffix = t;
 
-                return next();
-            }
+                    return next();
+                }
 
-            server.add(t, __setup, be.add());
-            server.bind(t, __setup, be.bind());
-            server.compare(t, __setup, be.compare());
-            server.del(t, __setup, be.del());
-            server.modify(t, __setup, be.modify());
-            server.search(t, __setup, be.search());
+                server.add(t, __setup, be.add());
+                server.bind(t, __setup, be.bind());
+                server.compare(t, __setup, be.compare());
+                server.del(t, __setup, be.del());
+                server.modify(t, __setup, be.modify());
+                server.search(t, __setup, be.search());
 
-            if (++finished < Object.keys(trees).length)
-                return false;
+                if (++finished < Object.keys(trees).length)
+                    return false;
 
-            return listen(server);
+                return listen(server);
+            });
         });
     });
 });

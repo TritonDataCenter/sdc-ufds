@@ -6,6 +6,7 @@
 
 var extend = require('node.extend');
 var uuid = require('node-uuid');
+var util = require('util');
 
 if (require.cache[__dirname + '/helper.js'])
     delete require.cache[__dirname + '/helper.js'];
@@ -51,8 +52,9 @@ var PACKAGE = {
 
 function get(callback) {
     return CLIENT.search(USER_DN, '(objectclass=*)', function (err, res) {
-        if (err)
+        if (err) {
             return callback(err);
+        }
 
         var obj;
 
@@ -63,6 +65,15 @@ function get(callback) {
             delete obj.dn;
             if (obj.controls)
                 delete obj.controls;
+            // FIXME: Need to review why attrs. _parent and _salt are being
+            // retrieved now but they weren't by the non-streaming branch.
+            /* BEGIN JSSTYLED */
+            for (var p in obj) {
+                if (/^_.*/.test(p)) {
+                    delete obj[p];
+                }
+            }
+            /* END JSSTYLED */
         });
 
         res.on('error', function (err2) {
@@ -184,7 +195,8 @@ test('modify non-existent entry', function (t) {
 });
 
 
-test('modify mutable attribute of entry with immutable attributes', function (t) {
+test('modify mutable attribute of entry with immutable attributes',
+        function (t) {
     var change = {
         type: 'replace',
         modification: {

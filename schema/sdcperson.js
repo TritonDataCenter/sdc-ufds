@@ -51,7 +51,6 @@ util.inherits(SDCPerson, Validator);
 
 SDCPerson.prototype.validate = function validate(entry, callback) {
     var attrs = entry.attributes;
-    var i;
     var errors = [];
 
     if (!LOGIN_RE.test(attrs.login[0]) ||

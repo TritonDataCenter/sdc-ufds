@@ -31,7 +31,7 @@ JSL_FILES_NODE   = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -f tools/jsstyle.conf
 SHRINKWRAP	 = npm-shrinkwrap.json
-SMF_MANIFESTS	 = smf/manifests/ufds-master.xml.in \
+SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
                    smf/manifests/ufds-capi.xml.in
 
 CLEAN_FILES	+= node_modules $(SHRINKWRAP) cscope.files

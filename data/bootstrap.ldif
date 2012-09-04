@@ -17,3 +17,13 @@ ou: groups
 dn: ou=config, o=smartdc
 objectclass: organizationalUnit
 ou: config
+
+dn: datacenter=coal, o=smartdc
+datacenter: coal
+company: Joyent
+address: 375 Water Street
+objectclass: datacenter
+
+dn: cn=replicator, datacenter=coal, o=smartdc
+cn: replicator
+objectclass: sdcreplicator

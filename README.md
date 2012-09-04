@@ -1,10 +1,10 @@
-# Joyent Engineering Guide
+# UFDS Replicator
 
-Repository: <git@git.joyent.com:eng.git>
-Browsing: <https://mo.joyent.com/eng>
-Who: Trent Mick, Dave Pacheco
-Docs: <https://mo.joyent.com/docs/eng>
-Tickets/bugs: <https://devhub.joyent.com/jira/browse/TOOLS>
+Repository: <git@git.joyent.com:ufds-replicator.git>
+Browsing: <https://mo.joyent.com/ufds-replicator>
+Who: Andres Rodriguez
+Docs: <https://mo.joyent.com/docs/ufds-replicator>
+Tickets/bugs: <https://devhub.joyent.com/jira/browse/CAPI>
 
 
 # Overview
@@ -16,24 +16,6 @@ point for many of the suggestion practices defined in the guidelines. This is
 especially true for node.js-based REST API projects.
 
 Start with the guidelines: <https://mo.joyent.com/docs/eng>
-
-
-# Repository
-
-    deps/           Git submodules and/or commited 3rd-party deps should go
-                    here. See "node_modules/" for node.js deps.
-    docs/           Project docs (restdown)
-    lib/            Source files.
-    node_modules/   Node.js deps, either populated at build time or commited.
-                    See Managing Dependencies.
-    pkg/            Package lifecycle scripts
-    smf/manifests   SMF manifests
-    smf/methods     SMF method scripts
-    test/           Test suite (using node-tap)
-    tools/          Miscellaneous dev/upgrade/deployment tools and data.
-    Makefile
-    package.json    npm module info (holds the project version)
-    README.md
 
 
 # Development

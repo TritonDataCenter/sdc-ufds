@@ -53,8 +53,14 @@ var REPLICATOR_OPTS = {
 rep = new Replicator(REPLICATOR_OPTS);
 rep.init();
 
+
 rep.once('started', function () {
     LOG.info('Replicator has started!');
+});
+
+
+rep.on('caughtup', function (cn) {
+	LOG.info('Replicator has caught up with UFDS at changenumber %s', cn);
 });
 
 

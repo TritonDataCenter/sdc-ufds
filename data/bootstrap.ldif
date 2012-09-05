@@ -24,6 +24,10 @@ company: Joyent
 address: 375 Water Street
 objectclass: datacenter
 
+dn: ou=servers, datacenter=coal, o=smartdc
+ou: servers
+objectclass: organizationalUnit
+
 dn: cn=replicator, datacenter=coal, o=smartdc
 cn: replicator
 objectclass: sdcreplicator

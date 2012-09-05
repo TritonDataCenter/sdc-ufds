@@ -279,7 +279,7 @@ function onMorayConnect() {
         if (clogErr) {
             LOG.fatal({err: clogErr}, 'Unable to set changelog bucket');
             LOG.info('Trying again in 10 seconds');
-            setTimeout(function () {
+            return setTimeout(function () {
                 onMorayConnect();
             }, 10000);
         }
@@ -313,7 +313,7 @@ function onMorayConnect() {
                 if (err) {
                     LOG.fatal({err: err}, 'Unable to set Moray bucket');
                     LOG.info('Trying again in 10 seconds');
-                    setTimeout(function () {
+                    return setTimeout(function () {
                         onMorayConnect();
                     }, 10000);
                 }

@@ -9,7 +9,7 @@ var assert = require('assert-plus');
 
 var fixtures = require('./fixtures');
 var Replicator = require('../lib/index');
-var REPLICATOR;
+var rep;
 
 var bunyan = require('bunyan');
 
@@ -21,7 +21,7 @@ var LOG = bunyan.createLogger({
 });
 
 var CUSTOMER_DN = 'uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc';
-var REPLICATION_QUERY = '/ou=users,%20o=smartdc??sub?(&(!(objectclass=vm))(!(login=admin)))';
+var REPLICATION_QUERY = '/ou=users,%20o=smartdc??sub?';
 
 var LOCAL_UFDS = {
 	url: 'ldap://' + (process.env.LOCAL_UFDS_IP || '127.0.0.1:1389'),
@@ -48,17 +48,25 @@ var REPLICATOR_OPTS = {
 
 
 exports.initReplicator = function(t) {
-	REPLICATOR = new Replicator(REPLICATOR_OPTS);
-	REPLICATOR.init();
+	rep = new Replicator(REPLICATOR_OPTS);
+	rep.init();
 
-	REPLICATOR.once('started', function () {
+	rep.once('started', function () {
 	    t.done();
 	});
 };
 
 
-exports.bootstrap = function(t) {
-	var remote = REPLICATOR.remoteUfds;
+// Give the replicator time to catch up
+exports.catchUp = function(t) {
+	rep.once('caughtup', function (cn) {
+		t.done();
+	});
+};
+
+
+exports.addUser = function(t) {
+	var remote = rep.remoteUfds;
 
 	var user = fixtures.user;
 	var key = fixtures.key;
@@ -75,17 +83,42 @@ exports.bootstrap = function(t) {
 };
 
 
-// Give the replicator time to catch up
-exports.bootstrapCatchUp = function(t) {
-	setTimeout(function () {
-    	t.done();
-	}, 180000);
+exports.catchUpAdd = function(t) {
+	rep.once('caughtup', function (cn) {
+		t.done();
+	});
 };
 
 
-// Create delete operations and let them replicate
-exports.unbootstrap = function(t) {
-	var remote = REPLICATOR.remoteUfds;
+exports.getUser = function(t) {
+	var local = rep.localUfds;
+
+	var user = fixtures.user;
+	var opts = {
+		scope: 'sub',
+		filter: '(objectclass=*)'
+	};
+
+	var entries = 0;
+
+	local.search(user.dn, opts, function (err, res) {
+		assert.ifError(err);
+
+		res.on('searchEntry', function (entry) {
+			assert.ok(entry);
+			entries++;
+		});
+
+		res.on('end', function (res) {
+			assert.equal(entries, 2);
+			t.done();
+		});
+	});
+};
+
+
+exports.deleteUser = function(t) {
+	var remote = rep.remoteUfds;
 
 	var userDn = fixtures.user.dn;
 	var keyDn = fixtures.key.dn;
@@ -102,20 +135,17 @@ exports.unbootstrap = function(t) {
 };
 
 
-exports.unbootstrapCatchUp = function(t) {
-	setTimeout(function () {
-    	t.done();
-	}, 3000);
+exports.catchUpDelete = function(t) {
+	rep.once('caughtup', function (cn) {
+		t.done();
+	});
 };
 
 
 exports.cleanup = function(t) {
-    REPLICATOR.once('stopped', function () {
+    rep.once('stopped', function () {
         t.done();
     });
 
-	REPLICATOR.checkpoint.set(0, function(err) {
-		assert.ifError(err);
-		REPLICATOR.stop();
-	});
+	rep.stop();
 };

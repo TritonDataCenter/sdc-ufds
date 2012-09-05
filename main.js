@@ -273,11 +273,15 @@ server.use(function setup(req, res, next) {
     return next();
 });
 
-moray.on('connect', function () {
+function onMorayConnect() {
     var clog = config.changelog;
     moray.putBucket(clog.bucket, {index: clog.schema}, function (clogErr) {
         if (clogErr) {
-            errorAndExit(clogErr, 'Unable to set changelog bucket');
+            LOG.fatal({err: clogErr}, 'Unable to set changelog bucket');
+            LOG.info('Trying again in 10 seconds');
+            setTimeout(function () {
+                onMorayConnect();
+            }, 10000);
         }
 
         server.search('cn=changelog',
@@ -307,7 +311,11 @@ moray.on('connect', function () {
 
             return moray.putBucket(bucket, cfg, function (err) {
                 if (err) {
-                    errorAndExit(err, 'Unable to set Moray bucket');
+                    LOG.fatal({err: err}, 'Unable to set Moray bucket');
+                    LOG.info('Trying again in 10 seconds');
+                    setTimeout(function () {
+                        onMorayConnect();
+                    }, 10000);
                 }
 
                 function __setup(req, res, next) {
@@ -331,4 +339,6 @@ moray.on('connect', function () {
             });
         });
     });
-});
+}
+
+moray.on('connect', onMorayConnect);

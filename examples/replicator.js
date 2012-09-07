@@ -26,7 +26,10 @@ var LOG = bunyan.createLogger({
 });
 
 var rep;
-var REPLICATION_QUERY = '/ou=users,%20o=smartdc??sub?';
+
+var USERS_QUERY = '/ou=users, o=smartdc??sub?';
+var SERVERS_QUERY = '/ou=servers, datacenter=coal, o=smartdc??sub?';
+var PACKAGES_QUERY = '/ou=packages, o=smartdc??sub?';
 
 var LOCAL_UFDS = {
 	url: 'ldap://' + (process.env.LOCAL_UFDS_IP || '127.0.0.1:1389'),
@@ -35,8 +38,15 @@ var LOCAL_UFDS = {
 	bindCredentials: 'secret'
 };
 
+var REPLICATION_QUERIES = [
+	USERS_QUERY,
+	SERVERS_QUERY,
+	PACKAGES_QUERY
+];
+
 var REMOTE_UFDS = {
-	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14' + REPLICATION_QUERY),
+	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14'),
+	queries: REPLICATION_QUERIES,
 	maxConnections: 1,
 	bindDN: 'cn=root',
 	bindCredentials: 'secret'
@@ -52,7 +62,6 @@ var REPLICATOR_OPTS = {
 
 rep = new Replicator(REPLICATOR_OPTS);
 rep.init();
-
 
 rep.once('started', function () {
     LOG.info('Replicator has started!');

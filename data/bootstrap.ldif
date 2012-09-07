@@ -18,6 +18,10 @@ dn: ou=config, o=smartdc
 objectclass: organizationalUnit
 ou: config
 
+dn: ou=packages, o=smartdc
+ou: packages
+objectclass: organizationalUnit
+
 dn: datacenter=coal, o=smartdc
 datacenter: coal
 company: Joyent

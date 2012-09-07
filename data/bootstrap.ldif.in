@@ -59,3 +59,6 @@ version: 1.0.0
 zfs_io_priority: 10
 objectclass: sdcpackage
 
+dn: cn=replicator, datacenter=DATACENTER_NAME, o=smartdc
+cn: replicator
+objectclass: sdcreplicator

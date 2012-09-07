@@ -247,10 +247,15 @@ var config;
 try {
     if (!parsed.file)
         parsed.file = './etc/config.json';
-    if (!parsed.ufds)
-        parsed.ufds = 'ldaps://localhost:636';
 
     config = JSON.parse(fs.readFileSync(parsed.file, 'utf8'));
+    // Once we get the config file, has no sense to wonder about ldap host:port
+    if (!parsed.ufds) {
+        parsed.ufds = 'ldaps://' + config.host;
+        if (config.port) {
+            parsed.ufds += ':' + config.port;
+        }
+    }
 } catch (e) {
     console.error(e.stack);
     process.exit(1);

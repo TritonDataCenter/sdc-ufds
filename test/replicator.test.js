@@ -33,25 +33,35 @@ var LOCAL_UFDS = {
 	bindCredentials: 'secret'
 };
 
-var REPLICATION_QUERIES = [
+var QUERIES_ONE = [
 	USERS_QUERY,
-	SERVERS_QUERY,
+	SERVERS_QUERY
+];
+
+var QUERIES_TWO = [
 	PACKAGES_QUERY
 ];
 
-var REMOTE_UFDS = {
+var REMOTE_ONE = {
 	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14'),
-	queries: REPLICATION_QUERIES,
+	queries: QUERIES_ONE,
 	maxConnections: 1,
 	bindDN: 'cn=root',
 	bindCredentials: 'secret'
 };
 
+var REMOTE_TWO = {
+	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14'),
+	queries: QUERIES_TWO,
+	maxConnections: 1,
+	bindDN: 'cn=root',
+	bindCredentials: 'secret'
+};
 
 var REPLICATOR_OPTS = {
 	log: LOG,
 	localUfds: LOCAL_UFDS,
-	remoteUfds: REMOTE_UFDS,
+	remotes: [REMOTE_ONE, REMOTE_TWO],
 	checkpointDn: 'cn=replicator, datacenter=coal, o=smartdc'
 };
 
@@ -66,16 +76,23 @@ exports.initReplicator = function(t) {
 };
 
 
-// Give the replicator time to catch up
+// // Give the replicators time to catch up
 exports.catchUp = function(t) {
-	rep.once('caughtup', function (cn) {
-		t.done();
+	var done = 0;
+
+	rep.on('caughtup', function (id, cn) {
+		done++;
+
+		if (done == 2) {
+			rep.removeAllListeners('caughtup');
+			t.done();
+		}
 	});
 };
 
 
 exports.addUser = function(t) {
-	var remote = rep.remoteUfds;
+	var remote = rep.remotes[0].remoteUfds;
 
 	var user = fixtures.user;
 	var key = fixtures.key;
@@ -127,7 +144,7 @@ exports.getUser = function(t) {
 
 
 exports.deleteUser = function(t) {
-	var remote = rep.remoteUfds;
+	var remote = rep.remotes[0].remoteUfds;
 
 	var userDn = fixtures.user.dn;
 	var keyDn = fixtures.key.dn;

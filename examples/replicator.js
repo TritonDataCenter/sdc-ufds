@@ -38,15 +38,26 @@ var LOCAL_UFDS = {
 	bindCredentials: 'secret'
 };
 
-var REPLICATION_QUERIES = [
+var QUERIES_ONE = [
 	USERS_QUERY,
-	SERVERS_QUERY,
+	SERVERS_QUERY
+];
+
+var QUERIES_TWO = [
 	PACKAGES_QUERY
 ];
 
-var REMOTE_UFDS = {
+var REMOTE_ONE = {
 	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14'),
-	queries: REPLICATION_QUERIES,
+	queries: QUERIES_ONE,
+	maxConnections: 1,
+	bindDN: 'cn=root',
+	bindCredentials: 'secret'
+};
+
+var REMOTE_TWO = {
+	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14'),
+	queries: QUERIES_TWO,
 	maxConnections: 1,
 	bindDN: 'cn=root',
 	bindCredentials: 'secret'
@@ -55,7 +66,7 @@ var REMOTE_UFDS = {
 var REPLICATOR_OPTS = {
 	log: LOG,
 	localUfds: LOCAL_UFDS,
-	remoteUfds: REMOTE_UFDS,
+	remotes: [REMOTE_ONE, REMOTE_TWO],
 	checkpointDn: 'cn=replicator, datacenter=coal, o=smartdc'
 };
 
@@ -63,13 +74,14 @@ var REPLICATOR_OPTS = {
 rep = new Replicator(REPLICATOR_OPTS);
 rep.init();
 
+
 rep.once('started', function () {
     LOG.info('Replicator has started!');
 });
 
 
-rep.on('caughtup', function (cn) {
-	LOG.info('Replicator has caught up with UFDS at changenumber %s', cn);
+rep.on('caughtup', function (id, cn) {
+	LOG.info('Replicator %d has caught up with UFDS at changenumber %s', id, cn);
 });
 
 

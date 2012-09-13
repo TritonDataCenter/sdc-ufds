@@ -20,7 +20,7 @@
         "retry": "0.6.0",
         "crc": "0.2.0",
         "microtime": "0.3.1",
-        "moray": "git+ssh://git@git.joyent.com:node-moray.git#f7665c9"
+        "moray": "git+ssh://git@git.joyent.com:node-moray.git#cced4a8"
     },
     "devDependencies": {
         "nodeunit": "0.7.4",

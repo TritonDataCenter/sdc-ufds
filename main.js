@@ -55,17 +55,20 @@ var SCHEMA;
 ///--- Helpers
 
 function usage(code, message) {
-    var _opts = '';
+    var _opts = '', msg;
     Object.keys(SHORT_OPTS).forEach(function (k) {
-        var longOpt = SHORT_OPTS[k][0].replace('--', '');
-        var type = OPTS[longOpt].name || 'string';
-        if (type && type === 'boolean') type = '';
+        var longOpt = SHORT_OPTS[k][0].replace('--', ''),
+            type = OPTS[longOpt].name || 'string';
+
+        if (type && type === 'boolean') {
+            type = '';
+        }
         type = type.toLowerCase();
 
         _opts += ' [--' + longOpt + ' ' + type + ']';
     });
 
-    var msg = (message ? message + '\n' : '') +
+    msg = (message ? message + '\n' : '') +
         'usage: ' + path.basename(process.argv[1]) + _opts;
 
     console.error(msg);
@@ -80,12 +83,13 @@ function errorAndExit(err, message) {
 
 
 function processConfig() {
-    var _config;
-    var parsed = nopt(OPTS, SHORT_OPTS, process.argv, 2);
-    var file = parsed.file || __dirname + '/etc/ufds.config.json';
+    var _config,
+        parsed = nopt(OPTS, SHORT_OPTS, process.argv, 2),
+        file = parsed.file || __dirname + '/etc/ufds.config.json';
 
-    if (parsed.help)
+    if (parsed.help) {
         usage(0);
+    }
 
     LOG.info({file: file}, 'Processing configuration file');
 
@@ -93,32 +97,40 @@ function processConfig() {
 
         _config = JSON.parse(fs.readFileSync(file, 'utf8'));
 
-        if (_config.certificate && _config.key && !_config.port)
+        if (_config.certificate && _config.key && !_config.port) {
             _config.port = 636;
+        }
 
-        if (!_config.port)
+        if (!_config.port) {
             _config.port = 389;
+        }
 
     } catch (e) {
         console.error('Unable to parse configuration file: ' + e.message);
         process.exit(1);
     }
 
-    if (parsed.port)
+    if (parsed.port) {
         _config.port = parsed.port;
+    }
 
-    if (parsed.debug)
+    if (parsed.debug) {
         LOG.level(parsed.debug > 1 ? 'trace' : 'debug');
+    }
 
-    if (parsed.certificate)
+    if (parsed.certificate) {
         _config.certificate = parsed.certificate;
-    if (parsed.key)
+    }
+    if (parsed.key) {
         _config.key = parsed.key;
+    }
 
-    if (_config.certificate)
+    if (_config.certificate) {
         _config.certificate = fs.readFileSync(_config.certificate, 'utf8');
-    if (_config.key)
+    }
+    if (_config.key) {
         _config.key = fs.readFileSync(_config.key, 'utf8');
+    }
 
     LOG.debug('config processed: %j', _config);
     _config.log = LOG;
@@ -128,15 +140,16 @@ function processConfig() {
 
 
 function audit(req, res, next) {
-    var additional = '';
+    var additional = '', attrs;
     switch (req.type) {
     case 'BindRequest':
         additional += 'bindType=' + req.authentication + ', ';
         break;
     case 'AddRequest':
-        var attrs = req.toObject().attributes;
-        if (attrs.userpassword)
+        attrs = req.toObject().attributes;
+        if (attrs.userpassword) {
             attrs.userpassword = ['XXXXXX'];
+        }
         additional += 'entry= ' + JSON.stringify(attrs) + ', ';
         break;
     case 'SearchRequest':
@@ -184,11 +197,13 @@ function createServer(options) {
 
     // Admin bind
     _server.bind(options.rootDN, function (req, res, next) {
-        if (req.version !== 3)
+        if (req.version !== 3) {
             return next(new ldap.ProtocolError(req.version + ' is not v3'));
+        }
 
-        if (req.credentials !== options.rootPassword)
+        if (req.credentials !== options.rootPassword) {
             return next(new ldap.InvalidCredentialsError(req.dn.toString()));
+        }
 
         res.end();
         return next();
@@ -244,105 +259,126 @@ function createServer(options) {
 }
 
 
-function listen(_server) {
+function listen(_server, config) {
     return _server.listen(config.port, config.host, function () {
         LOG.info('UFDS listening at: %s\n\n', _server.url);
     });
 }
 
-
 ///--- Mainline
 
-var config = processConfig();
+function main() {
+    var config = processConfig(),
+        finished = 0,
+        moray = createMorayClient(config),
+        server = createServer(config),
+        trees = config.trees;
 
-SCHEMA = schema.load(__dirname + '/schema', LOG);
-LOG.info({schema: Object.keys(SCHEMA)}, 'Schema loaded');
+    SCHEMA = schema.load(__dirname + '/schema', LOG);
+    LOG.info({schema: Object.keys(SCHEMA)}, 'Schema loaded');
 
-var finished = 0;
-var moray = createMorayClient(config);
-var server = createServer(config);
-var trees = config.trees;
 
-moray.once('error', function (err) {
-    errorAndExit(err, 'Moray Error');
-});
 
-server.use(function setup(req, res, next) {
-    req.req_id = uuid();
-    req.log = LOG.child({req_id: req.req_id}, true);
-    req.moray = moray;
-    req.schema = SCHEMA;
-    req.config = config;
+    moray.once('error', function (err) {
+        errorAndExit(err, 'Moray Error');
+    });
 
-    return next();
-});
+    server.use(function setup(req, res, next) {
+        req.req_id = uuid();
+        req.log = LOG.child({req_id: req.req_id}, true);
+        req.moray = moray;
+        req.schema = SCHEMA;
+        req.config = config;
 
-function onMorayConnect() {
-    var clog = config.changelog;
-    moray.putBucket(clog.bucket, {index: clog.schema}, function (clogErr) {
-        if (clogErr) {
-            LOG.fatal({err: clogErr}, 'Unable to set changelog bucket');
-            LOG.info('Trying again in 10 seconds');
-            return setTimeout(function () {
-                onMorayConnect();
-            }, 10000);
-        }
+        return next();
+    });
 
-        server.search('cn=changelog',
-                      function _setup(req, res, next) {
-                            req.bucket = clog.bucket;
-                            req.suffix = 'cn=changelog';
-                            return next();
-                      },
-                      be.search());
+    function onMorayConnect() {
+        var clog = config.changelog;
+        moray.putBucket(clog.bucket, {index: clog.schema}, function (clogErr) {
+            if (clogErr) {
+                LOG.fatal({err: clogErr}, 'Unable to set changelog bucket');
+                LOG.info('Trying again in 10 seconds');
+                return setTimeout(function () {
+                    onMorayConnect();
+                }, 10000);
+            }
 
-        return Object.keys(trees).forEach(function (t) {
-            LOG.debug({
-                bucket: trees[t].bucket,
-                schema: trees[t].schema,
-                suffix: t
-            }, 'Configuring UFDS bucket');
+            server.search('cn=changelog',
+                          function _setup(req, res, next) {
+                                req.bucket = clog.bucket;
+                                req.suffix = 'cn=changelog';
+                                return next();
+                          },
+                          be.search());
 
-            var bucket = trees[t].bucket,
-                cfg = {
-                    index: trees[t].schema,
-                    post: [
-                        be.changelog.add,
-                        be.changelog.mod,
-                        be.changelog.del
-                    ]
-                };
+            return Object.keys(trees).forEach(function (t) {
+                LOG.debug({
+                    bucket: trees[t].bucket,
+                    schema: trees[t].schema,
+                    suffix: t
+                }, 'Configuring UFDS bucket');
 
-            return moray.putBucket(bucket, cfg, function (err) {
-                if (err) {
-                    LOG.fatal({err: err}, 'Unable to set Moray bucket');
-                    LOG.info('Trying again in 10 seconds');
-                    return setTimeout(function () {
-                        onMorayConnect();
-                    }, 10000);
-                }
+                var bucket = trees[t].bucket,
+                    cfg = {
+                        index: trees[t].schema,
+                        post: [
+                            be.changelog.add,
+                            be.changelog.mod,
+                            be.changelog.del
+                        ]
+                    };
 
-                function __setup(req, res, next) {
-                    req.bucket = trees[t].bucket;
-                    req.suffix = t;
+                return moray.putBucket(bucket, cfg, function (err) {
+                    if (err) {
+                        LOG.fatal({err: err}, 'Unable to set Moray bucket');
+                        LOG.info('Trying again in 10 seconds');
+                        return setTimeout(function () {
+                            onMorayConnect();
+                        }, 10000);
+                    }
 
-                    return next();
-                }
+                    function __setup(req, res, next) {
+                        req.bucket = trees[t].bucket;
+                        req.suffix = t;
 
-                server.add(t, __setup, be.add());
-                server.bind(t, __setup, be.bind());
-                server.compare(t, __setup, be.compare());
-                server.del(t, __setup, be.del());
-                server.modify(t, __setup, be.modify());
-                server.search(t, __setup, be.search());
+                        return next();
+                    }
 
-                if (++finished < Object.keys(trees).length)
-                    return false;
+                    server.add(t, __setup, be.add());
+                    server.bind(t, __setup, be.bind());
+                    server.compare(t, __setup, be.compare());
+                    server.del(t, __setup, be.del());
+                    server.modify(t, __setup, be.modify());
+                    server.search(t, __setup, be.search());
 
-                return listen(server);
+                    if (++finished < Object.keys(trees).length)
+                        return false;
+
+                    return listen(server, config);
+                });
             });
         });
-    });
+    }
+
+    moray.on('connect', onMorayConnect);
 }
 
-moray.on('connect', onMorayConnect);
+var REBOOTING = false;
+process.on('uncaughtException', function (err) {
+    console.log('UncaughtException happened.');
+    LOG.fatal({err: err}, 'uncaughtException');
+    if (REBOOTING !== true) {
+        REBOOTING = true;
+        console.log('Retrying to boot ufds server in 30 seconds.');
+        var t = setTimeout(function () {
+            clearTimeout(t);
+            // Let SMF do its job and restart the server after 30 seconds.
+            // FIXME: Ideally, we'll have a better procedure to boot the server
+            // and cleanup/retry ourselves, w/o any need of exit the process.
+            process.exit(1);
+        }, (30 * 1000));
+    }
+});
+
+main();

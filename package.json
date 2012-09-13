@@ -11,16 +11,16 @@
         "node": ">=0.8"
     },
     "dependencies": {
-        "bunyan": "0.13.0",
+        "bunyan": "0.13.5",
         "http-signature": "0.9.9",
-        "ldapjs": "git://github.com/mcavage/node-ldapjs.git#c56aa5b74fdadd35f3a1fef9297bc33d809438f3",
+        "ldapjs": "git://github.com/mcavage/node-ldapjs.git#c56aa5b",
         "node-uuid": "1.3.3",
         "nopt": "1.0.10",
         "restify": "1.4.0",
         "retry": "0.6.0",
         "crc": "0.2.0",
         "microtime": "0.3.1",
-        "moray": "git+ssh://git@git.joyent.com:node-moray.git#b2ab3c72c2748742496597d8df6f9e34ccce486c"
+        "moray": "git+ssh://git@git.joyent.com:node-moray.git#f7665c9"
     },
     "devDependencies": {
         "nodeunit": "0.7.4",

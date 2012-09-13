@@ -9,7 +9,7 @@ var fs = require('fs');
 
 var Logger = require('bunyan');
 var ldapjs = require('ldapjs');
-var moray = require('moray-client');
+var moray = require('moray');
 
 
 
@@ -76,38 +76,49 @@ module.exports = {
 
     cleanup: function cleanupMoray(suffix, callback) {
         var client = moray.createClient({
-            url: process.env.MORAY_URL || 'http://localhost:8080',
+            url: process.env.MORAY_URL || 'http://127.0.0.1:2020',
             log: LOG.child({
                 component: 'moray'
             }),
             retry: false,
-            connectTimeout: 1000
-        });
+            connectTimeout: 1000,
+            noCache: true
+        }),
+        bucket = process.env.MORAY_BUCKET ||
+            'ufds_' + suffix.replace('=', '_'),
+        req,
+        rows = [];
 
-        var bucket = process.env.MORAY_BUCKET ||
-            'ufds_' + suffix.replace('=', '_');
-
-        var keys = [];
-        var req = client.keys(bucket, {limit: 1000});
-        req.on('error', function (err) {
+        client.once('error', function (err) {
             return callback(err);
         });
-        req.on('keys', function (_keys) {
-            if (req.hasMoreKeys())
-                req.next();
-            Object.keys(_keys).forEach(function (k) {
-                keys.push(k);
+        client.on('connect', function () {
+            req = client.findObjects(bucket, 'objectclass=*', {limit: 1000});
+            req.once('error', function (err) {
+                return callback(err);
             });
-        });
-        req.on('end', function () {
-            var finished = 0;
-            keys.forEach(function (k) {
-                client.del(bucket, k, function (err) {
-                    assert.ifError(err);
-                    return (++finished === keys.length ? callback() : false);
+            req.on('record', function (obj) {
+                rows.push(obj);
+            });
+            req.on('end', function () {
+                var finished = 0;
+                rows.forEach(function (r) {
+                    client.delObject(r.bucket, r.key, function (err) {
+                        assert.ifError(err);
+                        finished += 1;
+                        if (finished === rows.length) {
+                            client.close();
+                            return callback();
+                        } else {
+                            return false;
+                        }
+                    });
                 });
             });
         });
+
+
+
     }
 };
 

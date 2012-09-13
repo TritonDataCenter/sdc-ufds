@@ -4,12 +4,13 @@
     "rootDN": "cn=root",
     "rootPassword": "secret",
     "moray": {
-        "url": "http://localhost:8080",
+        "url": "http://127.0.0.1:2020",
         "connectTimeout": 1000,
         "retry": {
             "retries": 1,
             "minTimeout": 1000
-        }
+        },
+        "noCache": true
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",

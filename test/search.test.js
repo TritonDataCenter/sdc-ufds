@@ -32,6 +32,15 @@ function entryToObject(entry) {
     delete obj.dn;
     if (obj.controls)
         delete obj.controls;
+    // FIXME: Need to review why attrs. _parent and _salt are being retrieved
+    // now but they weren't by the non-streaming branch.
+    /* BEGIN JSSTYLED */
+    for (var p in obj) {
+        if (/^_.*/.test(p)) {
+            delete obj[p];
+        }
+    }
+    /* END JSSTYLED */
     return obj;
 }
 
@@ -143,6 +152,7 @@ test('search base objectclass=*', function (t) {
         t.equal(dn, results[0].dn);
         t.deepEqual(results[0].attributes, USERS[dn]);
         t.done();
+
     });
 });
 

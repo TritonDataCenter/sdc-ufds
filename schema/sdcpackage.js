@@ -97,8 +97,9 @@ Package.prototype.validate = function validate(entry, callback) {
     }
 
     if (!validNumber(attrs.max_physical_memory[0], MIN_RAM)) {
-        errors.push('RAM: \'' + attrs.max_physical_memory[0] + '\' is invalid ' +
-                    '(must be greater or equal than ' + MIN_RAM + ')');
+        errors.push('RAM: \'' + attrs.max_physical_memory[0] +
+                '\' is invalid ' +
+                '(must be greater or equal than ' + MIN_RAM + ')');
     }
 
     if (!validNumber(attrs.max_swap[0], MIN_SWAP)) {
@@ -106,9 +107,12 @@ Package.prototype.validate = function validate(entry, callback) {
                     '(must be greater or equal than ' + MIN_SWAP + ')');
     }
 
-    if (parseInt(attrs.max_swap[0], 10) < parseInt(attrs.max_physical_memory[0], 10)) {
-        errors.push('Swap: \'' + attrs.max_swap[0] + '\' is invalid ' +
-                    '(cannot be less than RAM: ' + attrs.max_physical_memory[0] + ')');
+    if (parseInt(attrs.max_swap[0], 10) <
+        parseInt(attrs.max_physical_memory[0], 10)) {
+        errors.push('Swap: \'' + attrs.max_swap[0] +
+                        '\' is invalid ' +
+                        '(cannot be less than RAM: ' +
+                        attrs.max_physical_memory[0] + ')');
     }
 
     if (!validNumber(attrs.quota[0], MIN_DISK)) {

@@ -236,6 +236,10 @@ function createServer(options) {
         return next();
     });
 
+    _server.on('clientError', function (err) {
+        LOG.error({err: err}, 'LDAPJS Server clientError');
+    });
+
     return _server;
 }
 

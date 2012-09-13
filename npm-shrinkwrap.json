@@ -18,7 +18,7 @@
     },
     "ldapjs": {
       "version": "0.5.4",
-      "from": "git://github.com/mcavage/node-ldapjs.git#master",
+      "from": "git://github.com/mcavage/node-ldapjs.git#c56aa5b74fdadd35f3a1fef9297bc33d809438f3",
       "dependencies": {
         "asn1": {
           "version": "0.1.11"

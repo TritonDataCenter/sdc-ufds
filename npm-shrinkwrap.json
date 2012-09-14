@@ -3,7 +3,7 @@
   "version": "7.0.0",
   "dependencies": {
     "bunyan": {
-      "version": "0.13.0"
+      "version": "0.13.5"
     },
     "http-signature": {
       "version": "0.9.9",
@@ -18,7 +18,7 @@
     },
     "ldapjs": {
       "version": "0.5.4",
-      "from": "git://github.com/mcavage/node-ldapjs.git#c56aa5b74fdadd35f3a1fef9297bc33d809438f3",
+      "from": "git://github.com/mcavage/node-ldapjs.git#c56aa5b",
       "dependencies": {
         "asn1": {
           "version": "0.1.11"
@@ -117,19 +117,16 @@
     },
     "moray": {
       "version": "1.0.0",
-      "from": "git+ssh://git@git.joyent.com:node-moray.git#b2ab3c72c2748742496597d8df6f9e34ccce486c",
+      "from": "git+ssh://git@git.joyent.com:node-moray.git#cced4a8",
       "dependencies": {
         "assert-plus": {
-          "version": "0.1.0"
-        },
-        "bunyan": {
-          "version": "0.10.0"
+          "version": "0.1.1"
         },
         "clone": {
-          "version": "0.1.0"
+          "version": "0.1.1"
         },
         "fast": {
-          "version": "0.1.5",
+          "version": "0.1.6",
           "dependencies": {
             "verror": {
               "version": "1.3.3",

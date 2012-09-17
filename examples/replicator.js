@@ -22,7 +22,7 @@ var LOG = bunyan.createLogger({
 	name: 'sample-replicator',
         stream: process.stdout,
         serializers: bunyan.stdSerializers,
-	level: 'info'
+	level: process.LOG_LEVEL || 'info'
 });
 
 var rep;

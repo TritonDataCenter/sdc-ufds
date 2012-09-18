@@ -2,7 +2,7 @@
     "logLevel": "debug",
     "checkpointDn": "cn=replicator, datacenter=DATACENTER_NAME, o=smartdc",
     "localUfds": {
-        "url": "ldap://localhost",
+        "url": "ldaps://localhost",
         "maxConnections": 1,
         "bindDN": "ROOT_DN",
         "bindCredentials": "ROOT_PW"

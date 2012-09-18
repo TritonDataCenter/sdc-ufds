@@ -145,7 +145,7 @@
     },
     "ufds-replicator": {
       "version": "0.1.0",
-      "from": "git+ssh://git@git.joyent.com:ufds-replicator.git#6cc62c3",
+      "from": "git+ssh://git@git.joyent.com:ufds-replicator.git#7c4f8e7",
       "dependencies": {
         "filed": {
           "version": "0.0.5"

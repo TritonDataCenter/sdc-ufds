@@ -1,7 +1,7 @@
 {
   "name": "ufds-replicator",
   "description": "UFDS Replicator",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "author": "Andres Rodriguez (andres@joyent.com)",
   "private": true,
   "main": "./lib/index.js",

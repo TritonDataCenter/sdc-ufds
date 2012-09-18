@@ -8,7 +8,7 @@
 var execFile = require('child_process').execFile;
 var child;
 
-var ldapUrl = process.LOCAL_UFDS_IP || 'ldap://127.0.0.1:1389';
+var ldapUrl = process.LOCAL_UFDS_URL || 'ldap://127.0.0.1:1389';
 var dataFile = process.DATA_FILE || 'data/bootstrap.ldif'
 
 var execArgs = [

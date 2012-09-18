@@ -32,7 +32,7 @@ var SERVERS_QUERY = '/ou=servers, datacenter=coal, o=smartdc??sub?';
 var PACKAGES_QUERY = '/ou=packages, o=smartdc??sub?';
 
 var LOCAL_UFDS = {
-	url: 'ldap://' + (process.env.LOCAL_UFDS_IP || '127.0.0.1:1389'),
+	url: process.env.LOCAL_UFDS_URL || 'ldap://127.0.0.1:1389',
 	maxConnections: 1,
 	bindDN: 'cn=root',
 	bindCredentials: 'secret'
@@ -48,7 +48,7 @@ var QUERIES_TWO = [
 ];
 
 var REMOTE_ONE = {
-	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14'),
+	url: process.env.REMOTE_UFDS_URL || 'ldaps://10.99.99.14',
 	queries: QUERIES_ONE,
 	maxConnections: 1,
 	bindDN: 'cn=root',
@@ -56,7 +56,7 @@ var REMOTE_ONE = {
 };
 
 var REMOTE_TWO = {
-	url: 'ldaps://' + (process.env.UFDS_IP || '10.99.99.14'),
+	url: process.env.REMOTE_UFDS_URL || 'ldaps://10.99.99.14',
 	queries: QUERIES_TWO,
 	maxConnections: 1,
 	bindDN: 'cn=root',

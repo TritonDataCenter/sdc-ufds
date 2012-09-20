@@ -1,6 +1,6 @@
 export PATH=$PWD/build/node/bin:$PWD/node_modules/.bin:$PATH
 
-alias ufds_laptop='node main.js -f ./etc/ufds.laptop.config.json -d 2 2>&1 | bunyan'
+alias ufds_laptop='node main.js -f ./etc/config.coal.json -d 1 2>&1 | bunyan'
 
 export LURL=ldap://localhost:1389
 export LCREDS="-D cn=root -w secret"

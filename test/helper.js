@@ -76,7 +76,7 @@ module.exports = {
 
     cleanup: function cleanupMoray(suffix, callback) {
         var client = moray.createClient({
-            url: process.env.MORAY_URL || 'http://127.0.0.1:2020',
+            url: process.env.MORAY_URL || 'tcp://10.99.99.13:2020',
             log: LOG.child({
                 component: 'moray'
             }),

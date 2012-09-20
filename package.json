@@ -20,7 +20,7 @@
         "retry": "0.6.0",
         "crc": "0.2.0",
         "microtime": "0.3.1",
-        "moray": "git+ssh://git@git.joyent.com:node-moray.git#cced4a8",
+        "moray": "git+ssh://git@git.joyent.com:node-moray.git#27eb7ac",
         "ufds-replicator": "git+ssh://git@git.joyent.com:ufds-replicator.git#7c4f8e7"
     },
     "devDependencies": {

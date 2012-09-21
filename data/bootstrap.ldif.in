@@ -35,6 +35,10 @@ dn: ou=servers, datacenter=DATACENTER_NAME, o=smartdc
 ou: servers
 objectclass: organizationalUnit
 
+dn: ou=images, o=smartdc
+ou: images
+objectclass: organizationalUnit
+
 dn: ou=packages, o=smartdc
 ou: packages
 objectclass: organizationalUnit

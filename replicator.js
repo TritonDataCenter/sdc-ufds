@@ -61,7 +61,7 @@ function errorAndExit(err, message) {
 function processConfig() {
     var _config,
         parsed = nopt(OPTS, SHORT_OPTS, process.argv, 2),
-        file = parsed.file || __dirname + './etc/replicator.json';
+        file = parsed.file || path.join(__dirname, 'etc/replicator.json');
 
     if (parsed.help) {
         usage(0);

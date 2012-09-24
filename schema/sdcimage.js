@@ -21,7 +21,7 @@ function SDCImage() {
         name: 'sdcimage',
         required: {
             uuid: 1,
-            name: 1,
+            name: 1
         },
         optional: {
             description: 1,

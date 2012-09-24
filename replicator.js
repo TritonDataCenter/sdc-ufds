@@ -12,9 +12,9 @@ var Replicator = require('ufds-replicator');
 
 
 var LOG = bunyan.createLogger({
-	name: 'ufds-replicator',
+    name: 'ufds-replicator',
     stream: process.stdout,
-    serializers: bunyan.stdSerializers,
+    serializers: bunyan.stdSerializers
 });
 
 
@@ -87,31 +87,32 @@ function processConfig() {
 
 function main() {
     var config = processConfig();
-	var rep;
+    var rep;
 
-	rep = new Replicator(config);
-	rep.init();
-
-
-	rep.once('started', function () {
-	    LOG.info('Replicator has started!');
-	});
+    rep = new Replicator(config);
+    rep.init();
 
 
-	rep.on('caughtup', function (id, cn) {
-		LOG.info('Replicator %d has caught up with UFDS at changenumber %s', id, cn);
-	});
+    rep.once('started', function () {
+        LOG.info('Replicator has started!');
+    });
 
 
-	rep.once('stopped', function () {
-		LOG.info('Replicator has stopped!');
-		process.exit(0);
-	});
+    rep.on('caughtup', function (id, cn) {
+        LOG.info('Replicator %d has caught up with UFDS at changenumber %s',
+            id, cn);
+    });
 
 
-	process.on('SIGINT', function () {
-		rep.stop();
-	});
+    rep.once('stopped', function () {
+        LOG.info('Replicator has stopped!');
+        process.exit(0);
+    });
+
+
+    process.on('SIGINT', function () {
+        rep.stop();
+    });
 }
 
 process.on('uncaughtException', function (err) {

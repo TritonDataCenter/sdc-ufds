@@ -237,8 +237,8 @@ function createServer(options) {
             dn: '',
             attributes: {
                 namingcontexts: suffixes,
-                supportedcontrol: ['1.3.6.1.4.1.38678.1'],
-                supportedcontrol: ['2.16.840.1.113730.3.4.3'],
+                supportedcontrol: ['1.3.6.1.4.1.38678.1',
+                    '2.16.840.1.113730.3.4.3'],
                 supportedextension: ['1.3.6.1.4.1.4203.1.11.3'],
                 supportedldapversion: 3,
                 currenttime: now(),
@@ -268,11 +268,11 @@ function listen(_server, config) {
 ///--- Mainline
 
 function main() {
-    var config = processConfig(),
-        finished = 0,
-        moray = createMorayClient(config),
-        server = createServer(config),
-        trees = config.trees;
+    var config = processConfig();
+    var finished = 0;
+    var moray = createMorayClient(config);
+    var server = createServer(config);
+    var trees = config.trees;
 
     SCHEMA = schema.load(__dirname + '/schema', LOG);
     LOG.info({schema: Object.keys(SCHEMA)}, 'Schema loaded');

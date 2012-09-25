@@ -47,6 +47,18 @@ dn: ou=config, o=smartdc
 ou: config
 objectclass: organizationalUnit
 
+dn: ou=nicTags, datacenter=DATACENTER_NAME, o=smartdc
+ou: nicTags
+objectclass: organizationalUnit
+
+dn: ou=networks, datacenter=DATACENTER_NAME, o=smartdc
+ou: networks
+objectclass: organizationalUnit
+
+dn: ou=nics, datacenter=DATACENTER_NAME, o=smartdc
+ou: nics
+objectclass: organizationalUnit
+
 dn: uuid=5968a8a4-5bff-4c5e-8034-d79de962e7f6, ou=packages, o=smartdc
 uuid: 5968a8a4-5bff-4c5e-8034-d79de962e7f6
 active: true

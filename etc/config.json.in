@@ -64,6 +64,17 @@
                 "tosubnet": { "type": "string" },
                 "fromwildcard": { "type": "string" },
                 "towildcard": { "type": "string" },
+                "nictag": {
+                    "type": "string",
+                    "unique": true
+                },
+                "nictagname": { "type": "string" },
+                "networkname": {
+                    "type": "string",
+                    "unique": true
+                },
+                "ip": { "type": "number" },
+                "mac": { "type": "number" },
                 "_owner": { "type": "string" },
                 "_parent": { "type": "string" },
                 "urn": {

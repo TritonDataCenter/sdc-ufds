@@ -10,7 +10,7 @@
         "url": "MORAY_URL",
         "connectTimeout": 1000,
         "retry": {
-            "retries": 1,
+            "retries": 3,
             "minTimeout": 1000
         }
     },

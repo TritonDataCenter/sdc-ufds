@@ -8,7 +8,7 @@
         "url": "tcp://10.99.99.13:2020",
         "connectTimeout": 1000,
         "retry": {
-            "retries": 1,
+            "retries": 3,
             "minTimeout": 1000
         }
     },

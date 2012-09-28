@@ -26,9 +26,9 @@ function SDCImage() {
         },
         optional: {
             description: 1,
-            dc: 0,      /* one or more */
-            tag: 0,     /* one or more */
-            urn: 1      /* DEPRECATED */
+            datacenter: 0,  /* one or more */
+            tag: 0,  /* one or more */
+            urn: 1  /* DEPRECATED */
         }
     });
 }

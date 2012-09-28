@@ -21,18 +21,15 @@ function SDCImage() {
         name: 'sdcimage',
         required: {
             uuid: 1,
-            name: 1
+            name: 1,
+            disabled: 1
         },
         optional: {
             description: 1,
             dc: 0,      /* one or more */
             tag: 0,     /* one or more */
             urn: 1      /* DEPRECATED */
-        },
-        immutable: [
-            'uuid',
-            'name'
-        ]
+        }
     });
 }
 util.inherits(SDCImage, Validator);

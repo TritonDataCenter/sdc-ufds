@@ -4,6 +4,8 @@ var assert = require('assert');
 var crypto = require('crypto');
 var fs = require('fs');
 var path = require('path');
+var cluster = require('cluster');
+var os = require('os');
 
 var Logger = require('bunyan');
 var nopt = require('nopt');
@@ -35,6 +37,7 @@ var SHORT_OPTS = {
     'f': ['--file'],
     'k': ['--key'],
     'p': ['--port'],
+    's': ['--single'],
     'h': ['--help']
 };
 
@@ -99,6 +102,8 @@ function processConfig() {
         LOG.level(parsed.debug > 1 ? 'trace' : 'debug');
     }
 
+    _config.single = (parsed.single) ? true : false;
+
     if (parsed.certificate) {
         _config.certificate = parsed.certificate;
     }
@@ -122,11 +127,29 @@ function processConfig() {
 // --- Mainline
 
 var config = processConfig();
-var ufds = require('./lib/ufds').createServer(config);
-ufds.on('morayError', ufds.morayConnectCalback);
-ufds.init(function () {
-    return (true);
-});
-// Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
-var sigyan = require('sigyan');
-sigyan.add([LOG, ufds.moray.log]);
+
+if (!config.single && cluster.isMaster) {
+    var min_child_ram = 128 * 1024 * 1024,
+        cpus = os.cpus().length,
+        slots = Math.ceil(os.totalmem() / min_child_ram),
+        max_forks = (cpus >= slots) ? slots : cpus;
+
+    for (var i = 0; i < max_forks; i++) {
+        cluster.fork();
+    }
+
+    cluster.on('death', function (worker) {
+        LOG.error({worker: worker}, 'worker %d exited');
+    });
+} else {
+    var ufds = require('./lib/ufds').createServer(config);
+    ufds.on('morayError', ufds.morayConnectCalback);
+    ufds.init(function () {
+        return (true);
+    });
+    // Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
+    var sigyan = require('sigyan');
+    sigyan.add([LOG, ufds.moray.log]);
+}
+
+

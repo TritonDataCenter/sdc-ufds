@@ -28,7 +28,8 @@ var OPTS = {
     'file': String,
     'key': String,
     'port': Number,
-    'help': Boolean
+    'help': Boolean,
+    'single': Boolean
 };
 
 var SHORT_OPTS = {

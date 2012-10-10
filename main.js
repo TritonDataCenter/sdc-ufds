@@ -129,26 +129,14 @@ function processConfig() {
 
 var config = processConfig();
 
-if (!config.single && cluster.isMaster) {
-    var min_child_ram = 128 * 1024 * 1024,
-        cpus = os.cpus().length,
-        slots = Math.ceil(os.totalmem() / min_child_ram),
-        max_forks = (cpus >= slots) ? slots : cpus;
+// CAPI-169: Clustering intentionally disabled due to race condition on
+// ldif bootstrap.
+var ufds = require('./lib/ufds').createServer(config);
+ufds.on('morayError', ufds.morayConnectCalback);
+ufds.init(function () {
+    return (true);
+});
+// Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
+var sigyan = require('sigyan');
+sigyan.add([LOG, ufds.moray.log]);
 
-    for (var i = 0; i < max_forks; i++) {
-        cluster.fork();
-    }
-
-    cluster.on('death', function (worker) {
-        LOG.error({worker: worker}, 'worker %d exited');
-    });
-} else {
-    var ufds = require('./lib/ufds').createServer(config);
-    ufds.on('morayError', ufds.morayConnectCalback);
-    ufds.init(function () {
-        return (true);
-    });
-    // Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
-    var sigyan = require('sigyan');
-    sigyan.add([LOG, ufds.moray.log]);
-}

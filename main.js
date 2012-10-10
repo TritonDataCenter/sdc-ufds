@@ -152,5 +152,3 @@ if (!config.single && cluster.isMaster) {
     var sigyan = require('sigyan');
     sigyan.add([LOG, ufds.moray.log]);
 }
-
-

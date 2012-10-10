@@ -129,20 +129,20 @@ function processConfig() {
 
 var config = processConfig();
 
-// Disable clustering until we verify the reason for CAPI-169
-// is not a race condition between forks:
-// if (!config.single && cluster.isMaster) {
-//     var min_child_ram = 128 * 1024 * 1024,
-//         cpus = os.cpus().length,
-//         slots = Math.ceil(os.totalmem() / min_child_ram),
-//         max_forks = (cpus >= slots) ? slots : cpus;
-//     for (var i = 0; i < max_forks; i++) {
-//         cluster.fork();
-//     }
-//     cluster.on('death', function (worker) {
-//         LOG.error({worker: worker}, 'worker %d exited');
-//     });
-// } else {
+if (!config.single && cluster.isMaster) {
+    var min_child_ram = 128 * 1024 * 1024,
+        cpus = os.cpus().length,
+        slots = Math.ceil(os.totalmem() / min_child_ram),
+        max_forks = (cpus >= slots) ? slots : cpus;
+
+    for (var i = 0; i < max_forks; i++) {
+        cluster.fork();
+    }
+
+    cluster.on('death', function (worker) {
+        LOG.error({worker: worker}, 'worker %d exited');
+    });
+} else {
     var ufds = require('./lib/ufds').createServer(config);
     ufds.on('morayError', ufds.morayConnectCalback);
     ufds.init(function () {
@@ -151,4 +151,6 @@ var config = processConfig();
     // Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
     var sigyan = require('sigyan');
     sigyan.add([LOG, ufds.moray.log]);
-// }
+}
+
+

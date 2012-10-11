@@ -68,6 +68,7 @@
                 "unique": true
             },
             "nictagname": { "type": "string" },
+            "nictagsprovided": { "type": "string" },
             "networkname": {
                 "type": "string",
                 "unique": true

@@ -1,0 +1,6 @@
+dn: ip=174285634, o=smartdc
+belongstotype: zone
+belongstouuid: 8bedcdfe-f352-4c34-ae67-2f02fcdcf20c
+ip: 174285634
+objectclass: ip
+owneruuid: 930896af-bf8c-48d4-885c-6573a94b1853

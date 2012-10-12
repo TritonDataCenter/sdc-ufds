@@ -139,4 +139,3 @@ ufds.init(function () {
 // Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
 var sigyan = require('sigyan');
 sigyan.add([LOG, ufds.moray.log]);
-

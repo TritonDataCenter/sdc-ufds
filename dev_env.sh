@@ -1,8 +1,8 @@
-export PATH=$PWD/build/node/bin:$PWD/node_modules/.bin:$PATH
+export PATH=$PWD/build/node/bin:$PWD/node_modules/.bin:/opt/local/bin:$PATH
 
-alias ufds_laptop='node main.js -f ./etc/config.coal.json -d 1 2>&1 | bunyan'
+alias ufds_laptop='node main.js -s -f ./etc/config.coal.json -d 1 2>&1 | bunyan'
 
-export LURL=ldap://localhost:1389
+export LURL=ldap://127.0.0.1:1389
 export LCREDS="-D cn=root -w secret"
 alias ladd_laptop='ldapadd -x -H $LURL $LCREDS'
 alias lsearch_laptop='ldapsearch -x -LLL -H $LURL $LCREDS'

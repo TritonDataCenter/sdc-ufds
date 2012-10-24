@@ -22,10 +22,17 @@ function SDCImage() {
         required: {
             uuid: 1,
             name: 1,
-            disabled: 1
+            disabled: 1,
+            type: 1,
+            os: 1,
+            type: 1,
+            activated: 1
         },
         optional: {
+            published_at: 1,
+            files: 1,
             description: 1,
+            requirements: 1,
             datacenter: 0,  /* one or more */
             tag: 0,  /* one or more */
             urn: 1  /* DEPRECATED */
@@ -36,19 +43,7 @@ util.inherits(SDCImage, Validator);
 
 
 SDCImage.prototype.validate = function validate(entry, callback) {
-    var attrs = entry.attributes,
-        errors = [];
-
-    if (!UUID_RE.test(attrs.uuid[0])) {
-        errors.push(format('Image uuid: "%s" is invalid (must be a UUID)',
-            attrs.uuid[0]));
-    }
-
-    //TODO: max length on name and description
-
-    if (errors.length)
-        return callback(new ldap.ConstraintViolationError(errors.join('\n')));
-
+    // Leaving validation to IMGAPI.
     return callback();
 };
 

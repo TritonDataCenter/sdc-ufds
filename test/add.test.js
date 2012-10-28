@@ -54,7 +54,10 @@ test('add suffix', function (t) {
         objectclass: 'organization'
     };
     CLIENT.add(SUFFIX, entry, function (err) {
-        t.ifError(err);
+        if (err) {
+            if (err.name !== 'EntryAlreadyExistsError')
+                t.ifError(err);
+        }
         t.done();
     });
 });

@@ -6,10 +6,6 @@ var ldap = require('ldapjs');
 var Validator = require('../lib/schema/validator');
 
 var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
-/* JSSTYLED */
-var URN_RE = /^\w+:(?:[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})?:.+:\d+\.\d+\.\d+$/;
-
-
 
 ///--- Validation helpers
 
@@ -17,9 +13,6 @@ function validUUID(uuid) {
     return UUID_RE.test(uuid);
 }
 
-function validUrn(urn) {
-    return URN_RE.test(urn);
-}
 
 function validNumber(attr, min, max) {
     if (!min) min = 0;
@@ -91,11 +84,6 @@ Package.prototype.validate = function validate(entry, callback) {
                     '\' is invalid (must be a UUID)');
     }
 
-    if (!validUrn(attrs.urn[0])) {
-        errors.push('Package URN: \'' + attrs.urn[0] +
-                    '\' is invalid (must be a URN)');
-    }
-
     if (!validNumber(attrs.max_physical_memory[0], MIN_RAM)) {
         errors.push('RAM: \'' + attrs.max_physical_memory[0] +
                 '\' is invalid ' +
@@ -146,8 +134,9 @@ Package.prototype.validate = function validate(entry, callback) {
     }
 
 
-    if (errors.length)
+    if (errors.length) {
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
+    }
 
     return callback();
 };

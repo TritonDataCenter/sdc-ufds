@@ -43,7 +43,6 @@ var PACKAGE = {
     'default': true,
     active: false,
     vcpus: 1,
-    urn: 'sdc::regular_128:1.0.0',
     uuid: uuid(),
     objectclass: 'sdcpackage'
 };

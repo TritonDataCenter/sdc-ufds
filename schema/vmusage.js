@@ -5,11 +5,7 @@ var ldap = require('ldapjs');
 
 var Validator = require('../lib/schema/validator');
 
-
-/* JSSTYLED */
 var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
-/* JSSTYLED */
-
 
 
 ///--- Validation helpers
@@ -27,7 +23,7 @@ function validNumber(attr) {
 
 function VM() {
     Validator.call(this, {
-        name: 'vm',
+        name: 'vmusage',
         required: {
             uuid: 1,
             image_uuid: 1,

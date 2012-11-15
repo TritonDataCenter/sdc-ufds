@@ -53,6 +53,7 @@
             "postalcode": { "type": "string" },
             "uniquemember": { "type": "string" },
             "agent": { "type": "string" },
+            "owner": { "type": "string" },
             "fwrule": { "type": "string" },
             "fromtag": { "type": "string" },
             "totag": { "type": "string" },

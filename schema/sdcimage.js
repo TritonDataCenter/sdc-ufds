@@ -22,6 +22,7 @@ function SDCImage() {
         required: {
             uuid: 1,
             name: 1,
+            owner: 1,
             disabled: 1,
             type: 1,
             os: 1,
@@ -33,8 +34,8 @@ function SDCImage() {
             files: 1,
             description: 1,
             requirements: 1,
+            acl: 0,  /* zero or more */
             datacenter: 0,  /* one or more */
-            tag: 0,  /* one or more */
             urn: 1  /* DEPRECATED */
         }
     });

@@ -32,26 +32,26 @@ client.on('connect', function () {
 
 
 function deleteChangelogBucket() {
- 	client.delBucket('ufds_cn_changelog_two', function (err) {
-    	if (err) {
+    client.delBucket('ufds_cn_changelog_two', function (err) {
+        if (err) {
 			LOG.error(err);
 			process.exit(1);
-    	}
+        }
 
-    	deleteTreeBucket();
+        deleteTreeBucket();
 	});
 }
 
 
 function deleteTreeBucket() {
- 	client.delBucket('ufds_o_smartdc_two', function (err) {
-    	if (err) {
+    client.delBucket('ufds_o_smartdc_two', function (err) {
+        if (err) {
 			LOG.error(err);
 			process.exit(1);
-    	}
+        }
 
-    	LOG.info('Buckets deleted. Thanks.');
-    	process.exit(0);
+        LOG.info('Buckets deleted. Thanks.');
+        process.exit(0);
 	});
 }
 

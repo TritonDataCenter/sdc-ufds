@@ -10,7 +10,7 @@
  *
  * LDAPTLS_REQCERT=allow ldapadd -H ldap://127.0.0.1:1389 \
  *		-x -D cn=root -w secret \
- * 		-f data/bootstrap.ldif
+ *      -f data/bootstrap.ldif
  */
 
 var assert = require('assert-plus');

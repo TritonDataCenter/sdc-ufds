@@ -9,7 +9,7 @@ var execFile = require('child_process').execFile;
 var child;
 
 var ldapUrl = process.LOCAL_UFDS_URL || 'ldap://127.0.0.1:1389';
-var dataFile = process.DATA_FILE || 'data/bootstrap.ldif'
+var dataFile = process.DATA_FILE || 'data/bootstrap.ldif';
 
 var execArgs = [
 	'-H', ldapUrl,
@@ -22,7 +22,7 @@ var execArgs = [
 var execEnv = {
 	env: { 'LDAPTLS_REQCERT': 'allow' },
 	cwd: process.cwd()
-}
+};
 
 child = execFile('ldapadd', execArgs, execEnv, onExec);
 
@@ -32,7 +32,7 @@ function onExec(error, stdout, stderr) {
 	}
 
 	if (stderr) {
-    	console.log('ldapadd stderr:\n' + stderr);
+        console.log('ldapadd stderr:\n' + stderr);
     }
 
     if (error !== null) {

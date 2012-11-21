@@ -71,7 +71,7 @@ exports.initReplicator = function(t) {
 	rep.init();
 
 	rep.once('started', function () {
-	    t.done();
+        t.done();
 	});
 };
 

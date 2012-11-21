@@ -16,7 +16,7 @@ var Replicator = require('../lib/index');
 var LOG = bunyan.createLogger({
 	name: 'ufds-replicator',
     stream: process.stdout,
-    serializers: bunyan.stdSerializers,
+    serializers: bunyan.stdSerializers
 });
 
 
@@ -96,7 +96,7 @@ function main() {
 
 
 	rep.once('started', function () {
-	    LOG.info('Replicator has started!');
+        LOG.info('Replicator has started!');
 	});
 
 

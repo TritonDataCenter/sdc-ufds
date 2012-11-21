@@ -21,7 +21,7 @@
         "crc": "0.2.0",
         "microtime": "0.3.1",
         "moray": "git+ssh://git@git.joyent.com:node-moray.git#b6f1d12",
-        "ufds-replicator": "git+ssh://git@git.joyent.com:ufds-replicator.git#08a4091",
+        "ufds-replicator": "git+ssh://git@git.joyent.com:ufds-replicator.git#1ecbb4",
         "sigyan": "0.2.0"
     },
     "devDependencies": {

@@ -161,7 +161,7 @@
     },
     "ufds-replicator": {
       "version": "0.1.0",
-      "from": "git+ssh://git@git.joyent.com:ufds-replicator.git#08a4091",
+      "from": "git+ssh://git@git.joyent.com:ufds-replicator.git#1ecbb4",
       "dependencies": {
         "bunyan": {
           "version": "0.10.0"
@@ -178,6 +178,9 @@
               }
             }
           }
+        },
+        "async": {
+          "version": "0.1.22"
         },
         "assert-plus": {
           "version": "0.1.2"

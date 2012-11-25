@@ -58,6 +58,7 @@
             "fromtag": { "type": "string" },
             "totag": { "type": "string" },
             "frommachine": { "type": "string" },
+            "tomachine": { "type": "string" },
             "fromip": { "type": "string" },
             "toip": { "type": "string" },
             "fromsubnet": { "type": "string" },

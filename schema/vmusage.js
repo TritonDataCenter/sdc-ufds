@@ -14,9 +14,14 @@ function validUUID(uuid) {
     return UUID_RE.test(uuid);
 }
 
-function validNumber(attr) {
+function validNumber(attr, gezero) {
     var number = parseInt(attr, 10);
-    return (number > 0 ? true : false);
+
+    if (gezero === true) {
+        return (number >= 0 ? true : false);
+    } else {
+        return (number > 0 ? true : false);
+    }
 }
 
 ///--- API
@@ -64,9 +69,9 @@ VM.prototype.validate = function validate(entry, callback) {
                     '\' is invalid (must be a positive number)');
     }
 
-    if (attrs.quota !== undefined && !validNumber(attrs.quota[0])) {
+    if (attrs.quota !== undefined && !validNumber(attrs.quota[0], true)) {
         errors.push('Quota: \'' + attrs.quota[0] +
-                    '\' is invalid (must be a positive number)');
+                    '\' is invalid (must be a number greater or equal than 0)');
     }
 
     if (errors.length) {

@@ -35,6 +35,7 @@ function Nic() {
         },
         optional: {
             ip: 1,
+            model: 1,
             networkuuid: 1,
             nictagname: 1,
             nictagsprovided: 1,

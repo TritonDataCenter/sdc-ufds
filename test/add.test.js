@@ -123,7 +123,8 @@ test('add child unique conflict', function (t) {
     };
     CLIENT.add(dn, entry, function (err) {
         t.ok(err);
-        t.equal(err.name, 'ConstraintViolationError');
+        if (err)
+            t.equal(err.name, 'ConstraintViolationError');
         t.done();
     });
 });

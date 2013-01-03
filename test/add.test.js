@@ -4,6 +4,7 @@
 // bunyan debug logs.
 //
 
+var ldap = require('ldapjs');
 var sprintf = require('util').format;
 var uuid = require('node-uuid');
 
@@ -125,6 +126,25 @@ test('add child unique conflict', function (t) {
         t.ok(err);
         if (err)
             t.equal(err.name, 'ConstraintViolationError');
+        t.done();
+    });
+});
+
+
+test('add child manage DSA', function (t) {
+    var controls = [];
+    controls.push(new ldap.Control({
+        type: '2.16.840.1.113730.3.4.2',
+        criticality: true
+    }));
+    var dn = sprintf(DN_FMT, uuid.v4());
+    var entry = {
+        login: 'a',
+        objectclass: 'sdcperson'
+    };
+
+    CLIENT.add(dn, entry, controls, function (err) {
+        t.ifError(err);
         t.done();
     });
 });

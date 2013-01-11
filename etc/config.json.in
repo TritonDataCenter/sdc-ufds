@@ -51,7 +51,6 @@
             "state": { "type": "string" },
             "country": { "type": "string" },
             "postalcode": { "type": "string" },
-            "uniquemember": { "type": "string" },
             "agent": { "type": "string" },
             "owner": { "type": "string" },
             "fwrule": { "type": "string" },

@@ -99,8 +99,12 @@ mod_test: $(NODEUNIT)
 search_test: $(NODEUNIT)
 	$(NODEUNIT) test/search.test.js --reporter tap
 
+.PHONY: pwdpolicy_test
+pwdpolicy_test: $(NODEUNIT)
+	$(NODEUNIT) test/pwdpolicy.test.js --reporter tap
+
 .PHONY: test
-test: add_test bind_test compare_test del_test mod_test search_test
+test: add_test bind_test compare_test del_test mod_test search_test pwdpolicy_test
 
 .PHONY: pkg
 pkg:

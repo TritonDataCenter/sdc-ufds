@@ -22,7 +22,8 @@
         "microtime": "0.3.1",
         "moray": "git+ssh://git@git.joyent.com:node-moray.git#b6f1d12",
         "ufds-replicator": "git+ssh://git@git.joyent.com:ufds-replicator.git#1ecbb4",
-        "sigyan": "0.2.0"
+        "sigyan": "0.2.0",
+        "bcrypt": "0.7.3"
     },
     "devDependencies": {
         "nodeunit": "0.7.4",

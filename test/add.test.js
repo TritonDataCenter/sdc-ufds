@@ -84,7 +84,7 @@ test('add child', function (t) {
         login: 'unit_test',
         email: 'unit_test@joyent.com',
         uuid: uuid(),
-        userpassword: 'secret',
+        userpassword: 'secret123',
         objectclass: 'sdcperson'
     };
     CLIENT.add(dn, entry, function (err) {
@@ -100,7 +100,7 @@ test('add child already exists', function (t) {
         login: 'foo',
         email: 'foo@joyent.com',
         uuid: uuid(),
-        userpassword: 'secret',
+        userpassword: 'secret123',
         objectclass: 'sdcperson'
     };
     CLIENT.add(dn, entry, function (err) {
@@ -119,7 +119,7 @@ test('add child unique conflict', function (t) {
         login: 'a' + id.substr(0, 7),
         email: 'unit_test@joyent.com',
         uuid: id,
-        userpassword: 'secret',
+        userpassword: 'secret123',
         objectclass: 'sdcperson'
     };
     CLIENT.add(dn, entry, function (err) {

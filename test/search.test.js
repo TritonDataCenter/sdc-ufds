@@ -30,8 +30,9 @@ function entryToObject(entry) {
     var obj = entry.object;
     obj.userpassword = 'test';
     delete obj.dn;
-    if (obj.controls)
+    if (obj.controls) {
         delete obj.controls;
+    }
     // FIXME: Need to review why attrs. _parent and _salt are being retrieved
     // now but they weren't by the non-streaming branch.
     /* BEGIN JSSTYLED */
@@ -41,6 +42,9 @@ function entryToObject(entry) {
         }
     }
     /* END JSSTYLED */
+    if (obj.pwdchangedtime) {
+        delete obj.pwdchangedtime;
+    }
     return obj;
 }
 

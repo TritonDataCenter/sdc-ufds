@@ -38,41 +38,9 @@ var pwdPolicy = {
     '}',
     pwdminlength: 7,
     pwdmaxfailure: 6,
-    pwdlockoutduration: 1800
+    pwdlockoutduration: 1800,
+    pwdmaxage: 7776000
 };
-
-// SDC 6.5 like imported entry, including SHA1 encrypted password,
-// 'joypass123', with salt length of 39 chars.
-function importedEntry() {
-    var id = uuid();
-    var login = 'a' + id.substr(0, 7);
-    var email = login + '_test@joyent.com';
-
-    return {
-        login: login,
-        email: email,
-        uuid: id,
-        userpassword: 'cce3af1d9eab80fbca78a2795919cdc7cbab3136',
-        _salt: '73e4f8488ac85ab542bc54f12ef55a0a429edb1',
-        objectclass: 'sdcperson'
-    };
-}
-
-
-// New entry to be added straight to UFDS, not imported from SDC 6.5 CAPI:
-function newEntry() {
-    var id = uuid();
-    var login = 'a' + id.substr(0, 7);
-    var email = login + '_test@joyent.com';
-
-    return {
-        login: login,
-        email: email,
-        uuid: id,
-        userpassword: 'joypass123',
-        objectclass: 'sdcperson'
-    };
-}
 
 
 function getUser(login, callback) {
@@ -144,7 +112,21 @@ test('setup', function (t) {
 
 
 test('CAPI Imported sdcPerson entry', function (t) {
-    var entry = importedEntry();
+    // SDC 6.5 like imported entry, including SHA1 encrypted password,
+    // 'joypass123', with salt length of 39 chars.
+    var id = uuid();
+    var login = 'a' + id.substr(0, 7);
+    var email = login + '_test@joyent.com';
+
+    var entry = {
+        login: login,
+        email: email,
+        uuid: id,
+        userpassword: 'cce3af1d9eab80fbca78a2795919cdc7cbab3136',
+        _salt: '73e4f8488ac85ab542bc54f12ef55a0a429edb1',
+        objectclass: 'sdcperson'
+    };
+
     var dn = sprintf(DN_FMT, entry.uuid);
     CLIENT.add(dn, entry, function (err) {
         t.ifError(err, 'Imported entry error');
@@ -152,6 +134,7 @@ test('CAPI Imported sdcPerson entry', function (t) {
             t.ifError(er1);
             t.equal(39, user._salt.length);
             IMPORTED = user;
+            t.ok(user.pwdchangedtime);
             console.log(util.inspect(user, false, 8));
             t.done();
         });
@@ -170,13 +153,26 @@ test('Authenticate imported sdcPerson entry', function (t) {
 
 
 test('UFDS new sdcPerson entry', function (t) {
-    var entry = newEntry();
+    // New entry to be added straight to UFDS, not imported from SDC 6.5 CAPI:
+    var id = uuid();
+    var login = 'a' + id.substr(0, 7);
+    var email = login + '_test@joyent.com';
+
+    var entry = {
+        login: login,
+        email: email,
+        uuid: id,
+        userpassword: 'joypass123',
+        objectclass: 'sdcperson'
+    };
+
     var dn = sprintf(DN_FMT, entry.uuid);
     CLIENT.add(dn, entry, function (err) {
         t.ifError(err, 'New sdcPerson entry error');
         getUser(entry.uuid, function (er1, user) {
             t.ifError(er1);
             t.equal(29, user._salt.length);
+            t.ok(user.pwdchangedtime);
             NOT_IMPORTED = user;
             console.log(util.inspect(user, false, 8));
             t.done();
@@ -211,6 +207,8 @@ test('Update CAPI imported entry', function (t) {
             t.ifError(er2);
             t.ok(user._sha1_salt);
             t.equal(29, user._salt.length);
+            t.ok(user.pwdchangedtime);
+            t.ok(user.pwdchangedtime > IMPORTED.pwdchangedtime);
             t.done();
         });
     });
@@ -244,6 +242,8 @@ test('Update not imported entry', function (t) {
             t.ok(!user._sha1_salt);
             t.equal(29, user._salt.length);
             t.equal(user._salt, NOT_IMPORTED._salt);
+            t.ok(user.pwdchangedtime);
+            t.ok(user.pwdchangedtime > IMPORTED.pwdchangedtime);
             t.done();
         });
     });
@@ -256,6 +256,58 @@ test('Authenticate not imported sdcPerson entry after update', function (t) {
         t.ifError(err);
         t.ok(ok);
         t.done();
+    });
+});
+
+
+test('Password too short not allowed', function (t) {
+    var id = uuid();
+    var login = 'a' + id.substr(0, 7);
+    var email = login + '_test@joyent.com';
+
+    var entry = {
+        login: login,
+        email: email,
+        uuid: id,
+        userpassword: 'joy123',
+        objectclass: 'sdcperson'
+    };
+
+    var dn = sprintf(DN_FMT, entry.uuid);
+    CLIENT.add(dn, entry, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'OperationsError');
+        t.equal(err.message, 'passwordTooShort');
+        t.done();
+    });
+});
+
+
+test('Passwords must contain alphanumeric chars', function (t) {
+    var id = uuid();
+    var login = 'a' + id.substr(0, 7);
+    var email = login + '_test@joyent.com';
+
+    var entry = {
+        login: login,
+        email: email,
+        uuid: id,
+        userpassword: 'withoutnumbers',
+        objectclass: 'sdcperson'
+    };
+
+    var dn = sprintf(DN_FMT, entry.uuid);
+    CLIENT.add(dn, entry, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'OperationsError');
+        t.equal(err.message, 'insufficientPasswordQuality');
+        entry.userpassword = '1234567890';
+        CLIENT.add(dn, entry, function (er2) {
+            t.ok(er2);
+            t.equal(er2.name, 'OperationsError');
+            t.equal(er2.message, 'insufficientPasswordQuality');
+            t.done();
+        });
     });
 });
 

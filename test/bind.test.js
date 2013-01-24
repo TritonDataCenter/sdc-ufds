@@ -47,7 +47,7 @@ test('add fixtures', function (t) {
             login: 'unit_test',
             email: 'unit_test@joyent.com',
             uuid: uuid(),
-            userpassword: 'secret',
+            userpassword: 'secret123',
             objectclass: 'sdcperson'
         };
         CLIENT.add(USER_DN, user, function (err2) {
@@ -77,7 +77,7 @@ test('bind non-existent entry', function (t) {
 
 
 test('bind success', function (t) {
-    CLIENT.bind(USER_DN, 'secret', function (err) {
+    CLIENT.bind(USER_DN, 'secret123', function (err) {
         t.ifError(err);
         t.done();
     });

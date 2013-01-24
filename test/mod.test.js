@@ -25,7 +25,7 @@ var USER = {
     email: 'modunittest@joyent.com',
     login: 'mod_unit_test',
     objectclass: 'sdcperson',
-    userpassword: 'test',
+    userpassword: 'test123',
     uuid: uuid()
 };
 
@@ -60,10 +60,11 @@ function get(callback) {
         // Clean up the entry so it's easy to do deepEquals later
         res.on('searchEntry', function (entry) {
             obj = entry.object;
-            obj.userpassword = 'test';
+            obj.userpassword = 'test123';
             delete obj.dn;
-            if (obj.controls)
+            if (obj.controls) {
                 delete obj.controls;
+            }
             // FIXME: Need to review why attrs. _parent and _salt are being
             // retrieved now but they weren't by the non-streaming branch.
             /* BEGIN JSSTYLED */
@@ -73,6 +74,9 @@ function get(callback) {
                 }
             }
             /* END JSSTYLED */
+            if (obj.pwdchangedtime) {
+                delete obj.pwdchangedtime;
+            }
         });
 
         res.on('error', function (err2) {

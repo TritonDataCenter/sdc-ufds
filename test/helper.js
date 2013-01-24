@@ -15,7 +15,6 @@ var moray = require('moray');
 
 ///--- Globals
 
-var CFG_FILE = process.env.TEST_CONFIG_FILE || __dirname + '/config.test.json';
 var LOG = new Logger({
     level: (process.env.LOG_LEVEL || 'info'),
     name: process.argv[1],

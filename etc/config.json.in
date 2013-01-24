@@ -28,6 +28,7 @@
     },
     "o=smartdc": {
         "blacklistRDN": "cn=blacklist",
+        "pwdPolicyRDN": "cn=pwdPolicy",
         "bucket": "ufds_o_smartdc",
         "administratorsGroupRDN": "cn=operators, ou=groups",
         "schema": {
@@ -81,7 +82,20 @@
             "urn": {
                 "type": "string",
                 "unique": true
-            }
+            },
+            "pwdattribute": { "type": "string" },
+            "pwdinhistory": { "type": "number" },
+            "pwdminlength": { "type": "number" },
+            "pwdmaxfailure": { "type": "number" },
+            "pwdlockoutduration": { "type": "number" },
+            "pwdmaxage": { "type": "number" },
+            "pwdcheckquality": { "type": "string" },
+            "pwdchangedtime": { "type": "number" },
+            "pwdhistory": { "type": "string" },
+            "pwdpolicysubentry": { "type": "string" },
+            "pwdendtime": { "type": "number" },
+            "pwdaccountlockedtime": { "type": "number" },
+            "pwdfailuretime": { "type": "number" }
         }
     }
 }

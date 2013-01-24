@@ -23,8 +23,25 @@ var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'uuid=%s, ' + SUFFIX;
 
 var test = helper.test;
+var IMPORTED, NOT_IMPORTED;
 
-// SDC 6.5 like imported entry, including SHA1 encrypted password, 
+var pwdPolicy = {
+    objectclass: 'pwdPolicy',
+    pwdattribute: 'userpassword',
+    pwdinhistory: 4,
+    pwdcheckquality: 'function checkPassword(pwd, cb) {' +
+        'if (!/[a-zA-Z]+/.test(pwd) || !/[0-9]+/.test(pwd)) {' +
+            'return cb(\'insufficientPasswordQuality\');' +
+         '} else {' +
+             'return cb(null);' +
+         '}' +
+    '}',
+    pwdminlength: 7,
+    pwdmaxfailure: 6,
+    pwdlockoutduration: 1800
+};
+
+// SDC 6.5 like imported entry, including SHA1 encrypted password,
 // 'joypass123', with salt length of 39 chars.
 function importedEntry() {
     var id = uuid();
@@ -57,7 +74,6 @@ function newEntry() {
     };
 }
 
-var IMPORTED, NOT_IMPORTED;
 
 function getUser(login, callback) {
     var opts = {
@@ -83,8 +99,8 @@ function getUser(login, callback) {
             }
         });
 
-        res.on('error', function (err) {
-            return callback(err);
+        res.on('error', function (er2) {
+            return callback(er2);
         });
 
         res.on('end', function () {
@@ -105,16 +121,23 @@ test('setup', function (t) {
         t.ok(client);
         CLIENT = client;
         var entry = {
-            o: 'smartdc',
+            o: 'o=smartdc',
             objectclass: 'organization'
         };
-        CLIENT.add(SUFFIX, entry, function (err) {
-            if (err) {
-                if (err.name !== 'EntryAlreadyExistsError') {
-                    t.ifError(err);
+        CLIENT.add(SUFFIX, entry, function (er1) {
+            if (er1) {
+                if (er1.name !== 'EntryAlreadyExistsError') {
+                    t.ifError(er1);
                 }
             }
-            t.done();
+            CLIENT.add('cn=pwdpolicy, ' + SUFFIX, pwdPolicy, function (er2) {
+                if (er2) {
+                    if (er2.name !== 'EntryAlreadyExistsError') {
+                        t.ifError(er2);
+                    }
+                }
+                t.done();
+            });
         });
     });
 });
@@ -125,8 +148,8 @@ test('CAPI Imported sdcPerson entry', function (t) {
     var dn = sprintf(DN_FMT, entry.uuid);
     CLIENT.add(dn, entry, function (err) {
         t.ifError(err, 'Imported entry error');
-        getUser(entry.uuid, function (err, user) {
-            t.ifError(err);
+        getUser(entry.uuid, function (er1, user) {
+            t.ifError(er1);
             t.equal(39, user._salt.length);
             IMPORTED = user;
             console.log(util.inspect(user, false, 8));
@@ -151,8 +174,8 @@ test('UFDS new sdcPerson entry', function (t) {
     var dn = sprintf(DN_FMT, entry.uuid);
     CLIENT.add(dn, entry, function (err) {
         t.ifError(err, 'New sdcPerson entry error');
-        getUser(entry.uuid, function (err, user) {
-            t.ifError(err);
+        getUser(entry.uuid, function (er1, user) {
+            t.ifError(er1);
             t.equal(29, user._salt.length);
             NOT_IMPORTED = user;
             console.log(util.inspect(user, false, 8));

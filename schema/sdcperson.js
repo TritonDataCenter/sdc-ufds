@@ -15,7 +15,7 @@ var LOGIN_RE = /^[a-zA-Z][a-zA-Z0-9_\.@]+$/;
 
 var RESERVED_LOGINS = [
     // Special 'local' user for Dataset.cloud_name for a dataset added to MAPI
-    //that did not originate from a DSAPI.
+    // that did not originate from a DSAPI.
     // See <https://datasets.joyent.com/docs#manifest-specification>.
     'local'
 ];
@@ -23,6 +23,9 @@ var RESERVED_LOGINS = [
 
 
 ///--- API
+
+// Attributes prefixed with 'pwd' come from pwdPolicy spec. See:
+// http://tools.ietf.org/html/draft-behera-ldap-password-policy-10#section-5.3
 
 function SDCPerson() {
     Validator.call(this, {
@@ -42,7 +45,13 @@ function SDCPerson() {
             state: 1,
             postalcode: 1,
             country: 1,
-            phone: 5
+            phone: 5,
+            pwdchangedtime: 1,
+            pwdaccountlockedtime: 1,
+            pwdfailuretime: 6,
+            pwdhistory: 4,
+            pwdpolicysubentry: 1,
+            pwdendtime: 1
         }
     });
 }

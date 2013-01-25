@@ -209,6 +209,7 @@ test('Update CAPI imported entry', function (t) {
             t.equal(29, user._salt.length);
             t.ok(user.pwdchangedtime);
             t.ok(user.pwdchangedtime > IMPORTED.pwdchangedtime);
+            t.ok(user.pwdendtime);
             t.done();
         });
     });
@@ -244,6 +245,7 @@ test('Update not imported entry', function (t) {
             t.equal(user._salt, NOT_IMPORTED._salt);
             t.ok(user.pwdchangedtime);
             t.ok(user.pwdchangedtime > IMPORTED.pwdchangedtime);
+            t.ok(user.pwdendtime);
             t.done();
         });
     });
@@ -311,6 +313,34 @@ test('Passwords must contain alphanumeric chars', function (t) {
     });
 });
 
+
+test('Updated passwords quality', function (t) {
+    var dn = sprintf(DN_FMT, NOT_IMPORTED.uuid);
+    var change = {
+        type: 'replace',
+        modification: {
+            userpassword: 'joy123'
+        }
+    };
+    CLIENT.modify(dn, change, function (er1) {
+        t.ok(er1);
+        t.equal(er1.name, 'OperationsError');
+        t.equal(er1.message, 'passwordTooShort');
+        change.modification.userpassword = 'withoutnumbers';
+        CLIENT.modify(dn, change, function (er2) {
+            t.ok(er2);
+            t.equal(er2.name, 'OperationsError');
+            t.equal(er2.message, 'insufficientPasswordQuality');
+            change.modification.userpassword = '1234567890';
+            CLIENT.modify(dn, change, function (er3) {
+                t.ok(er3);
+                t.equal(er3.name, 'OperationsError');
+                t.equal(er3.message, 'insufficientPasswordQuality');
+                t.done();
+            });
+        });
+    });
+});
 
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {

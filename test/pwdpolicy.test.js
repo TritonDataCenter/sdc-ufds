@@ -135,7 +135,6 @@ test('CAPI Imported sdcPerson entry', function (t) {
             t.equal(39, user._salt.length);
             IMPORTED = user;
             t.ok(user.pwdchangedtime);
-            console.log(util.inspect(user, false, 8));
             t.done();
         });
     });
@@ -174,7 +173,6 @@ test('UFDS new sdcPerson entry', function (t) {
             t.equal(29, user._salt.length);
             t.ok(user.pwdchangedtime);
             NOT_IMPORTED = user;
-            console.log(util.inspect(user, false, 8));
             t.done();
         });
     });
@@ -341,6 +339,60 @@ test('Updated passwords quality', function (t) {
         });
     });
 });
+
+
+test('Password history', function (t) {
+    var dn = sprintf(DN_FMT, IMPORTED.uuid);
+    var change = {
+        type: 'replace',
+        modification: {
+            userpassword: 'joypass123'
+        }
+    };
+    CLIENT.modify(dn, change, function (er1) {
+        t.ok(er1);
+        t.equal(er1.name, 'OperationsError');
+        t.equal(er1.message, 'passwordInHistory');
+        change.modification.userpassword = '123joyent';
+        CLIENT.modify(dn, change, function (er2) {
+            t.ok(er2);
+            t.equal(er2.name, 'OperationsError');
+            t.equal(er2.message, 'passwordInHistory');
+            change.modification.userpassword = 'joyent123';
+            CLIENT.modify(dn, change, function (er3) {
+                t.ifError(er3);
+                change.modification.userpassword = '123joypass';
+                CLIENT.modify(dn, change, function (er4) {
+                    t.ifError(er4);
+                    change.modification.userpassword = 'foobar123';
+                    CLIENT.modify(dn, change, function (er6) {
+                        t.ifError(er6);
+                        getUser(IMPORTED.uuid, function (er8, user1) {
+                            // At this point, we do have exactly 4 pwd in
+                            // history and the new one. We should keep the 1st
+                            t.ok(user1._sha1_salt);
+                            t.equal(pwdPolicy.pwdinhistory,
+                                user1.pwdhistory.length);
+                            change.modification.userpassword = '123foobar';
+                            CLIENT.modify(dn, change, function (er7) {
+                                t.ifError(er7);
+                                getUser(IMPORTED.uuid, function (er5, user) {
+                                    // And now, given we got rid of the orig.
+                                    // pwd, we should also get rid of old salt:
+                                    t.ok(!user._sha1_salt);
+                                    t.equal(pwdPolicy.pwdinhistory,
+                                        user.pwdhistory.length);
+                                    t.done();
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {

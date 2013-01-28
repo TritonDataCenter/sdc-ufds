@@ -276,7 +276,7 @@ test('Password too short not allowed', function (t) {
     var dn = sprintf(DN_FMT, entry.uuid);
     CLIENT.add(dn, entry, function (err) {
         t.ok(err);
-        t.equal(err.name, 'OperationsError');
+        t.equal(err.name, 'ConstraintViolationError');
         t.equal(err.message, 'passwordTooShort');
         t.done();
     });
@@ -299,12 +299,12 @@ test('Passwords must contain alphanumeric chars', function (t) {
     var dn = sprintf(DN_FMT, entry.uuid);
     CLIENT.add(dn, entry, function (err) {
         t.ok(err);
-        t.equal(err.name, 'OperationsError');
+        t.equal(err.name, 'ConstraintViolationError');
         t.equal(err.message, 'insufficientPasswordQuality');
         entry.userpassword = '1234567890';
         CLIENT.add(dn, entry, function (er2) {
             t.ok(er2);
-            t.equal(er2.name, 'OperationsError');
+            t.equal(er2.name, 'ConstraintViolationError');
             t.equal(er2.message, 'insufficientPasswordQuality');
             t.done();
         });
@@ -322,17 +322,17 @@ test('Updated passwords quality', function (t) {
     };
     CLIENT.modify(dn, change, function (er1) {
         t.ok(er1);
-        t.equal(er1.name, 'OperationsError');
+        t.equal(er1.name, 'ConstraintViolationError');
         t.equal(er1.message, 'passwordTooShort');
         change.modification.userpassword = 'withoutnumbers';
         CLIENT.modify(dn, change, function (er2) {
             t.ok(er2);
-            t.equal(er2.name, 'OperationsError');
+            t.equal(er2.name, 'ConstraintViolationError');
             t.equal(er2.message, 'insufficientPasswordQuality');
             change.modification.userpassword = '1234567890';
             CLIENT.modify(dn, change, function (er3) {
                 t.ok(er3);
-                t.equal(er3.name, 'OperationsError');
+                t.equal(er3.name, 'ConstraintViolationError');
                 t.equal(er3.message, 'insufficientPasswordQuality');
                 t.done();
             });
@@ -351,12 +351,12 @@ test('Password history', function (t) {
     };
     CLIENT.modify(dn, change, function (er1) {
         t.ok(er1);
-        t.equal(er1.name, 'OperationsError');
+        t.equal(er1.name, 'ConstraintViolationError');
         t.equal(er1.message, 'passwordInHistory');
         change.modification.userpassword = '123joyent';
         CLIENT.modify(dn, change, function (er2) {
             t.ok(er2);
-            t.equal(er2.name, 'OperationsError');
+            t.equal(er2.name, 'ConstraintViolationError');
             t.equal(er2.message, 'passwordInHistory');
             change.modification.userpassword = 'joyent123';
             CLIENT.modify(dn, change, function (er3) {

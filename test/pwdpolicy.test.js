@@ -251,7 +251,7 @@ test('Update not imported entry', function (t) {
 
 
 test('Authenticate not imported sdcPerson entry after update', function (t) {
-    var dn = sprintf(DN_FMT, IMPORTED.uuid);
+    var dn = sprintf(DN_FMT, NOT_IMPORTED.uuid);
     CLIENT.compare(dn, 'userpassword', '123joyent', function (err, ok) {
         t.ifError(err);
         t.ok(ok);
@@ -386,6 +386,51 @@ test('Password history', function (t) {
                                 });
                             });
                         });
+                    });
+                });
+            });
+        });
+    });
+});
+
+
+test('Expired password', function (t) {
+    var dn = sprintf(DN_FMT, NOT_IMPORTED.uuid);
+    var now = Date.now();
+    var change = {
+        type: 'replace',
+        modification: {
+            pwdendtime: [now]
+        }
+    };
+
+    // Reset pwdendtime to lock account
+    CLIENT.modify(dn, change, function (er1) {
+        t.ifError(er1);
+        CLIENT.compare(dn, 'userpassword', '123joyent', function (er2, ok, res) {
+            t.ok(!er2);
+            t.ok(!ok);
+            t.equal(res.errorMessage, 'passwordExpired');
+            //console.log(er2.name);
+            //console.log(er2.message);
+            CLIENT.bind(dn, '123joyent', function (er3) {
+                t.ok(er3);
+                t.equal(er3.name, 'InvalidCredentialsError');
+                t.equal(er3.message, 'passwordExpired');
+                // Reset again to unlock:
+                change = {
+                    type: 'replace',
+                    modification: {
+                        pwdendtime: [now + (pwdPolicy.pwdmaxage * 1000)]
+                    }
+                };
+                CLIENT.modify(dn, change, function (er4) {
+                    t.ifError(er4);
+                    CLIENT.compare(dn, 'userpassword', '123joyent',
+                        function (er5, ok) {
+                        t.ifError(er5);
+                        t.ok(ok);
+                        t.done();
                     });
                 });
             });

@@ -67,7 +67,7 @@ dn: cn=pwdpolicy, o=smartdc
 objectclass: pwdPolicy
 pwdattribute: userpassword
 pwdinhistory: 4
-pwdcheckquality: pwdcheckquality: function checkPassword(pwd, cb) {if (!/[a-zA-Z]+/.test(pwd) || !/[0-9]+/.test(pwd)) {return cb('insufficientPasswordQuality');} else {return cb(null);}}
+pwdcheckquality: function checkPassword(pwd, cb) {if (!/[a-zA-Z]+/.test(pwd) || !/[0-9]+/.test(pwd)) {return cb('insufficientPasswordQuality');} else {return cb(null);}}
 pwdminlength: 7
 pwdmaxfailure: 6
 pwdlockoutduration: 1800

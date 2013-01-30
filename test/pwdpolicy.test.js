@@ -1,7 +1,6 @@
 // Copyright 2013 Joyent, Inc.  All rights reserved.
 //
-// You can set UFDS_URL to connect to a server, and LOG_LEVEL to turn on
-// bunyan debug logs.
+// See helper.js for customization options.
 //
 
 var ldap = require('ldapjs');

@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 //
 // Just a simple wrapper over nodeunit's exports syntax. Also exposes
 // a common logger for all tests.
@@ -6,17 +6,27 @@
 
 var assert = require('assert');
 var fs = require('fs');
+var path = require('path');
+var util = require('util');
 
 var Logger = require('bunyan');
 var ldapjs = require('ldapjs');
 var moray = require('moray');
 
 
-
 ///--- Globals
+var CONFIG;
+var CFG_FILE = process.env.TEST_CONFIG_FILE || path.normalize(__dirname + '/../etc/config.coal.json');
+
+try {
+    CONFIG = JSON.parse(fs.readFileSync(CFG_FILE, 'utf8'));
+} catch (e) {
+    console.error('Unable to parse configuration file: ' + e.message);
+    process.exit(1);
+}
 
 var LOG = new Logger({
-    level: (process.env.LOG_LEVEL || 'info'),
+    level: (CONFIG.logLevel || 'info'),
     name: process.argv[1],
     stream: process.stderr,
     src: true,
@@ -51,7 +61,7 @@ module.exports = {
         var client = ldapjs.createClient({
             connectTimeout: 1000,
             log: LOG,
-            url: (process.env.UFDS_URL || 'ldap://localhost:1389')
+            url: (util.format('ldap://%s:%s', CONFIG.host, CONFIG.port) || 'ldaps://10.99.99.14')
         });
 
         client.once('error', function (err) {
@@ -59,14 +69,16 @@ module.exports = {
         });
 
         client.once('connect', function () {
-            if (nobind)
+            if (nobind) {
                 return callback(null, client);
+            }
 
-            var dn = process.env.UFDS_BIND_DN || 'cn=root';
-            var pw = process.env.UFDS_BIND_PW || 'secret';
+            var dn = CONFIG.rootDN || 'cn=root';
+            var pw = CONFIG.rootPassword || 'secret';
             return client.bind(dn, pw, function (err) {
-                if (err)
+                if (err) {
                     return callback(err);
+                }
 
                 return callback(null, client);
             });
@@ -75,24 +87,24 @@ module.exports = {
 
     cleanup: function cleanupMoray(suffix, callback) {
         var client = moray.createClient({
-            url: process.env.MORAY_URL || 'tcp://10.99.99.13:2020',
+            url: CONFIG.moray.url || 'tcp://10.99.99.13:2020',
             log: LOG.child({
                 component: 'moray'
             }),
             retry: false,
             connectTimeout: 1000,
             noCache: true
-        }),
-        bucket = process.env.MORAY_BUCKET ||
-            'ufds_' + suffix.replace('=', '_'),
-        req,
-        rows = [];
+        });
+        var bucket = process.env.MORAY_BUCKET ||
+            'ufds_' + suffix.replace('=', '_');
+        var req;
+        var rows = [];
 
         client.once('error', function (err) {
             return callback(err);
         });
         client.on('connect', function () {
-            req = client.findObjects(bucket, 'objectclass=*', {limit: 1000});
+            req = client.findObjects(bucket, '(&(objectclass=sdcperson)(email=*@test.joyent.com))', {limit: 1000});
             req.once('error', function (err) {
                 return callback(err);
             });
@@ -101,6 +113,10 @@ module.exports = {
             });
             req.on('end', function () {
                 var finished = 0;
+                if (rows.length === 0) {
+                    client.close();
+                    return callback();
+                }
                 rows.forEach(function (r) {
                     client.delObject(r.bucket, r.key, function (err) {
                         assert.ifError(err);

@@ -1,15 +1,15 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 //
-// You can set UFDS_URL to connect to a server, and LOG_LEVEL to turn on
-// bunyan debug logs.
+// See helper.js for customization options.
 //
 
 var extend = require('node.extend');
 var uuid = require('node-uuid');
 var util = require('util');
 
-if (require.cache[__dirname + '/helper.js'])
+if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];
+}
 var helper = require('./helper.js');
 
 
@@ -77,6 +77,10 @@ function get(callback) {
             if (obj.pwdchangedtime) {
                 delete obj.pwdchangedtime;
             }
+
+            if (obj.pwdendtime) {
+                delete obj.pwdendtime;
+            }
         });
 
         res.on('error', function (err2) {
@@ -109,13 +113,21 @@ test('add fixtures', function (t) {
         o: SUFFIX.split('=')[1]
     };
     CLIENT.add(SUFFIX, suffix, function (err) {
-        t.ifError(err);
+        if (err) {
+            if (err.name !== 'EntryAlreadyExistsError') {
+                t.ifError(err);
+            }
+        }
 
         CLIENT.add(USER_DN, USER, function (err2) {
             t.ifError(err2);
 
             CLIENT.add(PACKAGE_DN, PACKAGE, function (err3) {
-                t.ifError(err3);
+                if (err3) {
+                    if (err3.name !== 'EntryAlreadyExistsError') {
+                        t.ifError(err3);
+                    }
+                }
                 t.done();
             });
         });
@@ -231,9 +243,12 @@ test('modify immutable attribute', function (t) {
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {
         t.ifError(err);
-        CLIENT.unbind(function (err2) {
-            t.ifError(err2);
-            t.done();
+        CLIENT.del(USER_DN, function (er1) {
+            t.ifError(er1);
+            CLIENT.unbind(function (err3) {
+                t.ifError(err3);
+                t.done();
+            });
         });
     });
 });

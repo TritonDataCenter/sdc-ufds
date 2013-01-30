@@ -1,15 +1,15 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 //
-// You can set UFDS_URL to connect to a server, and LOG_LEVEL to turn on
-// bunyan debug logs.
+// See helper.js for customization options.
 //
 
 var ldap = require('ldapjs');
 var sprintf = require('util').format;
 var uuid = require('node-uuid');
 
-if (require.cache[__dirname + '/helper.js'])
+if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];
+}
 var helper = require('./helper.js');
 
 
@@ -22,7 +22,10 @@ var DN_FMT = 'uuid=%s, ' + SUFFIX;
 
 var test = helper.test;
 
-
+var DUP_ID = uuid();
+var DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
+var DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
+var DUP_DN = sprintf(DN_FMT, DUP_ID);
 
 ///--- Tests
 
@@ -56,8 +59,9 @@ test('add suffix', function (t) {
     };
     CLIENT.add(SUFFIX, entry, function (err) {
         if (err) {
-            if (err.name !== 'EntryAlreadyExistsError')
+            if (err.name !== 'EntryAlreadyExistsError') {
                 t.ifError(err);
+            }
         }
         t.done();
     });
@@ -79,15 +83,14 @@ test('add child missing parent', function (t) {
 
 
 test('add child', function (t) {
-    var dn = sprintf(DN_FMT, 'unit-test');
     var entry = {
-        login: 'unit_test',
-        email: 'unit_test@joyent.com',
-        uuid: uuid(),
+        login: DUP_LOGIN,
+        email: DUP_EMAIL,
+        uuid: DUP_ID,
         userpassword: 'secret123',
         objectclass: 'sdcperson'
     };
-    CLIENT.add(dn, entry, function (err) {
+    CLIENT.add(DUP_DN, entry, function (err) {
         t.ifError(err);
         t.done();
     });
@@ -95,7 +98,6 @@ test('add child', function (t) {
 
 
 test('add child already exists', function (t) {
-    var dn = sprintf(DN_FMT, 'unit-test');
     var entry = {
         login: 'foo',
         email: 'foo@joyent.com',
@@ -103,7 +105,7 @@ test('add child already exists', function (t) {
         userpassword: 'secret123',
         objectclass: 'sdcperson'
     };
-    CLIENT.add(dn, entry, function (err) {
+    CLIENT.add(DUP_DN, entry, function (err) {
         t.ok(err);
         t.equal(err.name, 'EntryAlreadyExistsError');
         t.done();
@@ -117,15 +119,16 @@ test('add child unique conflict', function (t) {
 
     var entry = {
         login: 'a' + id.substr(0, 7),
-        email: 'unit_test@joyent.com',
+        email: DUP_EMAIL,
         uuid: id,
         userpassword: 'secret123',
         objectclass: 'sdcperson'
     };
     CLIENT.add(dn, entry, function (err) {
         t.ok(err);
-        if (err)
+        if (err) {
             t.equal(err.name, 'ConstraintViolationError');
+        }
         t.done();
     });
 });
@@ -139,7 +142,7 @@ test('add child manage DSA', function (t) {
     }));
     var dn = sprintf(DN_FMT, uuid.v4());
     var entry = {
-        login: 'a',
+        login: 'a' + uuid().substr(0, 7),
         objectclass: 'sdcperson'
     };
 

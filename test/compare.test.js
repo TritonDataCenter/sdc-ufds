@@ -1,13 +1,13 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 //
-// You can set UFDS_URL to connect to a server, and LOG_LEVEL to turn on
-// bunyan debug logs.
+// See helper.js for customization options.
 //
 
 var uuid = require('node-uuid');
 
-if (require.cache[__dirname + '/helper.js'])
+if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];
+}
 var helper = require('./helper.js');
 
 
@@ -41,7 +41,11 @@ test('add fixtures', function (t) {
         o: O
     };
     CLIENT.add(SUFFIX, suffix, function (err) {
-        t.ifError(err);
+        if (err) {
+            if (err.name !== 'EntryAlreadyExistsError') {
+                t.ifError(err);
+            }
+        }
         t.done();
     });
 });

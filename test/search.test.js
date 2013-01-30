@@ -1,14 +1,15 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 //
-// You can set UFDS_URL to connect to a server, and LOG_LEVEL to turn on
-// bunyan debug logs.
+// See helper.js for customization options.
 //
 
 var extend = require('node.extend');
 var uuid = require('node-uuid');
+var sprintf = require('util').format;
 
-if (require.cache[__dirname + '/helper.js'])
+if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];
+}
 var helper = require('./helper.js');
 
 
@@ -22,13 +23,14 @@ var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var TOTAL_ENTRIES = 10;
 var USERS = {};
 
-
+var ID = uuid();
+var LOGIN = 'a' + ID.substr(0, 7);
 
 ///--- Helpers
 
 function entryToObject(entry) {
     var obj = entry.object;
-    obj.userpassword = 'test';
+    obj.userpassword = 'secret123';
     delete obj.dn;
     if (obj.controls) {
         delete obj.controls;
@@ -44,6 +46,9 @@ function entryToObject(entry) {
     /* END JSSTYLED */
     if (obj.pwdchangedtime) {
         delete obj.pwdchangedtime;
+    }
+    if (obj.pwdendtime) {
+        delete obj.pwdendtime;
     }
     return obj;
 }
@@ -81,8 +86,8 @@ function search(dn, filter, scope, callback) {
                     dn: entry.dn.toString(),
                     attributes: entryToObject(entry)
                 });
+                retrieved++;
             }
-            retrieved++;
         });
 
         res.on('error', function (error) {
@@ -100,12 +105,12 @@ function load(callback) {
     var finished = 0;
 
     for (var i = 0; i < TOTAL_ENTRIES; i++) {
-        var dn = 'login=child' + i + ', ' + SUFFIX;
+        var dn = sprintf('login=%s_child' + i + ', ' + SUFFIX, LOGIN);
         USERS[dn] = {
             uuid: uuid(),
-            login: 'child' + i,
-            email: 'child' + i + '@test.joyent.com',
-            userpassword: 'test',
+            login: sprintf('%s_child' + i, LOGIN),
+            email: sprintf('%s_child' + i, LOGIN) + '@test.joyent.com',
+            userpassword: 'secret123',
             objectclass: 'sdcperson'
         };
         CLIENT.add(dn, USERS[dn], function (err) {
@@ -138,7 +143,11 @@ test('add fixtures', function (t) {
         o: SUFFIX.split('=')[1]
     };
     CLIENT.add(SUFFIX, suffix, function (err) {
-        t.ifError(err);
+        if (err) {
+            if (err.name !== 'EntryAlreadyExistsError') {
+                t.ifError(err);
+            }
+        }
         load(function (err2) {
             t.ifError(err2);
             t.done();
@@ -148,7 +157,7 @@ test('add fixtures', function (t) {
 
 
 test('search base objectclass=*', function (t) {
-    var dn = 'login=child1, ' + SUFFIX;
+    var dn = sprintf('login=%s_child1, ' + SUFFIX, LOGIN);
     search(dn, function (err, results, count) {
         t.ifError(err);
         t.equal(count, 1);
@@ -162,8 +171,9 @@ test('search base objectclass=*', function (t) {
 
 
 test('search base eq filter ok', function (t) {
-    var dn = 'login=child1, ' + SUFFIX;
-    search(dn, '(login=child1)', function (err, results, count) {
+    var dn = sprintf('login=%s_child1, ' + SUFFIX, LOGIN);
+    search(dn, sprintf('(login=%s_child1)', LOGIN),
+        function (err, results, count) {
         t.ifError(err);
         t.equal(count, 1);
         t.equal(results.length, 1);
@@ -175,8 +185,8 @@ test('search base eq filter ok', function (t) {
 
 
 test('search base eq filter no match', function (t) {
-    var dn = 'login=child1, ' + SUFFIX;
-    search(dn, '(login=child2)', function (err, _, count) {
+    var dn = sprintf('login=%s_child1, ' + SUFFIX, LOGIN);
+    search(dn, sprintf('(login=%s_child2)', LOGIN), function (err, _, count) {
         t.ifError(err);
         t.equal(count, 0);
         t.done();
@@ -185,7 +195,7 @@ test('search base eq filter no match', function (t) {
 
 
 test('search sub substr filter ok', function (t) {
-    search(SUFFIX, '(login=c*d*)', 'sub', function (err, results, count) {
+    search(SUFFIX, '(login=*c*d*)', 'sub', function (err, results, count) {
         t.ifError(err);
         t.equal(count, TOTAL_ENTRIES);
         results.forEach(function (r) {
@@ -206,7 +216,7 @@ test('search sub wrong base', function (t) {
 
 
 test('search sub filter no match', function (t) {
-    search(SUFFIX, '(!(login=c*))', 'sub', function (err, _, count) {
+    search(SUFFIX, '(!(login=*c*))', 'sub', function (err, _, count) {
         t.ifError(err);
         t.equal(count, 0);
         t.done();
@@ -215,7 +225,8 @@ test('search sub filter no match', function (t) {
 
 
 test('search sub filter ge ok', function (t) {
-    search(SUFFIX, '(login>=child9)', 'sub', function (err, results, count) {
+    search(SUFFIX, sprintf('(login>=%s_child9)', LOGIN), 'sub',
+        function (err, results, count) {
         t.ifError(err);
         t.equal(count, 1);
         results.forEach(function (r) {
@@ -227,7 +238,8 @@ test('search sub filter ge ok', function (t) {
 
 
 test('search sub filter le ok', function (t) {
-    search(SUFFIX, '(login<=child8)', 'sub', function (err, results, count) {
+    search(SUFFIX, sprintf('(login<=%s_child8)', LOGIN), 'sub',
+        function (err, results, count) {
         t.ifError(err);
         t.equal(count, 9);
         results.forEach(function (r) {
@@ -239,7 +251,7 @@ test('search sub filter le ok', function (t) {
 
 
 test('search sub filter and ok', function (t) {
-    var filter = '(&(login=child1)(objectclass=sdcperson))';
+    var filter = sprintf('(&(login=%s_child1)(objectclass=sdcperson))', LOGIN);
     search(SUFFIX, filter, 'sub', function (err, results, count) {
         t.ifError(err);
         t.equal(count, 1);
@@ -252,7 +264,8 @@ test('search sub filter and ok', function (t) {
 
 
 test('search sub filter or ok', function (t) {
-    var filter = '(|(login=child1)(login=child2))';
+    var filter = sprintf('(|(login=%s_child1)(login=%s_child2))', LOGIN,
+        LOGIN);
     search(SUFFIX, filter, 'sub', function (err, results, count) {
         t.ifError(err);
         t.equal(count, 2);
@@ -265,7 +278,8 @@ test('search sub filter or ok', function (t) {
 
 
 test('search sub filter compound ok', function (t) {
-    var filter = '(&(|(login=child1)(login=child2))(!(email=*)))';
+    var filter = sprintf('(&(|(login=%s_child1)(login=%s_child2))(!(email=*)))',
+        LOGIN, LOGIN);
     search(SUFFIX, filter, 'sub', function (err, _, count) {
         t.ifError(err);
         t.equal(count, 0);

@@ -475,29 +475,27 @@ test('Failed login attempts', function (t) {
                                         t.ifError(e3);
                                         t.ok(u3.pwdfailuretime);
                                         t.equal(6, u3.pwdfailuretime.length);
-                                        CLIENT.compare(dn,
-                                        'userpassword',
-                                        '123joyent',
-                                        function (err, ok, res) {
-                                            t.ok(!err);
-                                            t.ok(!ok);
-                                            t.equal(res.errorMessage,
-                                                'accountLocked');
-                                            CLIENT.modify(dn, change,
-                                                function (e4) {
+                                        // Too much nesting for 80 chars lines:
+                                        /* BEGIN JSSTYLED */
+                                        CLIENT.bind(dn, '123joyent', function (err1) {
+                                            t.ok(err1);
+                                            t.equal(err1.name, 'InvalidCredentialsError');
+                                            CLIENT.compare(dn, 'userpassword', '123joyent', function (err, ok, res) {
+                                                t.ok(!err);
+                                                t.ok(!ok);
+                                                t.equal(res.errorMessage, 'accountLocked');
+                                                CLIENT.modify(dn, change, function (e4) {
                                                     t.ifError(e4);
-                                                    getUser(IMPORTED.uuid,
-                                                        function (e5, u5) {
-                                                            // No more room!
-                                                            /* BEGIN JSSTYLED */
-                                                            t.ifError(e5);
-                                                            t.ok(!u5.pwdfailuretime);
-                                                            t.ok(!u5.pwdaccountlockedtime);
-                                                            /* END JSSTYLED */
-                                                            t.done();
+                                                    getUser(IMPORTED.uuid, function (e5, u5) {
+                                                        t.ifError(e5);
+                                                        t.ok(!u5.pwdfailuretime);
+                                                        t.ok(!u5.pwdaccountlockedtime);
+                                                        t.done();
                                                     });
+                                                });
                                             });
                                         });
+                                        /* END JSSTYLED */
                                     });
                                 });
                             });

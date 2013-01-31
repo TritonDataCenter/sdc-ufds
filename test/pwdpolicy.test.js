@@ -406,12 +406,10 @@ test('Expired password', function (t) {
     // Reset pwdendtime to lock account
     CLIENT.modify(dn, change, function (er1) {
         t.ifError(er1);
-        CLIENT.compare(dn, 'userpassword', '123joyent', function (er2, ok, res) {
-            t.ok(!er2);
+        CLIENT.compare(dn, 'userpassword', '123joyent', function (e2, ok, res) {
+            t.ok(!e2);
             t.ok(!ok);
             t.equal(res.errorMessage, 'passwordExpired');
-            //console.log(er2.name);
-            //console.log(er2.message);
             CLIENT.bind(dn, '123joyent', function (er3) {
                 t.ok(er3);
                 t.equal(er3.name, 'InvalidCredentialsError');
@@ -426,10 +424,84 @@ test('Expired password', function (t) {
                 CLIENT.modify(dn, change, function (er4) {
                     t.ifError(er4);
                     CLIENT.compare(dn, 'userpassword', '123joyent',
-                        function (er5, ok) {
+                        function (er5, ok2, res2) {
                         t.ifError(er5);
-                        t.ok(ok);
+                        t.ok(ok2);
                         t.done();
+                    });
+                });
+            });
+        });
+    });
+});
+
+
+test('Failed login attempts', function (t) {
+
+    //'123foobar' is the right password here
+    var dn = sprintf(DN_FMT, IMPORTED.uuid);
+    function compare(te, cb) {
+        CLIENT.compare(dn, 'userpassword', '123joyent',
+            function (err, ok, res) {
+                te.ok(!err);
+                te.ok(!ok);
+                te.equal(res.errorMessage, 'invalidPassword');
+                cb();
+            });
+    }
+
+    var change = {
+        type: 'replace',
+        modification: {
+            userpassword: 'joypass123'
+        }
+    };
+
+
+    compare(t, function () {
+        getUser(IMPORTED.uuid, function (e1, u1) {
+            t.ifError(e1);
+            t.ok(u1.pwdfailuretime);
+            compare(t, function () {
+                getUser(IMPORTED.uuid, function (e2, u2) {
+                    t.ifError(e2);
+                    t.ok(u2.pwdfailuretime);
+                    t.equal(2, u2.pwdfailuretime.length);
+                    compare(t, function () {
+                        compare(t, function () {
+                            compare(t, function () {
+                                compare(t, function () {
+                                    getUser(IMPORTED.uuid, function (e3, u3) {
+                                        t.ifError(e3);
+                                        t.ok(u3.pwdfailuretime);
+                                        t.equal(6, u3.pwdfailuretime.length);
+                                        CLIENT.compare(dn,
+                                        'userpassword',
+                                        '123joyent',
+                                        function (err, ok, res) {
+                                            t.ok(!err);
+                                            t.ok(!ok);
+                                            t.equal(res.errorMessage,
+                                                'accountLocked');
+                                            CLIENT.modify(dn, change,
+                                                function (e4) {
+                                                    t.ifError(e4);
+                                                    getUser(IMPORTED.uuid,
+                                                        function (e5, u5) {
+                                                            // No more room!
+                                                            /* BEGIN JSSTYLED */
+                                                            t.ifError(e5);
+                                                            t.ok(!u5.pwdfailuretime);
+                                                            t.ok(!u5.pwdaccountlockedtime);
+                                                            /* END JSSTYLED */
+                                                            t.done();
+                                                    });
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
                     });
                 });
             });

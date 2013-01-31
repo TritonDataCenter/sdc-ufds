@@ -16,7 +16,8 @@ var moray = require('moray');
 
 ///--- Globals
 var CONFIG;
-var CFG_FILE = process.env.TEST_CONFIG_FILE || path.normalize(__dirname + '/../etc/config.coal.json');
+var CFG_FILE = process.env.TEST_CONFIG_FILE ||
+            path.normalize(__dirname + '/../etc/config.coal.json');
 
 try {
     CONFIG = JSON.parse(fs.readFileSync(CFG_FILE, 'utf8'));
@@ -61,7 +62,8 @@ module.exports = {
         var client = ldapjs.createClient({
             connectTimeout: 1000,
             log: LOG,
-            url: (util.format('ldap://%s:%s', CONFIG.host, CONFIG.port) || 'ldaps://10.99.99.14')
+            url: (util.format('ldap://%s:%s', CONFIG.host, CONFIG.port) ||
+                'ldaps://10.99.99.14')
         });
 
         client.once('error', function (err) {
@@ -104,7 +106,9 @@ module.exports = {
             return callback(err);
         });
         client.on('connect', function () {
-            req = client.findObjects(bucket, '(&(objectclass=sdcperson)(email=*@test.joyent.com))', {limit: 1000});
+            req = client.findObjects(bucket,
+                '(&(objectclass=sdcperson)(email=*@test.joyent.com))',
+                {limit: 1000});
             req.once('error', function (err) {
                 return callback(err);
             });

@@ -5,7 +5,6 @@
 
 var uuid = require('node-uuid');
 var sprintf = require('util').format;
-var uuid = require('node-uuid');
 
 if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];

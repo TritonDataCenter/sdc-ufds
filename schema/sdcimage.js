@@ -20,6 +20,7 @@ function SDCImage() {
     Validator.call(this, {
         name: 'sdcimage',
         required: {
+            v: 1,
             uuid: 1,
             name: 1,
             owner: 1,

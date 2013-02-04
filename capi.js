@@ -251,7 +251,7 @@ try {
     config = JSON.parse(fs.readFileSync(parsed.file, 'utf8'));
     // Once we get the config file, has no sense to wonder about ldap host:port
     if (!parsed.ufds) {
-        parsed.ufds = 'ldaps://' + config.host;
+        parsed.ufds = 'ldaps://127.0.0.1';
         if (config.port) {
             parsed.ufds += ':' + config.port;
         }

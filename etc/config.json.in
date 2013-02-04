@@ -1,5 +1,4 @@
 {
-    "host": "UFDS_ADMIN_IP",
     "port": 636,
     "rootDN": "ROOT_DN",
     "rootPassword": "ROOT_PW",

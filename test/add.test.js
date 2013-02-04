@@ -153,6 +153,46 @@ test('add child manage DSA', function (t) {
 });
 
 
+test('add blacklisted email', function (t) {
+    var blacklist = {
+        objectclass: 'emailblacklist',
+        email: ['badguy@devnull.com', '*@disasterdrivendevelopment.com']
+    };
+    CLIENT.add('cn=blacklist, ' + SUFFIX, blacklist, function (err) {
+        if (err) {
+            if (err.name !== 'EntryAlreadyExistsError') {
+                t.ifError(err);
+            }
+        }
+        var id = uuid();
+        var login = 'a' + id.substr(0, 7);
+        var email = login + '@disasterdrivendevelopment.com';
+        var dn = sprintf(DN_FMT, id);
+
+        var entry = {
+            login: login,
+            email: email,
+            uuid: id,
+            userpassword: 'secret123',
+            objectclass: 'sdcperson'
+        };
+
+        CLIENT.add(dn, entry, function (er1) {
+            t.ok(er1);
+            t.equal(er1.name, 'ConstraintViolationError');
+            t.equal(er1.message, 'Email address is blacklisted.');
+            entry.email = 'badguy@devnull.com';
+            CLIENT.add(dn, entry, function (er2) {
+                t.ok(er2);
+                t.equal(er2.name, 'ConstraintViolationError');
+                t.equal(er2.message, 'Email address is blacklisted.');
+                t.done();
+            });
+        });
+    });
+});
+
+
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {
         t.ifError(err);

@@ -88,7 +88,8 @@
             "pwdpolicysubentry": { "type": "string" },
             "pwdendtime": { "type": "number" },
             "pwdaccountlockedtime": { "type": "number" },
-            "pwdfailuretime": { "type": "number" }
+            "pwdfailuretime": { "type": "number" },
+            "_imported": { "type": "string" }
         }
     }
 }

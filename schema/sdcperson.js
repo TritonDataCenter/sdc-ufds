@@ -51,7 +51,8 @@ function SDCPerson() {
             pwdfailuretime: 6,
             pwdhistory: 4,
             pwdpolicysubentry: 1,
-            pwdendtime: 1
+            pwdendtime: 1,
+            _imported: 1
         }
     });
 }

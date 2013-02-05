@@ -103,6 +103,10 @@ function processConfig() {
         LOG.level(parsed.debug > 1 ? 'trace' : 'debug');
     }
 
+    if (_config.logLevel) {
+        LOG.level(_config.logLevel);
+    }
+
     _config.single = (parsed.single) ? true : false;
 
     if (parsed.certificate) {

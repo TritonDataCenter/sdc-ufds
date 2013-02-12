@@ -130,6 +130,7 @@ release: all docs
 		$(ROOT)/npm-shrinkwrap.json \
 		$(ROOT)/schema \
 		$(ROOT)/smf \
+		$(ROOT)/test \
 		$(TMPDIR)/root/opt/smartdc/ufds/
 	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
 	cp $(ROOT)/etc/replicator.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc

@@ -64,6 +64,7 @@ start_time=$(date +%s)
 
 NODE_INSTALL=$TOP/build/node
 PATH=$TOP/build/node/bin:$TOP/node_modules/.bin:$PATH
+NODEUNIT=$TOP/node_modules/.bin/nodeunit
 
 # Options.
 opt_test_pattern=
@@ -104,7 +105,7 @@ if [[ -n "$opt_test_pattern" ]]; then
 fi
 
 if [[ -n "$test_files" ]]; then
-    PATH=$NODE_INSTALL/bin:$PATH TEST_CONFIG_FILE=$TOP/etc/config.json make test \
+    PATH=$NODE_INSTALL/bin:$PATH TEST_CONFIG_FILE=$TOP/etc/config.json $NODEUNIT test/*.test.js --reporter tap \
         | tee $OUTPUT_DIR/ufds.tap
 fi
 

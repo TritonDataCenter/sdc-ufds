@@ -59,11 +59,24 @@ module.exports = {
         }
         assert.equal(typeof (callback), 'function');
 
+        var host, port;
+        if (!CONFIG.port && !CONFIG.host) {
+            host = '10.99.99.14';
+            port = 636;
+        } else if (!CONFIG.host && CONFIG.port) {
+            host = '127.0.0.1';
+            port = CONFIG.port;
+        } else {
+            port = CONFIG.port;
+            host = CONFIG.host;
+        }
+        var proto = (port === 636) ? 'ldaps' : 'ldap';
+        var url = util.format('%s://%s:%s', proto, host, port);
+
         var client = ldapjs.createClient({
             connectTimeout: 1000,
             log: LOG,
-            url: (util.format('ldap://%s:%s', CONFIG.host, CONFIG.port) ||
-                'ldaps://10.99.99.14')
+            url: url
         });
 
         client.once('error', function (err) {

@@ -3,12 +3,12 @@
 // A firewall rule for the firewall API
 //
 
-var util = require('util');
-var net = require('net');
-
 var ldap = require('ldapjs');
-
+var net = require('net');
+var util = require('util');
+var valid = require('../lib/validator');
 var Validator = require('../lib/schema/validator');
+
 
 
 
@@ -22,14 +22,20 @@ var actionRE = /^(allow|block)$/;
 
 ///--- Validation helpers (keep these in sync with the originals in fwapi)
 
-function validateIPv4address(ip) {
-    if (!net.isIPv4(ip) || (ip == '255.255.255.255') || (ip == '0.0.0.0')) {
+// Ensure subnet is in valid CIDR form
+function validateIPv4subnetNumber(subnet) {
+    var parts = subnet.split('/');
+    if (!valid.ipNumber(parts[0])) {
+        return false;
+    }
+    if (!parseInt(parts[1], 10) || (parts[1] < 1) || (parts[1] > 32)) {
         return false;
     }
     return true;
+
 }
 
-// Ensure subnet is in valid CIDR form
+/*
 function validateIPv4subnet(subnet) {
     var parts = subnet.split('/');
     if (!validateIPv4address(parts[0])) {
@@ -40,6 +46,8 @@ function validateIPv4subnet(subnet) {
     }
     return true;
 }
+*/
+
 
 
 
@@ -49,17 +57,17 @@ function FWRule() {
     Validator.call(this, {
         name: 'fwrule',
         required: {
-            fwrule: 1,
+            uuid: 1,
             protocol: 1,
-            port: 10,
+            ports: 10,
             action: 1,
             enabled: 1
         },
         optional: {
             fromtag: 0,
             totag: 0,
-            frommachine: 0,
-            tomachine: 0,
+            fromvm: 0,
+            tovm: 0,
             fromip: 0,
             toip: 0,
             fromsubnet: 0,
@@ -78,9 +86,8 @@ FWRule.prototype.validate = function validate(entry, callback) {
     var i;
     var directions = ['from', 'to'];
 
-    if (!uuidRE.test(attrs.fwrule)) {
-        errors.push('fwrule uuid: \'' + attrs.fwrule + '\' is invalid '
-                    + '(must be a UUID)');
+    if (!valid.UUID(attrs.uuid)) {
+        errors.push(util.format('UUID "%s" is invalid', attrs.uuid));
     }
 
     for (var d in directions) {
@@ -88,48 +95,51 @@ FWRule.prototype.validate = function validate(entry, callback) {
 
         for (i in attrs[dir + 'ip']) {
             var ip = attrs[dir + 'ip'][i];
-            if (!validateIPv4address(ip)) {
-                errors.push('IP address: \'' + ip + '\' is invalid');
+            if (!valid.ipNumber(ip)) {
+                errors.push(util.format('IP number "%s" is invalid', ip));
             }
         }
 
-        for (i in attrs[dir + 'machine']) {
-            var machine = attrs[dir + 'machine'][i];
-            if (!uuidRE.test(machine)) {
-                errors.push('machine: \'' + machine + '\' is invalid '
-                            + '(must be a UUID)');
+        for (i in attrs[dir + 'vm']) {
+            var vm = attrs[dir + 'vm'][i];
+            if (!valid.UUID(vm)) {
+                errors.push(util.format('VM UUID "%s" is invalid', vm));
             }
         }
 
         for (i in attrs[dir + 'subnet']) {
             var subnet = attrs[dir + 'subnet'][i];
-            if (!validateIPv4subnet(subnet)) {
-                errors.push('subnet: \'' + subnet + '\' is invalid '
-                            + '(must be in CIDR format)');
+            if (!validateIPv4subnetNumber(subnet)) {
+                errors.push(util.format('subnet "%s" is invalid '
+                    + '(must be in CIDR format)', subnet));
             }
         }
     }
 
     if (!actionRE.test(attrs.action)) {
-        errors.push('action: \'' + attrs.action + '\' is invalid '
-                    + '(must be one of: allow,block)');
+        errors.push(util.format('action "%s" is invalid '
+            + '(must be one of: allow,block)', attrs.action));
     }
 
     if (attrs.enabled != 'true' && attrs.enabled != 'false') {
-        errors.push('enabled: \'' + attrs.enabled + '\' is invalid '
-                    + '(must be one of: true,false)');
+        errors.push(util.format('enabled value "%s" is invalid '
+            + '(must be one of: true,false)', attrs.enabled));
     }
 
     if (!protocolRE.test(attrs.protocol)) {
-        errors.push('protocol: \'' + attrs.protocol + '\' is invalid '
-                    + '(must be one of: tcp,udp,icmp)');
+        errors.push(util.format('protocol "%s" is invalid '
+            + '(must be one of: tcp,udp,icmp)', attrs.protocol));
     }
 
-    for (i in attrs.port) {
-        var port = attrs.port[i];
-        if (!parseInt(port, 10) || port < 1 || port > 25536) {
-            errors.push('port: \'' + port + '\' is invalid');
+    for (i in attrs.ports) {
+        var port = attrs.ports[i];
+        if (!parseInt(port, 10) || port < 1 || port > 65535) {
+            errors.push(util.format('port "%s" is invalid', port));
         }
+    }
+
+    if (attrs.hasOwnProperty('owner') && !valid.UUID(attrs.owner)) {
+        errors.push(util.format('owner UUID "%s" is invalid', attrs.owner));
     }
 
     if (errors.length)

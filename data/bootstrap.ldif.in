@@ -47,16 +47,8 @@ dn: ou=config, o=smartdc
 ou: config
 objectclass: organizationalUnit
 
-dn: ou=nicTags, datacenter=DATACENTER_NAME, o=smartdc
-ou: nicTags
-objectclass: organizationalUnit
-
-dn: ou=networks, datacenter=DATACENTER_NAME, o=smartdc
-ou: networks
-objectclass: organizationalUnit
-
-dn: ou=nics, datacenter=DATACENTER_NAME, o=smartdc
-ou: nics
+dn: ou=fwrules, datacenter=DATACENTER_NAME, o=smartdc
+ou: fwrules
 objectclass: organizationalUnit
 
 dn: cn=replicator, datacenter=DATACENTER_NAME, o=smartdc

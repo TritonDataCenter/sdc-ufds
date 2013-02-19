@@ -47,7 +47,7 @@ dn: ou=config, o=smartdc
 ou: config
 objectclass: organizationalUnit
 
-dn: ou=fwrules, datacenter=DATACENTER_NAME, o=smartdc
+dn: ou=fwrules, o=smartdc
 ou: fwrules
 objectclass: organizationalUnit
 

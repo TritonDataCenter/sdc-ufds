@@ -36,7 +36,6 @@ function validateIPv4subnetNumber(subnet) {
 }
 
 
-
 ///--- API
 
 function FWRule() {

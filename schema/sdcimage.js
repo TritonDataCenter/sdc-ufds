@@ -28,7 +28,8 @@ function SDCImage() {
             type: 1,
             os: 1,
             type: 1,
-            activated: 1
+            activated: 1,
+            state: 1
         },
         optional: {
             published_at: 1,

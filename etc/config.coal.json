@@ -5,7 +5,7 @@
     "rootPassword": "secret",
     "logLevel": "warn",
     "moray": {
-        "url": "tcp://10.99.99.13:2020",
+        "url": "tcp://10.99.99.17:2020",
         "connectTimeout": 1000,
         "retry": {
             "retries": 3,

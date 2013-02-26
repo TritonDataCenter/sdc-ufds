@@ -13,7 +13,7 @@
     "dependencies": {
         "bunyan": "0.18.2",
         "http-signature": "0.9.9",
-        "ldapjs": "git://github.com/mcavage/node-ldapjs.git#3fc422",
+        "ldapjs": "git://github.com/mcavage/node-ldapjs.git#17f551",
         "node-uuid": "1.4.0",
         "nopt": "2.1.1",
         "restify": "1.4.0",

@@ -35,20 +35,6 @@ function validateIPv4subnetNumber(subnet) {
 
 }
 
-/*
-function validateIPv4subnet(subnet) {
-    var parts = subnet.split('/');
-    if (!validateIPv4address(parts[0])) {
-        return false;
-    }
-    if (!parseInt(parts[1], 10) || (parts[1] < 1) || (parts[1] > 32)) {
-        return false;
-    }
-    return true;
-}
-*/
-
-
 
 
 ///--- API

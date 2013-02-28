@@ -443,9 +443,9 @@ test('Failed login attempts', function (t) {
     function compare(te, cb) {
         CLIENT.compare(dn, 'userpassword', '123joyent',
             function (err, ok, res) {
-                te.ok(!err);
-                te.ok(!ok);
-                te.equal(res.errorMessage, 'invalidPassword');
+                te.ok(!err, 'compare error');
+                te.ok(!ok, 'compare ok');
+                te.equal(res.errorMessage, 'invalidPassword', 'compare msg');
                 cb();
             });
     }
@@ -460,30 +460,30 @@ test('Failed login attempts', function (t) {
 
     compare(t, function () {
         getUser(IMPORTED.uuid, function (e1, u1) {
-            t.ifError(e1);
-            t.ok(u1.pwdfailuretime);
+            t.ifError(e1, 'get user err');
+            t.ok(u1.pwdfailuretime, 'pwd failure time ok');
             compare(t, function () {
                 getUser(IMPORTED.uuid, function (e2, u2) {
-                    t.ifError(e2);
-                    t.ok(u2.pwdfailuretime);
-                    t.equal(2, u2.pwdfailuretime.length);
+                    t.ifError(e2, 'get user err 2');
+                    t.ok(u2.pwdfailuretime, 'pwd failure time ok 2');
+                    t.equal(2, u2.pwdfailuretime.length, 'u2 length');
                     compare(t, function () {
                         compare(t, function () {
                             compare(t, function () {
                                 compare(t, function () {
                                     getUser(IMPORTED.uuid, function (e3, u3) {
-                                        t.ifError(e3);
-                                        t.ok(u3.pwdfailuretime);
+                                        t.ifError(e3, 'get user err 3');
+                                        t.ok(u3.pwdfailuretime, 'fail time 3');
                                         t.equal(6, u3.pwdfailuretime.length);
                                         // Too much nesting for 80 chars lines:
                                         /* BEGIN JSSTYLED */
                                         CLIENT.bind(dn, '123joyent', function (err1) {
-                                            t.ok(err1);
-                                            t.equal(err1.name, 'InvalidCredentialsError');
+                                            t.ok(err1, 'bind error');
+                                            t.equal(err1.name, 'InvalidCredentialsError', 'err name');
                                             CLIENT.compare(dn, 'userpassword', '123joyent', function (err, ok, res) {
-                                                t.ok(!err);
-                                                t.ok(!ok);
-                                                t.equal(res.errorMessage, 'accountLocked');
+                                                t.ok(!err, 'compare error');
+                                                t.ok(!ok, 'compare not ok');
+                                                t.equal(res.errorMessage, 'accountLocked', 'compare message');
                                                 CLIENT.modify(dn, change, function (e4) {
                                                     t.ifError(e4);
                                                     getUser(IMPORTED.uuid, function (e5, u5) {

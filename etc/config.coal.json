@@ -3,7 +3,7 @@
     "port": 1389,
     "rootDN": "cn=root",
     "rootPassword": "secret",
-    "logLevel": "warn",
+    "logLevel": "debug",
     "moray": {
         "url": "tcp://10.99.99.17:2020",
         "connectTimeout": 1000,
@@ -15,9 +15,8 @@
     "changelog": {
         "bucket": "ufds_cn_changelog",
         "schema": {
-            "changenumber": {
-                "type": "number",
-                "unique": true
+            "changetype": {
+                "type": "string"
             },
             "targetdn": {
                 "type": "string"
@@ -51,27 +50,17 @@
             "country": { "type": "string" },
             "postalcode": { "type": "string" },
             "agent": { "type": "string" },
-            "fwrule": { "type": "string" },
+            "owner": { "type": "string" },
             "fromtag": { "type": "string" },
             "totag": { "type": "string" },
-            "frommachine": { "type": "string" },
+            "fromvm": { "type": "string" },
+            "tovm": { "type": "string" },
             "fromip": { "type": "string" },
             "toip": { "type": "string" },
             "fromsubnet": { "type": "string" },
             "tosubnet": { "type": "string" },
             "fromwildcard": { "type": "string" },
             "towildcard": { "type": "string" },
-            "nictag": {
-                "type": "string",
-                "unique": true
-            },
-            "nictagname": { "type": "string" },
-            "networkname": {
-                "type": "string",
-                "unique": true
-            },
-            "ip": { "type": "number" },
-            "mac": { "type": "number" },
             "_owner": { "type": "string" },
             "_parent": { "type": "string" },
             "urn": {

@@ -26,7 +26,7 @@
     },
     "ldapjs": {
       "version": "0.6.2",
-      "from": "git://github.com/mcavage/node-ldapjs.git#3fc422",
+      "from": "git://github.com/mcavage/node-ldapjs.git#17f551",
       "dependencies": {
         "asn1": {
           "version": "0.1.11"
@@ -139,7 +139,7 @@
     },
     "moray": {
       "version": "1.0.0",
-      "from": "git+ssh://git@git.joyent.com:node-moray.git#3ed523",
+      "from": "git+ssh://git@git.joyent.com:node-moray.git#64f4c9",
       "dependencies": {
         "assert-plus": {
           "version": "0.1.2"

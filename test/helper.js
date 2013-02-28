@@ -61,7 +61,7 @@ module.exports = {
 
         var host, port;
         if (!CONFIG.port && !CONFIG.host) {
-            host = '10.99.99.14';
+            host = '10.99.99.18';
             port = 636;
         } else if (!CONFIG.host && CONFIG.port) {
             host = '127.0.0.1';
@@ -102,11 +102,14 @@ module.exports = {
 
     cleanup: function cleanupMoray(suffix, callback) {
         var client = moray.createClient({
-            url: CONFIG.moray.url || 'tcp://10.99.99.13:2020',
+            url: CONFIG.moray.url || 'tcp://10.99.99.17:2020',
             log: LOG.child({
                 component: 'moray'
             }),
-            retry: false,
+            retry: CONFIG.moray.retry || {
+                minTimeout: 1000,
+                retries: 3
+            },
             connectTimeout: 1000,
             noCache: true
         });

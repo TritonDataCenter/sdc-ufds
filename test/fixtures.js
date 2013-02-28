@@ -10,7 +10,7 @@ var USER = {
 	object: {
 		login: 'unpermixed',
 		uuid: 'a820621a-5007-4a2a-9636-edde809106de',
-		userpassword: 'FL8xhO',
+		userpassword: 'FL8xhOFL8xhO',
 		email: 'postdisseizor@superexist.com',
 		cn: 'Judophobism',
 		sn: 'popgun',

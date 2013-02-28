@@ -22,7 +22,7 @@ var LOG = bunyan.createLogger({
 	name: 'sample-replicator',
         stream: process.stdout,
         serializers: bunyan.stdSerializers,
-	level: process.LOG_LEVEL || 'info'
+	level: process.LOG_LEVEL || 'debug'
 });
 
 var rep;
@@ -67,7 +67,8 @@ var REPLICATOR_OPTS = {
 	log: LOG,
 	localUfds: LOCAL_UFDS,
 	remotes: [REMOTE_ONE, REMOTE_TWO],
-	checkpointDn: 'cn=replicator, datacenter=coal, o=smartdc'
+	checkpointDn: 'cn=replicator, datacenter=coal, o=smartdc',
+	retry : { retries: 2 }
 };
 
 
@@ -77,6 +78,11 @@ rep.init();
 
 rep.once('started', function () {
     LOG.info('Replicator has started!');
+});
+
+rep.once('error', function (err) {
+    LOG.info(err, 'Replicator has thrown an error, exiting');
+    process.exit(1);
 });
 
 

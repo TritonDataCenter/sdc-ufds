@@ -17,7 +17,7 @@ var LOG = bunyan.createLogger({
 	name: 'replicator-test',
         stream: process.stdout,
         serializers: bunyan.stdSerializers,
-	level: 'debug'
+	level: 'info'
 });
 
 var CUSTOMER_DN = 'uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc';

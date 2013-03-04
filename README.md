@@ -54,3 +54,26 @@ The following make tasks are available:
     search_test
 
 Of course, if you run `make test` all these tasks will run.
+
+# Schema
+
+Schema for UFDS is built on a custom framework where you extend a
+`Validator` class, and simply model the attributes you want, whether
+they're required or optional, and the number of values to allow.  This
+means to add new schema types into UFDS, you have to write (minimal)
+code.  Take a look at `./schema` to get a feel for what this looks
+like.  It's really not rocket science.
+
+The schema framework automatically runs on add/modify/modifyDN, and
+UFDS "discovers" all schema in that directory, so all you need to do
+to get a new type in the system is drop a file in there.
+
+In terms of the paradigm, you describe your _required_ attributes, and
+the number of values each can have, and then decide whether or not you
+want the type to be _strict_.  Strict set to true means that only the
+attributes described in your schema will be allowed, and you can then
+use the _optional_ block to describe optional attributes.  If _strict_
+is false, then _optional_ is pretty much irrelevant, as anything
+goes (_required_ attributes however, must be present). The default for
+strictness is _false_.
+

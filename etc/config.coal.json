@@ -3,7 +3,7 @@
     "port": 1389,
     "rootDN": "cn=root",
     "rootPassword": "secret",
-    "logLevel": "debug",
+    "logLevel": "info",
     "moray": {
         "url": "tcp://10.99.99.17:2020",
         "connectTimeout": 1000,

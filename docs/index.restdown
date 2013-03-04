@@ -1,8 +1,14 @@
-<!-- -*- mode: markdown -*- -->
-# Overview
+---
+title: UFDS
+mediaroot: ./media
+apisections: SmartDataCenter Tree, Changelog, CAPI
+markdown2extras: wiki-tables, code-friendly
+---
+
+# UFDS
 
 UFDS is the "unified foundational directory service" built for SDC over
-[ldapjs](http://ldapjs.org) and [Riak](http://mcavage.github.com/node-ldapjs-riak),
+[ldapjs](http://ldapjs.org) and [Moray](https://mo.joyent.com/docs/moray/master/),
 and is used to track accounts, credentials, and more. It is a superset of
 functionality offered by previous SDC versions employing CAPI (there is a
 backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
@@ -12,8 +18,6 @@ really just the SDC-specific uses of it.
 
 # SmartDataCenter Tree
 
-## Tree
-
 The directory tree is laid out as follows:
 
     o=smartdc
@@ -22,136 +26,226 @@ The directory tree is laid out as follows:
       |  | +-key=:fingerpring
       |  | +-metadata=:appkey
       |  | +-dclimit=:datacenter
+      |  | +-amonprobegroup=:uuid
+      |  | +-amonprobe=:uuid
       +-ou=groups
       |  +-cn=:name
+      +-cn=pwdpolicy
+      +-datacenter=:name
+      |  +-cn=replicator
+      +-ou=images
+      |  +-uuid=:uuid
+      +-ou=packages
+      |  +-uuid=:uuid
+      +-ou=config
+      +-ou=fwrules
+      |  +-uuid=:uuid
 
-Basically there are two "subtrees", one for users and one for groups.
 
-## Entries/Schema
+Basically main "subtrees" are about users and group information, while the
+other "subtrees" are related to headnode/datacenter configuration.
 
 Reference the files in `./schema` for an up to date list of attributes
 et al. This is just high-level information on what you can look for.
 
-### sdcPerson
+
+
+## Users (sdcPerson)
 
 The `sdcPerson` type is one of the `uuid=:uuid, ou=users, o=smartdc`
 entries, and contains all the attributes for a "user".
 These objects should always be stored by uuid.  Here's the
 bootstrapped user:
 
-    dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc
+    dn: uuid=00000000-0000-0000-0000-000000000000, ou=users, o=smartdc
     cn: Admin
-    email: user@joyent.com
+    email: root@localhost
     login: admin
     objectclass: sdcperson
     sn: User
-    uuid: 930896af-bf8c-48d4-885c-6573a94b1853
+    uuid: 00000000-0000-0000-0000-000000000000
 
-### sdcKey
+Please, note that login and email values may be different, given they are part
+of the headnode configuration.
+
+All the attributes starting with `pwd` are related to password policy. Unlike
+the attributes beginning with and underscore, the password policy related
+attributes are not hidden
+
+## SSH Keys (sdcKey)
 
 The `sdcKey` objectclass holds SSH keys for tenants, as well as the
 OpenSSL compatible form of the SSH key (to support signing).  While
 these objects have a `name` field, they are stored by fingerprint, and
 it is on the short term TODO list to make CloudAPI work with
-fingerprint as the URL.
+fingerprint as the URL. (Indeed, node-smartdc 7 uses keys fingerprint
+also as `name` attribute when nothing is specified).
 
-### CAPI Specific Objects
 
-Unclear if these have long-term viability, but for now they exist,
-so...
+## Password Policy (pwdPolicy)
 
-#### capiLimit
+`pwdpolicy` is related to PCI Compliance, and is a partial implementation
+of IETF draft [Password Policy for LDAP Directories](http://tools.ietf.org/html/draft-behera-ldap-password-policy-10).
+
+Concretely, the following PCI restrictions are implemented through the global
+`cn=pwdpolicy, o=smartdc` object:
+
+- passwords expire at least every 90 days
+- passwords must be at least 7 characters long
+- passwords must have both alpha & numeric characters.
+- passwords cannot be re-used. A new password cannot match the 4 previous
+  passwords.
+- customers are locked out after 6 failed login attempts.
+- customers are locked out for 30 minutes or until reset. The user could
+  regain the ability to login if they contact support or use the password
+  reset form from Customer Portal/SSO.
+
+Note that it's possible to set an specific password policy sub-entry for a
+given `sdcPerson` entry. Elements of this sub-entry would have the `dn` of
+`cn=pwdpolicy, uuid=:uuid, ou=users, o=smartdc` and the `sdcPerson` entry
+associated with this password policy entry will point to the `dn` through
+the `sdcPerson` attribute `pwdPolicySubentry`.
+
+
+## CAPI Specific Objects
+
+These objects `objectclass` may change in future versions to remove the
+legacy `capi` prefix.
+
+### capiLimit
 
 Holds a mapping of "limits" per dataset type in a particular
-datacenter.  Stored with "dclimit=:datacenter, ..." as the DN.
+datacenter for a given `sdcPerson`.
+Stored with `dclimit=:datacenter, uuid=:uuid, ou=users, o=smartdc` as the DN.
 
-#### capiMetadata
+Refer to Cloud API `provision_limits` plugin documentation for a more detailed
+description
 
-There's probably not anything using this, but it's just a free-form
-entry (meaning you can put any attribute/value pairs in you
-want). Stored by `metadata=:appkey, ...`.
+### capiMetadata
 
-# How Stuff works
+It's just a free-form entry (meaning you can put any attribute/value pairs in
+you want). Stored by `metadata=:appkey, ...`.
 
-## Schema
+Actually, SSO/Portal use it to store PCI related information
 
-Schema for UFDS is built on a custom framework where you extend a
-`Validator` class, and simply model the attributes you want, whether
-they're required or optional, and the number of values to allow.  This
-means to add new schema types into UFDS, you have to write (minimal)
-code.  Take a look at `./schema` to get a feel for what this looks
-like.  It's really not rocket science.
 
-The schema framework automatically runs on add/modify/modifyDN, and
-UFDS "discovers" all schema in that directory, so all you need to do
-to get a new type in the system is drop a file in there.
+## Email Black List
 
-In terms of the paradigm, you describe your _required_ attributes, and
-the number of values each can have, and then decide whether or not you
-want the type to be _strict_.  Strict set to true means that only the
-attributes described in your schema will be allowed, and you can then
-use the _optional_ block to describe optional attributes.  If _strict_
-is false, then _optional_ is pretty much irrelevant, as anything
-goes (_required_ attributes however, must be present). The default for
-strictness is _false_.
+The object `emailblacklist` is intended to store the list of email addresses
+disallowed to be used when a new `sdcPerson` entry is created. Both, complete
+email addresses like `foo@example.com` or wildcards, like `*@example.com` are
+valid values for the `email` attribute.
 
-## Indexing
 
-UFDS supports indexes and unique indexes.  Indexes are fairly cheap, so it's
-advantageous to index a lot of fields, really.  Unique indexes however, are
-extremely costly, so we only really want to set those where you really
-need them (notably login and email, since we're assuming we can generate
-uuid's without collision).
+## UFDS as Object Storage
 
-Indexing is configured in config.json, and leverages Riak's `2i`
-code.  Note that you'll need to keep `./cfg/config.json.in` in sync
-with what's needed, as that's what usb-headnode uses to generate the
-"in zone" config.  But in the config file, you'll see this block:
+Several of the SDC 7 applications use UFDS as their storage mechanism of choice
+among others to take advantage of the LDAP search facilities.
 
-    "indexes": {
-      "login": true,
-      "email": true,
-      "uuid": true,
-      "fingerprint": false,
-      "_owner": false,
-      "company": false,
-      "postalcode": false,
-      "country": false,
-      "city": false,
-      "state": false,
-      "cn": false,
-      "sn": false
-    }
+While it's possible to manipulate such values using raw LDAP commands, we
+encourage you to do not add/modify/delete such entries but through the
+different applications associated with each Object type:
 
-_true_ means the attribute is a unique index, _false_ means it's a
-regular index.  Everything in there ends up as a Riak 2i index.
+||**ObjectClass**||**Application**||
+||sdcPackage||AdminUI||
+||sdcImage||ImageAPI||
+||amonprobegroup||Amon||
+||amonprobe||Amon||
+||fwrule||FWAPI||
+||vmusage||VMAPI||
+||sdcreplicator||UFDS configuration||
 
-Note that there's no such thing as "reindexing" in Riak, so if you
-need indexes for your types, you *must* put them in before customer's
-touch the release (i.e., before any real data ends up in the
-stack). Reindexing means you've got to dump and reload.  Not pretty.
 
-## Adding Triggers
+# Interacting with UFDS
 
-Most of the code for UFDS is really in the [http://ldapjs.org](ldapjs)
-and [http://mcavage.github.com/node-ldapjs-riak](ldapjs-riak)
-code-bases, but the SmartDataCenter specific stuff lives here.  For
-example, to allow easy migration from CAPI to UFDS, password salting
-is *identical* to CAPI's. To do that, there's a `./lib/salt.js` file
-that has ldapjs handlers that inject attributes and modify the request
-as appropriate for each LDAP operation type that's appropriate.
-Similarly, there's code to convert an SSH key into the PKCS#8 PEM
-format.
+UFDS LDAP server runs into headnode machine of the same name `ufds` and,
+by default, it listens to all interfaces on `ldaps` port (636).
 
-Basically, if you want UFDS to do something other than store your
-record as-is, you need to write code to do so, and add it into the
-handler chain as appropriate.
+This machine has only admin interface, therefore the only way to interact with
+the LDAP server is from this interface.
+
+Easier way to interact with the LDAP server is using `sdc-ldap`, which is
+merely a wrapper for the different LDAP commands with the UFDS LDAP server
+address and the default authentication options already set.
+
+`sdc-ldap` is available as part of the set of SDC 7 `headnode` set of tools.
+
+
+    [root@headnode (coal) ~]# sdc-ldap search objectclass=sdcpackage name
+    dn: uuid=0ea54d9d-8d4d-4959-a87e-bf47c0f61a47, ou=packages, o=smartdc
+    name: sdc_64
+
+    dn: uuid=73a1ca34-1e30-48c7-8681-70314a9c67d3, ou=packages, o=smartdc
+    name: sdc_128
+
+    dn: uuid=78aa629d-04fc-4ee5-881b-0b4a914e0c52, ou=packages, o=smartdc
+    name: sdc_256
+
+    dn: uuid=5dd022c8-5388-43e3-9fdd-536df4ea4f9f, ou=packages, o=smartdc
+    name: sdc_512
+
+    dn: uuid=1ee2a2ab-2138-8542-b563-a67bb03792f7, ou=packages, o=smartdc
+    name: sdc_768
+
+    dn: uuid=4769a8f9-de51-4c1e-885f-c3920cc68137, ou=packages, o=smartdc
+    name: sdc_1024
+
+    dn: uuid=8d205d81-3672-4297-b80f-7822eb6c998b, ou=packages, o=smartdc
+    name: sdc_2048
+
+    dn: uuid=b2cd4ca7-ad7f-4a98-adeb-7adc9978a875, ou=packages, o=smartdc
+    name: sdc_db
+
+    dn: ou=pkg, o=smartdc
+    name: regular_128
+
+
+## Unlock user
+
+After 6 failed login attempts, an user account will get locked due to PCI
+restrictions. While the account will be unlocked if the user follows the
+password reset form in Portal, there's also the possibility to unlock the
+account w/o modifying the password talking straight to the ldap server.
+
+An user is locked when the `sdcPerson` entry has the attribute
+`pwdaccountlockedtime` set, and that value is smaller than the current time,
+(in a way the user will get automatically unlocked after 30 minutes).
+
+To immediately unlock an user, the easier way is to save the user information
+into a file and use ldap modify to remove the `pwdaccountlockedtime` attr. For
+example, for an user with dn:
+
+    uuid=298ef9d9-512e-419b-8dc2-915b7c99c75b, ou=users, o=smartdc
+
+we'll save the information into a file `/tmp/298ef9d9-512e-419b-8dc2-915b7c99c75b.ldif`
+including:
+
+    dn: uuid=298ef9d9-512e-419b-8dc2-915b7c99c75b, ou=users, o=smartdc
+    delete: pwdaccountlockedtime
+
+and then modify the entry with:
+
+    sdc-ldap modify -f /tmp/298ef9d9-512e-419b-8dc2-915b7c99c75b.ldif
+
+
+## Adding emails to blacklist
+
+Save the information into the file `/tmp/blacklist.ldif`, and add the required
+email addresses or wildcards as follow:
+
+    dn: cn=blacklist, o=smartdc
+    add: email
+    email: foo@bar.com
+    email: *@bar.com
+    email: whatever@else.net
+
+Then, add the modifications to the already existing `emailblacklist` with:
+
+    sdc-ldap modify -f /tmp/blacklist.ldif
 
 ## Searching (effectively)
 
-This is really important, so read this 2x if you have to! If you're
-doing searches on Riak that are _not_ indexed, you're fucked. Stop. Go
-back and figure out how to find what you need with indexes.
+This is really important, so read this 2x if you have to!
 
 To find a customer from the top of the tree, you're best off doing
 something like `(&(login=markc)(objectclass=sdcperson))` or
@@ -170,7 +264,7 @@ you want. When searching from the top of the tree, only use equality
 filters on indexed attributes (you can use an `and` filter, but one of
 them really should be an equality match).
 
-### Hidden attributes
+## Hidden attributes
 
 UFDS stores a bunch of attributes prefixed with `_`.  For example,
 `_ctime`, `_salt`, etc.  And, by default, UFDS will not return these
@@ -201,12 +295,16 @@ something Joyent invented.  The OID for this control is
       "_modifiedby": "cn=root"
     }]
 
-## Changelog
+
+Note that all the `ldapjs` binaries are part of node ldapjs module. All of them
+are in the path into the UFDS zone.
+
+# Changelog
 
 UFDS supports an almost-RFC compliant LDAP changelog, which will
 always live at `cn=changelog`.  It contains all changes that have ever
 happened in the directory.  You can search by `changetype`,
-`changenumber`, `changetime` and `targetdn`.  Here's a sample record:
+`changenumber` and `targetdn`.  Here's a sample record:
 
     dn: changenumber=1319561108253, cn=changelog
     targetdn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators, o=smartdc
@@ -219,66 +317,35 @@ happened in the directory.  You can search by `changetype`,
      53f"],"_owner":["930896af-bf8c-48d4-885c-6573a94b1853"]}
     objectclass: changeLogEntry
 
-# Development/Setup
+Here are sample searches using `sdc-ldap` wrapper:
 
-This all assumes you're developing for UFDS on your macbook.
+    sdc-ldap search -b cn=changelog "(changetype=*)"
+    sdc-ldap search -b cn=changelog "(changenumber>=50)"
 
-## Erlang
+# Aliasing the OpenLDAP CLI
 
-    $ brew install erlang
+Do this, or your life will be far far away to be happy:
 
-## Riak
+These are part of your headnode configuration, concretely `ufds_ldap_root_dn`
+and `ufds_ldap_root_pw`:
 
-You need a 1.0.x version of Riak. Get one here:
-<http://downloads.basho.com/riak/riak-1.0.1>.
+    $ export LCREDS="-D cn=root -w secret"
 
-Once you have that, you need to be on the leveldb backend, so crack open
-`riak-1.0.0rc1/etc/app.config` and under the section `{riak_kv`, change the
-key `storage_backend` to `riak_kv_eleveldb_backend` (it will probably be set
-to bitcask).  Once you have that, you also need to increase your ulimits:
-`ulimit -n 2048`, and I just run from a local shell: `./bin/riak start`. If you
-want to clean out/reset your data:
-`./bin/riak stop && rm -fr data/leveldb/* && ./bin/riak start`
+UFDS admin IP is also set into that file. Pick first of `ufds_admin_ips` value:
 
-## UFDS
+    $ export LURL=ldaps://10.99.99.18
 
-Next you need to start UFDS, which is the LDAP interface over riak.  Config
-for this is stored in `./cfg/config.json`, but assuming you're running localhost
-riak, you should be good to go with: `node main.js -f cfg/config.json -d 2`;
-note the `-d 2` is optional, but will spew diagnostic logs for you, which is
-helpful if you're developing.
+Then, alias the ldap commands as follow:
 
-### Aliasing the OpenLDAP CLI
+    $ alias lsearch='LDAPTLS_REQCERT=allow ldapsearch -x -LLL $LCREDS -H $LURL'
+    $ alias ladd='LDAPTLS_REQCERT=allow ldapadd -x $LCREDS -H $LURL'
+    $ alias lmodify='LDAPTLS_REQCERT=allow ldapmodify -x $LCREDS -H $LURL'
+    $ alias ldelete='LDAPTLS_REQCERT=allow ldapdelete -x $LCREDS -H $LURL'
 
-Do this, or your life will suck:
+# CAPI (SDC 6.5 Backwards Compatibility)
 
-    $ alias lsearch='LDAPTLS_REQCERT=allow ldapsearch -x -LLL -D cn=root -w secret -H ldaps://localhost:1636'
-    $ alias ladd='LDAPTLS_REQCERT=allow ldapadd -x -D cn=root -w secret -H ldaps://localhost:1636'
-    $ alias lmodify='LDAPTLS_REQCERT=allow ldapmodify -x -D cn=root -w secret -H ldaps://localhost:1636'
-    $ alias ldelete='LDAPTLS_REQCERT=allow ldapdelete -x -D cn=root -w secret -H ldaps://localhost:1636'
-
-### Bootstrapping
-
-Once you have riak+ufds running, you need to 'bootstrap' the LDAP tree.
-
-    $ ladd -f ./data/bootstrap.ldif
-
-That adds the shell of the tree, as well as the "admin" user.  To add
-a bunch of new records, you can run:
-
-    $ ladd -f ./data/1k.ldif
-
-Also, in `./tools` is `genldif`, which you can invoke like:
-
-    $ ./tools/genldif -k -n 10000
-
-To generate 10k users with SSH keys (note they will all share one SSH key).
-
-## CAPI
-
-To maintain backwards compatibility, there is a restify app that "approximates"
-the old CAPI interface. It assumes that UFDS is running on the same host, so to
-fire it up, just run `node capi.js -u ldaps://localhost:1636 -p 8080 -d 2`.
+To maintain backwards compatibility with SDC 6.5, there is a restify app that
+"approximates" the old CAPI interface. It is running on the same host than UFDS
 
 To make curl'ing the CAPI thing easier, I have a small bash function:
 
@@ -306,10 +373,3 @@ But, here's some helpers for you:
 ||*list*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys`||
 ||*rename*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f?name=foo -X PUT`||
 ||*delete*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f -X DELETE`||
-
-# TODO
-
-- load balancing Riak cluster
-- JSON error messages
-- change numbers as uuid
-- 6.5 upgrade

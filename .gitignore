@@ -6,3 +6,5 @@ var/*
 *.tar.bz2
 *.log
 smf/manifests/*.xml
+docs/*.html
+docs/*.json

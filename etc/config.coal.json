@@ -15,12 +15,9 @@
     "changelog": {
         "bucket": "ufds_cn_changelog",
         "schema": {
-            "changetype": {
-                "type": "string"
-            },
-            "targetdn": {
-                "type": "string"
-            }
+            "changetype": { "type": "string"},
+            "changetime": { "type": "number" },
+            "targetdn": { "type": "string"}
         }
     },
     "o=smartdc": {

@@ -78,9 +78,9 @@ attributes are not hidden
 The `sdcKey` objectclass holds SSH keys for tenants, as well as the
 OpenSSL compatible form of the SSH key (to support signing).  While
 these objects have a `name` field, they are stored by fingerprint, and
-it is on the short term TODO list to make CloudAPI work with
-fingerprint as the URL. (Indeed, node-smartdc 7 uses keys fingerprint
-also as `name` attribute when nothing is specified).
+CloudAPI works with either `name` or `fingerprint` as the URL.
+(Indeed, SmartDC 7 uses keys `fingerprint` also as `name` attribute when
+a `name` is not specified).
 
 
 ## Password Policy (pwdPolicy)

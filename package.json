@@ -11,7 +11,7 @@
         "node": ">=0.8"
     },
     "dependencies": {
-        "bunyan": "0.18.2",
+        "bunyan": "0.18.3",
         "http-signature": "0.9.9",
         "ldapjs": "git://github.com/mcavage/node-ldapjs.git#17f551",
         "node-uuid": "1.4.0",
@@ -19,7 +19,7 @@
         "restify": "1.4.0",
         "crc": "0.2.0",
         "microtime": "0.3.1",
-        "moray": "git+ssh://git@git.joyent.com:node-moray.git#64f4c9",
+        "moray": "git+ssh://git@git.joyent.com:node-moray.git#6248cbed48f0e86d9eb25bb708cc54ee99ddadde",
         "ufds-replicator": "git+ssh://git@git.joyent.com:ufds-replicator.git#fd48748",
         "sigyan": "0.2.0",
         "bcrypt": "0.7.3"

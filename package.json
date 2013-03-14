@@ -11,12 +11,12 @@
         "node": ">=0.8"
     },
     "dependencies": {
-        "bunyan": "0.18.3",
+        "bunyan": "0.19.0",
         "http-signature": "0.9.9",
         "ldapjs": "git://github.com/mcavage/node-ldapjs.git#17f551",
         "node-uuid": "1.4.0",
         "nopt": "2.1.1",
-        "restify": "1.4.0",
+        "restify": "2.3.4",
         "crc": "0.2.0",
         "microtime": "0.3.1",
         "moray": "git+ssh://git@git.joyent.com:node-moray.git#6248cbed48f0e86d9eb25bb708cc54ee99ddadde",

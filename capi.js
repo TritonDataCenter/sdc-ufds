@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var fs = require('fs');
@@ -91,6 +91,7 @@ function before(req, res, next) {
 ///--- Mainline
 
 var parsed = nopt(opts, shortOpts, process.argv, 2);
+
 if (parsed.help)
     usage(0);
 
@@ -105,12 +106,9 @@ if (!parsed.port)
 
 log = new Logger({
     name: 'capi',
-    streams: [
-        {
-            level: (parsed.debug ? 'debug' : 'info'),
-            stream: process.stdout
-        }
-    ]
+    level: (parsed.debug ? 'debug' : 'info'),
+    stream: process.stdout,
+    serializers: restify.bunyan.serializers
 });
 
 server = restify.createServer({
@@ -122,18 +120,10 @@ server.use(restify.acceptParser(server.acceptable));
 server.use(restify.dateParser());
 server.use(restify.queryParser());
 server.use(restify.bodyParser());
+server.use(restify.fullResponse());
 
 server.on('after', restify.auditLogger({
-    body: true,
-    log: new Logger({
-        name: 'audit',
-        streams: [
-            {
-                level: 'info',
-                stream: process.stdout
-            }
-        ]
-    })
+    log: log
 }));
 
 server.use(before);

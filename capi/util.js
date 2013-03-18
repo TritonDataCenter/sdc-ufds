@@ -236,9 +236,12 @@ module.exports = {
                 return returnError(err);
             });
             result.on('end', function () {
-                req.log.debug('LoadCustomer(%s) -> %j',
+                if (req.customer) {
+                    req.log.debug('LoadCustomer(%s) -> %j',
                               req.params.uuid,
-                              req.customer);
+                              req.customer.object);
+                }
+
                 if (!sent) {
                     sent = true;
                     if (!req.customer) {

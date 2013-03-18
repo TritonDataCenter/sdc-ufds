@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var sprintf = require('util').format;
@@ -18,6 +18,7 @@ var ID_FILTER = '(uuid=%s)';
 var GET_FILTER = '(&' + ID_FILTER + LIST_FILTER + ')';
 var FILTER = '(%s=%s)';
 var WC_FILTER = '(%s=*%s*)';
+var GROUPS = 'ou=groups, o=smartdc';
 var OPERATORS_DN = 'cn=operators, ou=groups, o=smartdc';
 
 var Change = ldap.Change;
@@ -111,36 +112,42 @@ module.exports = {
         var base = 'ou=users, o=smartdc';
 
         return util.loadCustomers(req.ldap, filter, function (err, customers) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
             if (sort) {
                 customers.sort(function (a, b) {
                     function compare(uno, dos) {
-                        if (uno[sort] < dos[sort])
+                        if (uno[sort] < dos[sort]) {
                             return -1;
-                        if (uno[sort] > dos[sort])
+                        }
+                        if (uno[sort] > dos[sort]) {
                             return 1;
+                        }
                         return 0;
                     }
 
                     var cmp = compare(a, b);
-                    if (reverse)
+                    if (reverse) {
                         cmp = cmp * -1;
-
+                    }
                     return cmp;
                 });
             }
 
-            if (offset !== false)
+            if (offset !== false) {
                 customers.splice(0, offset);
+            }
 
-            if (limit !== false)
+            if (limit !== false) {
                 customers = customers.splice(0, limit);
+            }
 
             var count = customers.length;
-            if (req.xml)
+            if (req.xml) {
                 customers = { customers: { customer: customers } };
+            }
 
             log.debug('ListCustomers: returning %o', customers);
             res.send(200, customers, { 'X-Joyent-Resource-Count': count });
@@ -170,18 +177,23 @@ module.exports = {
             }
         }
 
-        if (!req.params.login)
+        if (!req.params.login) {
             errors.push('login is a required parameter');
-        if (!req.params.password)
+        }
+        if (!req.params.password) {
             errors.push('password is a required parameter');
-        if (!req.params.email_address)
+        }
+        if (!req.params.email_address) {
             errors.push('email_address is a required parameter');
+        }
         if (req.params.password_confirmation &&
-            req.params.password_confirmation !== req.params.password)
+            req.params.password_confirmation !== req.params.password) {
             errors.push('password mis is a required parameter');
+            }
 
-        if (errors.length)
+        if (errors.length) {
             return res.sendError(errors);
+        }
 
         var customer = {
             uuid: uuid(),
@@ -191,26 +203,36 @@ module.exports = {
             objectclass: ['sdcperson']
         };
 
-        if (req.params.first_name)
+        if (req.params.first_name) {
             customer.cn = req.params.first_name;
-        if (req.params.last_name)
+        }
+        if (req.params.last_name) {
             customer.sn = req.params.last_name;
-        if (req.params.company_name)
+        }
+        if (req.params.company_name) {
             customer.company = req.params.company_name;
-        if (req.params.street_1)
+        }
+        if (req.params.street_1) {
             customer.address = [req.params.street_1];
-        if (req.params.street_2 && customer.address)
+        }
+        if (req.params.street_2 && customer.address) {
             customer.address.push(req.params.street_2);
-        if (req.params.city)
+        }
+        if (req.params.city) {
             customer.city = req.params.city;
-        if (req.params.state)
+        }
+        if (req.params.state) {
             customer.state = req.params.state;
-        if (req.params.postal_code)
+        }
+        if (req.params.postal_code) {
             customer.postalcode = req.params.postal_code;
-        if (req.params.country)
+        }
+        if (req.params.country) {
             customer.country = req.params.country;
-        if (req.params.phone_number)
+        }
+        if (req.params.phone_number) {
             customer.phone = req.params.phone_number;
+        }
 
         var dn = sprintf('uuid=%s, ou=users, o=smartdc', customer.uuid);
         log.debug('CreateCustomer, saving: %s -> %j', dn, customer);
@@ -232,15 +254,17 @@ module.exports = {
                 util.forgotPasswordCode(customer.uuid[0]);
 
             function done() {
-                if (req.xml)
+                if (req.xml) {
                     customer = { customer : customer };
+                }
 
                 res.send(201, customer);
                 return next();
             }
 
-            if (req.params.role !== '2')
+            if (req.params.role !== '2') {
                 return done();
+            }
 
             var change = {
                 operation: 'add',
@@ -269,8 +293,9 @@ module.exports = {
         log.debug('GetCustomer(%s) entered', req.params.uuid);
 
         var filter;
-        if (req.params.uuid.indexOf('+') === -1)
+        if (req.params.uuid.indexOf('+') === -1) {
             filter = sprintf(GET_FILTER, req.params.uuid);
+        }
 
         if (!filter) {
             filter = '(&' + LIST_FILTER + '(|';
@@ -281,26 +306,70 @@ module.exports = {
         }
 
         util.loadCustomers(req.ldap, filter, function (err, customers) {
-            if (err)
+            if (err) {
                 return next(err);
-
-            if (!customers.length)
-                return next(new restify.ResourceNotFoundError(req.params.id));
-
-            var result;
-            if (customers.length > 1) {
-                result = customers;
-                if (req.xml)
-                    result = { customers: { customer: customers } };
-            } else {
-                result = customers[0];
-                if (req.xml)
-                    result = { customer: customers[0] };
             }
 
-            log.debug('GetCustomer(%s) => %j', req.params.uuid, result);
-            res.send(200, result);
-            return next();
+            if (!customers.length) {
+                return next(new restify.ResourceNotFoundError(req.params.id));
+            }
+
+            var result;
+
+            if (customers.length > 1) {
+                result = customers;
+                if (req.xml) {
+                    result = { customers: { customer: customers } };
+                }
+                log.debug('GetCustomer(%s) => %j', req.params.uuid, result);
+                res.send(200, result);
+                return next();
+            } else {
+                var c = customers[0];
+
+                // Now load the groups it is in
+                var dn = sprintf('uuid=%s, ou=users, o=smartdc', c.uuid);
+                var opts = {
+                    scope: 'one',
+                    filter: sprintf(
+                        '(&(objectclass=groupofuniquenames)(uniquemember=%s))',
+                        dn)
+                };
+                return req.ldap.search(GROUPS, opts, function (gErr, gRes) {
+                    if (gErr) {
+                        return next(gErr);
+                    }
+
+                    var groups = [];
+
+                    gRes.on('searchEntry', function (entry) {
+                        groups.push(entry);
+                    });
+                    gRes.on('error', function (er) {
+                        return next(er);
+                    });
+                    gRes.on('end', function () {
+
+                        c.memberof = groups.map(function (v) {
+                            return v.dn;
+                        });
+
+                        if (c.memberof.indexOf(OPERATORS_DN) !== -1) {
+                            c.role_type = 2;
+                            c.role = 2;
+                        }
+
+                        result = c;
+                        if (req.xml) {
+                            result = { customer: c };
+                        }
+                        log.debug('GetCustomer(%s) => %j',
+                            req.params.uuid, result);
+                        res.send(200, result);
+                        return next();
+                    });
+                });
+            }
         });
     },
 

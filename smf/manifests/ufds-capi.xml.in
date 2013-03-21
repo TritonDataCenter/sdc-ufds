@@ -25,7 +25,7 @@
 
         <exec_method type="method"
                      name="start"
-                     exec="/opt/smartdc/ufds/build/node/bin/node capi.js -f etc/config.json &amp;"
+                     exec="/opt/smartdc/ufds/build/node/bin/node capi.js -f etc/config.json -d 2 &amp;"
                      timeout_seconds="30">
             <method_context working_directory="/opt/smartdc/ufds">
                 <method_credential user="nobody"

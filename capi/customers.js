@@ -108,7 +108,7 @@ module.exports = {
         } else {
             filter = LIST_FILTER;
         }
-
+        log.debug({filter: filter}, 'ListCustomers: LDAP filter');
         var base = 'ou=users, o=smartdc';
 
         return util.loadCustomers(req.ldap, filter, function (err, customers) {
@@ -149,7 +149,7 @@ module.exports = {
                 customers = { customers: { customer: customers } };
             }
 
-            log.debug('ListCustomers: returning %o', customers);
+            log.debug({customers: customers}, 'ListCustomers: returning');
             res.send(200, customers, { 'X-Joyent-Resource-Count': count });
             return next();
         }, base);
@@ -159,7 +159,7 @@ module.exports = {
     create: function create(req, res, next) {
         var log = req.log;
 
-        log.debug('CreateCustomer entered %o', req.params);
+        log.debug({params: req.params}, 'CreateCustomer: entered');
 
         var errors = [];
 
@@ -188,10 +188,11 @@ module.exports = {
         }
         if (req.params.password_confirmation &&
             req.params.password_confirmation !== req.params.password) {
-            errors.push('password mis is a required parameter');
+            errors.push('password confirmation missmatch');
             }
 
         if (errors.length) {
+            log.debug({errors: errors}, 'Create Customer: have errors!');
             return res.sendError(errors);
         }
 
@@ -235,13 +236,13 @@ module.exports = {
         }
 
         var dn = sprintf('uuid=%s, ou=users, o=smartdc', customer.uuid);
-        log.debug('CreateCustomer, saving: %s -> %j', dn, customer);
+        log.debug({dn: dn, customer: customer}, 'CreateCustomer: saving');
         return req.ldap.add(dn, customer, function (err) {
             if (err) {
                 if (err instanceof ldap.EntryAlreadyExistsError) {
                     return res.sendError(['Username is already taken']);
                 } else if (err instanceof ldap.ConstraintViolationError) {
-                    return res.sendError([err.message + ' already exists']);
+                    return res.sendError([err.message]);
                 } else {
                     return res.sendError([err.toString()]);
                 }
@@ -279,6 +280,10 @@ module.exports = {
                               dn.toString());
                     return res.sendError([err2.toString()]);
                 }
+                // Need to explicitly override role here, since we already
+                // translated customer before.
+                customer.role = 2;
+                customer.role_type = 2;
 
                 return done();
             });
@@ -290,7 +295,7 @@ module.exports = {
     get: function get(req, res, next) {
         var log = req.log;
 
-        log.debug('GetCustomer(%s) entered', req.params.uuid);
+        log.debug({uuid: req.params.uuid}, 'GetCustomer: entered');
 
         var filter;
         if (req.params.uuid.indexOf('+') === -1) {
@@ -305,13 +310,15 @@ module.exports = {
             filter += '))';
         }
 
+        log.debug({filter: filter}, 'GetCustomer: filter');
+
         util.loadCustomers(req.ldap, filter, function (err, customers) {
             if (err) {
                 return next(err);
             }
 
             if (!customers.length) {
-                return next(new restify.ResourceNotFoundError(req.params.id));
+                return next(new restify.ResourceNotFoundError(req.params.uuid));
             }
 
             var result;
@@ -321,7 +328,10 @@ module.exports = {
                 if (req.xml) {
                     result = { customers: { customer: customers } };
                 }
-                log.debug('GetCustomer(%s) => %j', req.params.uuid, result);
+                log.debug({
+                    uuid: req.params.uuid,
+                    result: result
+                }, 'GetCustomer: done');
                 res.send(200, result);
                 return next();
             } else {
@@ -363,8 +373,10 @@ module.exports = {
                         if (req.xml) {
                             result = { customer: c };
                         }
-                        log.debug('GetCustomer(%s) => %j',
-                            req.params.uuid, result);
+                        log.debug({
+                            uuid: req.params.uuid,
+                            result: result
+                        }, 'GetCustomer: done');
                         res.send(200, result);
                         return next();
                     });
@@ -378,7 +390,7 @@ module.exports = {
         assert.ok(req.customer);
         var log = req.log;
 
-        log.debug('UpdateCustomer entered %j', req.params);
+        log.debug({params: req.params}, 'UpdateCustomer: entered');
 
         if (req.params.customer) {
             if (typeof (req.params.customer) === 'object') {
@@ -461,9 +473,10 @@ module.exports = {
         });
 
         if (password.length) {
-            if (password[0] !== password[1])
-                return next(new restify.InvalidArgumentError('passwords do ' +
-                                                             'not match'));
+            if (password[0] !== password[1]) {
+                return next(new restify.InvalidArgumentError(
+                            'passwords do not match'));
+            }
 
             changes.push(new Change({
                 type: 'replace',
@@ -473,24 +486,29 @@ module.exports = {
             }));
         }
 
-        if (address.length)
+        if (address.length) {
             changes.push(new Change({
                 type: 'replace',
                 modification: {
                     address: address
                 }
             }));
+        }
 
-        if (!changes.length)
-            return next(new restify.MissingParameterError('no updates ' +
-                                                          'specified'));
+        if (!changes.length) {
+            return next(new restify.MissingParameterError(
+                        'no updates specified'));
+        }
+
+        log.debug({changes: changes}, 'UpdateCustomer: changes');
 
         var _dn = req.customer.dn.toString();
         return req.ldap.modify(_dn, changes, function (err) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            log.debug('UpdateCustomer(%s) => ok', req.params.id);
+            log.debug({id: req.params.uuid}, 'UpdateCustomer: ok');
             return next();
         });
     },
@@ -502,17 +520,18 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('DeleteCustomer(%s): entered', req.params.id);
+        log.debug({uuid: req.params.uuid}, 'DeleteCustomer: entered');
 
-        return req.ldap.del(req.customers.dn.toString(), function (err) {
-            if (err)
+        return req.ldap.del(req.customer.dn.toString(), function (err) {
+            if (err) {
                 return next(err);
+            }
 
-            log.debug('DeleteCustomer(%s) => gone', req.params.id);
+            log.debug({uuid: req.params.uuid}, 'DeleteCustomer: gone');
             var change = {
                 operation: 'delete',
                 modification: {
-                    uniquemember: req.customers.dn.toString()
+                    uniquemember: req.customer.dn.toString()
                 }
             };
             return req.ldap.modify(OPERATORS_DN, change, function () {

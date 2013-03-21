@@ -12,7 +12,7 @@ var util = require('util');
 var Logger = require('bunyan');
 var ldapjs = require('ldapjs');
 var moray = require('moray');
-
+var restify = require('restify');
 
 ///--- Globals
 var CONFIG;
@@ -98,6 +98,20 @@ module.exports = {
                 return callback(null, client);
             });
         });
+    },
+
+    createCAPICLient: function createCAPICLient(cb) {
+        assert.equal(typeof (cb), 'function');
+
+        var host = (!CONFIG.host) ? '127.0.0.1' : CONFIG.host;
+
+        var client = restify.createJsonClient({
+            connectTimeout: 1000,
+            log: LOG,
+            url: util.format('http://%s:8080', host)
+        });
+
+        return cb(client);
     },
 
     cleanup: function cleanupMoray(suffix, callback) {

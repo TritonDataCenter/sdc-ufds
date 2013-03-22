@@ -167,7 +167,7 @@ module.exports = {
             if (typeof (req.params.customer) === 'object') {
                 req.params = req.params.customer;
             } else if (typeof (req.params.customer) === 'string') {
-                if (res._accept === 'application/json') {
+                if (req.accepts('application/json') || req.is('application/json')) {
                     try {
                         req.params = JSON.parse(req.params.customer);
                     } catch (e) {
@@ -396,7 +396,7 @@ module.exports = {
             if (typeof (req.params.customer) === 'object') {
                 req.params = req.params.customer;
             } else if (typeof (req.params.customer) === 'string') {
-                if (res._accept === 'application/json') {
+                if (req.accepts('application/json') || req.is('application/json')) {
                     try {
                         req.params = JSON.parse(req.params.customer);
                     } catch (e) {

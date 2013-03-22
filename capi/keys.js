@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var sprintf = require('util').format;
@@ -140,7 +140,10 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('CreateKey(%s) entered: %o', req.params.uuid, req.params);
+        log.debug({
+            uuid: req.params.uuid,
+            params: req.params
+        }, 'CreateKey: entered');
 
         if (!req.params.name)
             return next(new restify.MissingParameterError('name is required'));
@@ -180,7 +183,10 @@ module.exports = {
                 if (req.xml)
                     key = { key: key };
 
-                log.debug('CreateKey(%s) -> %o', req.params.uuid, key);
+                log.debug({
+                    key: key,
+                    uuid: req.params.uuid
+                }, 'CreateKey: done');
                 res.send(201, key);
                 return next();
             });
@@ -193,7 +199,7 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('ListKeys(%s) entered', req.params.uuid);
+        log.debug({uuid: req.params.uuid}, 'ListKeys: entered');
 
         return loadKeys(req, function (err, keys) {
             if (err)
@@ -202,7 +208,10 @@ module.exports = {
             if (req.xml)
                 keys = { keys: { key: keys } };
 
-            log.debug('ListKeys(%s) -> %o', req.params.uuid, keys);
+            log.debug({
+                uuid: req.params.uuid,
+                keys: keys
+            }, 'ListKeys: done');
             res.send(200, keys);
             return next();
         });
@@ -214,7 +223,10 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('GetKey(%s/%s) entered', req.params.uuid, req.params.id);
+        log.debug({
+            customer_uuid: req.params.uuid,
+            key_id: req.params.id
+        }, 'GetKey: entered');
 
         return loadKey(req, function (err, key) {
             if (err)
@@ -223,8 +235,12 @@ module.exports = {
             if (req.xml)
                 key = { key: key };
 
-            log.debug('GetKey(%s/%s) -> %o',
-                      req.params.uuid, req.params.id, key);
+            log.debug({
+                customer_uuid: req.params.uuid,
+                key_id: req.params.id,
+                key: key
+            }, 'GetKey: done');
+
             res.send(200, key);
             return next();
         });
@@ -236,15 +252,22 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('PutKey(%s/%s) entered %o', req.params.uuid, req.params.id,
-                  req.params);
+        log.debug({
+            customer_uuid: req.params.uuid,
+            key_id: req.params.id,
+            params: req.params
+        }, 'PutKey: entered');
 
         return loadKey(req, function (err, key) {
             if (err)
                 return next(err);
 
             function done() {
-                log.debug('PutKey(%s/%s) ok', req.params.uuid, req.params.id);
+                log.debug({
+                    customer_uuid: req.params.uuid,
+                    key_id: req.params.id
+                }, 'PutKey: ok');
+
                 res.send(200);
                 return next();
             }
@@ -270,8 +293,11 @@ module.exports = {
                              key.fingerprint,
                              req.customer.dn.toString());
             if (req.params.key) {
-                log.debug('PutKey(%s/%s) rename',
-                          req.params.uuid, req.params.id);
+                log.debug({
+                    customer_uuid: req.params.uuid,
+                    key_id: req.params.id
+                }, 'PutKey: rename');
+
 
                 var _fp = fingerprint(req.params.key);
                 var dn2 = sprintf(KEY_DN, _fp, req.customer.dn.toString());
@@ -298,8 +324,10 @@ module.exports = {
         assert.ok(req.ldap);
 
         var log = req.log;
-
-        log.debug('DeleteKey(%s/%s) entered', req.params.uuid, req.params.id);
+        log.debug({
+            customer_uuid: req.params.uuid,
+            key_id: req.params.id
+        }, 'DeleteKey: entered');
 
         return loadKey(req, function (err, key) {
             if (err)
@@ -313,8 +341,11 @@ module.exports = {
                 if (err2)
                     return next(err2);
 
-                log.debug('DeleteKey(%s/%s) ok',
-                          req.params.uuid, req.params.id);
+                log.debug({
+                    customer_uuid: req.params.uuid,
+                    key_id: req.params.id
+                }, 'DeleteKey: ok');
+
                 res.send(200);
                 return next();
             });
@@ -326,9 +357,10 @@ module.exports = {
         assert.ok(req.ldap);
 
         var log = req.log;
-
-        log.debug('SmartLogin(%s/%s) entered',
-                  req.params.uuid, req.params.fp);
+        log.debug({
+            customer_uuid: req.params.uuid,
+            key_fingerprint: req.params.fingerprint
+        }, 'SmartLogin: entered');
 
         return loadKeys(req, function (err, keys) {
             if (err)

@@ -500,8 +500,6 @@ module.exports = {
                         'no updates specified'));
         }
 
-        log.debug({changes: changes}, 'UpdateCustomer: changes');
-
         var _dn = req.customer.dn.toString();
         return req.ldap.modify(_dn, changes, function (err) {
             if (err) {

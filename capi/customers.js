@@ -1,14 +1,15 @@
 // Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
-var sprintf = require('util').format;
+var mod_util = require('util');
+var sprintf = mod_util.format;
 
 var ldap = require('ldapjs');
 var restify = require('restify');
 var uuid = require('node-uuid');
 
 var util = require('./util');
-
+var salt = require('../lib/salt');
 
 
 ///--- Globals
@@ -196,11 +197,15 @@ module.exports = {
             return res.sendError(errors);
         }
 
+        // We need to set the password "6.5 style" here (UFDS will then set
+        // _imported property to true):
+        var saltedPassword = salt.saltPasswordSHA1(req.params.password);
         var customer = {
             uuid: uuid(),
             login: req.params.login,
             email: req.params.email_address,
-            userpassword: req.params.password,
+            userpassword: saltedPassword.password,
+            _salt: saltedPassword.salt,
             objectclass: ['sdcperson']
         };
 

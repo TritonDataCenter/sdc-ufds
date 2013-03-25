@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var sprintf = require('util').format;
@@ -29,14 +29,16 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('GetSalt(%s): entered', req.params.login);
+        log.debug({login: req.params.login}, 'GetSalt: entered');
         var filter = sprintf(GET_FILTER, req.params.login);
         util.loadCustomers(req.ldap, filter, false, function (err, customers) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            if (!customers.length)
+            if (!customers.length) {
                 return next(new ResourceNotFoundError(req.params.login));
+            }
 
             res.send(200, { salt: customers[0]._salt });
             return next();
@@ -49,30 +51,39 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('Login: entered params=%o', req.params);
+        log.debug({params: req.params}, 'Login: entered');
 
-        if (!req.params.login)
+        if (!req.params.login) {
             return next(new BadRequestError('login is required'));
-        if (!req.params.digest)
+        }
+        if (!req.params.digest) {
             return next(new BadRequestError('digest is required'));
+        }
 
         var filter = sprintf(LOGIN_FILTER, req.params.login);
 
         function callback(err, customers) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            if (!customers.length)
+            if (!customers.length) {
                 return next(new ResourceNotFoundError(req.params.login));
+            }
 
             var result = null;
             if (customers[0].userpassword === req.params.digest) {
                 result = util.translateCustomer(customers[0]);
-                if (req.xml)
+                if (req.xml) {
                     result = { customer: result };
+                }
             }
 
-            log.debug('Login(%s): => %o', req.params.login, result || {});
+            log.debug({
+                login: req.params.login,
+                result: result || {}
+            }, 'Login: done');
+
             res.send(200, result);
             return next();
 
@@ -86,25 +97,31 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('ForgotPassword: entered params=%o', req.params);
+        log.debug({params: req.params}, 'ForgotPassword: entered');
 
-        if (!req.params.email)
+        if (!req.params.email) {
             return next(new BadRequestError('email is required'));
+        }
 
         var filter = sprintf(EMAIL_FILTER, req.params.email);
 
         function callback(err, customers) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            if (!customers.length)
+            if (!customers.length) {
                 return next(new ResourceNotFoundError(req.params.email));
+            }
 
-            if (req.xml)
+            if (req.xml) {
                 customers = { customers: customers };
+            }
 
-            log.debug('ForgotPassword(%s): => %j', req.params.email,
-                      customers || {});
+            log.debug({
+                email: req.params.email,
+                customers: customers || {}
+            }, 'ForgotPassword: done');
             res.send(200, customers);
             return next();
         }

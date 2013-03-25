@@ -3,6 +3,8 @@
 
 var path = require('path');
 var util = require('util');
+// Just to avoid rewriting here the saltPassword(SHA1) functions:
+var salt = require('../../lib/salt');
 
 var h = path.resolve(__dirname, '../helper.js');
 
@@ -243,6 +245,51 @@ test('update key', function (t) {
     });
 });
 
+// --- SALT:
+var SALT;
+test('get salt', function (t) {
+    CAPI.get('/login/' + CUSTOMER.login, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(obj.salt);
+        SALT = obj.salt;
+        t.done();
+    });
+});
+
+
+// --- LOGIN:
+test('login', function (t) {
+    CAPI.post('/login', {
+        login: CUSTOMER.login,
+        digest: salt.saltPasswordSHA1('sup3rs3cr3t', SALT).password
+    }, function (err, req, res, obj) {
+        t.ifError(err);
+        // If login attempt fails, we'll receive an empty JSON object as
+        // the response
+        t.ok(obj);
+        t.ok(Object.keys(obj).length !== 0);
+        t.equal(obj.uuid, CUSTOMER.uuid);
+        t.done();
+    });
+});
+
+
+// --- ForgotPassword:
+test('forgot password', function (t) {
+    CAPI.post('/auth/forgot_password', {
+        email: CUSTOMER.email_address
+    }, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(Array.isArray(obj));
+        t.ok(obj.length);
+        t.equal(obj[0].uuid, CUSTOMER.uuid);
+        t.ok(obj[0].forgot_password_code);
+        t.done();
+    });
+});
+
 
 test('delete key', function (t) {
     var p = util.format(KEY_PATH, CUSTOMER.uuid, KEY.id);
@@ -252,6 +299,7 @@ test('delete key', function (t) {
         t.done();
     });
 });
+
 
 test('delete customer', function (t) {
     CAPI.del('/customers/' + CUSTOMER.uuid, function (err, req, res) {

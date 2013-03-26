@@ -1,7 +1,8 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
-var sprintf = require('util').format;
+var mod_util = require('util');
+var sprintf = mod_util.format;
 
 var ldap = require('ldapjs');
 var restify = require('restify');
@@ -40,12 +41,14 @@ function loadMetadata(req, notFoundOk, callback) {
 
         var entry = {};
         _res.on('error', function (err2) {
-            if (done)
+            if (done) {
                 return;
+            }
             done = true;
             if (err2 instanceof ldap.NoSuchObjectError) {
-                if (notFoundOk)
+                if (notFoundOk) {
                     return callback();
+                }
 
                 return callback(new restify.ResourceNotFoundError(req.url));
             }
@@ -62,8 +65,9 @@ function loadMetadata(req, notFoundOk, callback) {
         });
 
         _res.on('end', function (result) {
-            if (done)
+            if (done) {
                 return;
+            }
             done = true;
             return callback(null, entry);
         });
@@ -82,20 +86,29 @@ module.exports = {
 
         var log = req.log;
 
-        log.debug('GetMetadataKeys %s/%s entered',
-                  req.params.uuid, req.params.appkey);
+        log.debug({
+            uuid: req.params.uuid,
+            appkey: req.params.appkey
+        }, 'GetMetadataKeys: entered');
 
         return loadMetadata(req, function (err, entry) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            var keys = Object.keys(entry);
+            var keys = Object.keys(entry).filter(function (k) {
+                /* JSSTYLED */
+                return (k !== 'datacenter' && !/^_.*/.test(k) && k !== 'controls');
+            });
 
-            if (req.xml)
+            if (req.xml) {
                 keys = { keys: { key: keys } };
-
-            log.debug('GetMetadataKeys %s/%s -> %j',
-                      req.params.uuid, req.params.appkey, keys);
+            }
+            log.debug({
+                uuid: req.params.uuid,
+                appkey: req.params.appkey,
+                keys: keys
+            }, 'GetMetadataKeys: done');
             res.send(200, keys);
             return next();
         });
@@ -107,26 +120,38 @@ module.exports = {
         var dn = sprintf(MD_DN, req.params.appkey, req.customer.dn.toString());
         var log = req.log;
 
-        log.debug('PutMetadataKey %s/%s/%s entered',
-                  req.params.uuid, req.params.appkey, req.params.key);
+        log.debug({
+            uuid: req.params.uuid,
+            appkey: req.params.appkey,
+            key: req.params.key
+        }, 'PutMetadataKey: entered');
         return loadMetadata(req, true, function (err, entry) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
             if (!entry) {
-                log.debug('PutMetadataKey %s/%s/%s: need to add',
-                          req.params.uuid, req.params.appkey, req.params.key);
+                log.debug({
+                    uuid: req.params.uuid,
+                    appkey: req.params.appkey,
+                    key: req.params.key
+                }, 'PutMetadataKey: need to add');
+
                 entry = {
                     cn: [req.params.appkey],
                     objectclass: ['capimetadata']
                 };
                 entry[req.params.key] = [req.body];
                 return req.ldap.add(dn, entry, function (err2) {
-                    if (err2)
+                    if (err2) {
                         return next(err2);
+                    }
+                    log.debug({
+                        uuid: req.params.uuid,
+                        appkey: req.params.appkey,
+                        key: req.params.key
+                    }, 'PutMetadataKey: added');
 
-                    log.debug('PutMetadataKey %s/%s/%s: added', req.params.uuid,
-                              req.params.appkey, req.params.key);
                     res.send(201);
                     return next();
                 });
@@ -138,15 +163,22 @@ module.exports = {
                 type: 'replace',
                 modification: mod
             });
+            log.debug({
+                uuid: req.params.uuid,
+                appkey: req.params.appkey,
+                key: req.params.key
+            }, 'PutMetadataKey: updating');
 
-            log.debug('PutMetadataKey %s/%s/%s: updating', req.params.uuid,
-                      req.params.appkey, req.params.key);
             return req.ldap.modify(dn, change, function (err2) {
-                if (err2)
+                if (err2) {
                     return next(err2);
+                }
 
-                log.debug('PutMetadataKey %s/%s/%s: updated', req.params.uuid,
-                          req.params.appkey, req.params.key);
+                log.debug({
+                    uuid: req.params.uuid,
+                    appkey: req.params.appkey,
+                    key: req.params.key
+                }, 'PutMetadataKey: updated');
                 res.send(entry[req.params.key] ? 200 : 201);
                 return next();
             });
@@ -157,22 +189,30 @@ module.exports = {
         assert.ok(req.ldap);
 
         var log = req.log;
+        log.debug({
+            uuid: req.params.uuid,
+            appkey: req.params.appkey,
+            key: req.params.key
+        }, 'GetMetadataKey: updated');
 
-        log.debug('GetMetadataKey %s/%s/%s entered',
-                  req.params.uuid, req.params.appkey, req.params.key);
         return loadMetadata(req, function (err, entry) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            if (!entry[req.params.key])
+            if (!entry[req.params.key]) {
                 return next(new restify.ResourceNotFoundError(req.params.key));
+            }
 
             // force this on the client, like a true CAPI would!
             res._accept = 'text/plain';
             var value = entry[req.params.key];
-            log.debug('GetMetadataKey %s/%s/%s -> %s',
-                      req.params.uuid, req.params.appkey, req.params.key,
-                      value);
+            log.debug({
+                uuid: req.params.uuid,
+                appkey: req.params.appkey,
+                key: req.params.key,
+                value: value
+            }, 'GetMetadataKey: done');
             res.send(200, value);
             return next();
         });
@@ -183,16 +223,20 @@ module.exports = {
         assert.ok(req.ldap);
 
         var log = req.log;
-
-        log.debug('DeleteMetadataKey %s/%s/%s entered',
-                  req.params.uuid, req.params.appkey, req.params.key);
+        log.debug({
+            uuid: req.params.uuid,
+            appkey: req.params.appkey,
+            key: req.params.key
+        }, 'DeleteMetadataKey: updated');
 
         return loadMetadata(req, function (err, entry) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            if (!entry[req.params.key])
+            if (!entry[req.params.key]) {
                 return next(new restify.ResourceNotFoundError(req.params.key));
+            }
 
             var mod = {};
             mod[req.params.key] = entry[req.params.key];
@@ -203,13 +247,20 @@ module.exports = {
 
             var dn = sprintf(MD_DN, req.params.appkey,
                              req.customer.dn.toString());
+            log.debug({
+                dn: dn,
+                key: req.params.key
+            }, 'DeleteMetadataKey: deleting');
+
             log.debug('DeletMetadataKey %s: deleting %s', dn, req.params.key);
             return req.ldap.modify(dn, change, function (err2) {
-                if (err2)
+                if (err2) {
                     return next(err2);
-
-                log.debug('DeleteMetadataKey %s deleted %s', dn,
-                          req.params.key);
+                }
+                log.debug({
+                    dn: dn,
+                    key: req.params.key
+                }, 'DeleteMetadataKey: deleted');
                 res.send(200);
                 return next();
             });

@@ -290,6 +290,173 @@ test('forgot password', function (t) {
     });
 });
 
+// --- Limits:
+test('add limit', function (t) {
+    var limitPath = util.format('/customers/%s/limits/%s/%s',
+        CUSTOMER.uuid, 'coal', 'smartos');
+    var restify = require('restify');
+    var client = restify.createStringClient({
+        url: CAPI.url.protocol + '//' + CAPI.url.host
+    });
+    client.put(limitPath, '7', function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(res.statusCode, 201);
+        client.close();
+        t.done();
+    });
+});
+
+
+test('list limits', function (t) {
+    var limitsPath = util.format('/customers/%s/limits', CUSTOMER.uuid);
+    CAPI.get(limitsPath, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(Array.isArray(obj));
+        t.equal(obj[0].limit, 7);
+        t.done();
+    });
+});
+
+
+test('modify limit', function (t) {
+    var limitPath = util.format('/customers/%s/limits/%s/%s',
+        CUSTOMER.uuid, 'coal', 'smartos');
+    var restify = require('restify');
+    var client = restify.createStringClient({
+        url: CAPI.url.protocol + '//' + CAPI.url.host
+    });
+    client.put(limitPath, '14', function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(res.statusCode, 200);
+        client.close();
+        var limitsPath = util.format('/customers/%s/limits', CUSTOMER.uuid);
+        CAPI.get(limitsPath, function (err2, req2, res2, obj2) {
+            t.ifError(err2);
+            t.ok(obj2);
+            t.ok(Array.isArray(obj2));
+            t.equal(obj2[0].limit, 14);
+            t.done();
+        });
+    });
+});
+
+
+test('delete limit', function (t) {
+    var limitPath = util.format('/customers/%s/limits/%s/%s',
+        CUSTOMER.uuid, 'coal', 'smartos');
+    CAPI.del(limitPath, function (err, req, res) {
+        t.ifError(err);
+        t.equal(res.statusCode, 200);
+        t.done();
+    });
+});
+
+// Or we'll raise a NotAllowedOnNonLeafError from delete customer:
+test('limit cleanup', function (t) {
+    var limitDn = util.format('dclimit=coal, %s',
+        'uuid=' + CUSTOMER.uuid + ', ou=users, ' + SUFFIX);
+
+    helper.createClient(function (err, client) {
+        t.ifError(err);
+        t.ok(client);
+        client.del(limitDn, function (err1) {
+            t.ifError(err1);
+            client.unbind(function (err2) {
+                t.ifError(err2);
+                t.done();
+            });
+        });
+    });
+});
+
+
+// --- Metadata:
+test('add app meta key', function (t) {
+    var appKeyMetaPath = util.format('/auth/customers/%s/metadata/%s/%s',
+        CUSTOMER.uuid, 'myapp', 'foo');
+    var restify = require('restify');
+    var client = restify.createStringClient({
+        url: CAPI.url.protocol + '//' + CAPI.url.host
+    });
+    client.put(appKeyMetaPath, 'bar', function (err, req, res, obj) {
+        t.equal(res.statusCode, 201);
+        client.close();
+        t.done();
+    });
+});
+
+
+test('get app meta key', function (t) {
+    var appKeyMetaPath = util.format('/auth/customers/%s/metadata/%s/%s',
+        CUSTOMER.uuid, 'myapp', 'foo');
+    CAPI.get(appKeyMetaPath, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(res.statusCode, 200);
+        t.equal('bar', obj);
+        t.done();
+    });
+});
+
+
+test('update app meta key', function (t) {
+    var appKeyMetaPath = util.format('/auth/customers/%s/metadata/%s/%s',
+        CUSTOMER.uuid, 'myapp', 'foo');
+    var restify = require('restify');
+    var client = restify.createStringClient({
+        url: CAPI.url.protocol + '//' + CAPI.url.host
+    });
+    client.put(appKeyMetaPath, 'baz', function (err, req, res, obj) {
+        t.equal(res.statusCode, 200);
+        client.close();
+        t.done();
+    });
+});
+
+
+test('get app meta', function (t) {
+    var appMetaPath = util.format('/auth/customers/%s/metadata/%s',
+        CUSTOMER.uuid, 'myapp');
+    CAPI.get(appMetaPath, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(res.statusCode, 200);
+        t.ok(Array.isArray(obj));
+        t.equal(obj.length, 1);
+        t.equal(obj[0], 'foo');
+        t.done();
+    });
+});
+
+
+test('delete app meta key', function (t) {
+    var appKeyMetaPath = util.format('/auth/customers/%s/metadata/%s/%s',
+        CUSTOMER.uuid, 'myapp', 'foo');
+    CAPI.del(appKeyMetaPath, function (err, req, res) {
+        t.ifError(err);
+        t.equal(res.statusCode, 200);
+        t.done();
+    });
+});
+
+
+// Or we'll raise a NotAllowedOnNonLeafError from delete customer:
+test('meta cleanup', function (t) {
+    var limitDn = util.format('metadata=myapp, %s',
+        'uuid=' + CUSTOMER.uuid + ', ou=users, ' + SUFFIX);
+
+    helper.createClient(function (err, client) {
+        t.ifError(err);
+        t.ok(client);
+        client.del(limitDn, function (err1) {
+            t.ifError(err1);
+            client.unbind(function (err2) {
+                t.ifError(err2);
+                t.done();
+            });
+        });
+    });
+});
+
 
 test('delete key', function (t) {
     var p = util.format(KEY_PATH, CUSTOMER.uuid, KEY.id);
@@ -311,8 +478,8 @@ test('delete customer', function (t) {
 
 
 test('teardown', function (t) {
-    helper.cleanup(SUFFIX, function (err) {
-        t.ifError(err);
+    helper.cleanup(SUFFIX, function (err3) {
+        t.ifError(err3);
         CAPI.close();
         t.done();
     });

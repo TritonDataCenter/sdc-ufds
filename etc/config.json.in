@@ -5,6 +5,7 @@
     "certificate": "/opt/smartdc/ufds/ssl/cert.pem",
     "key": "/opt/smartdc/ufds/ssl/key.pem",
     "logLevel": "info",
+    "use_bcrypt": false,
     "moray": {
         "url": "MORAY_URL",
         "connectTimeout": 1000,

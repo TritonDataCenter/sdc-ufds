@@ -374,3 +374,23 @@ But, here's some helpers for you:
 ||*list*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys`||
 ||*rename*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f?name=foo -X PUT`||
 ||*delete*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f -X DELETE`||
+
+# Using Bcrypt to encrypt passwords
+
+While UFDS can use `bcrypt` to encrypt users passwords, it's recommended to
+do not use it on those cases where any SDC 6.5 application is trying to
+authenticate users through `capi-shim`.
+
+The reason is that legacy 6.5 applications will assume that encryption is
+made using `SHA1` instead of `bcrypt`, and the hash supplied to `capi-shim`
+for authentication will not be valid.
+
+Therefore, the config flag `use_bcrypt` is set to `false` by default into the
+UFDS config file.
+
+Once there isn't any legacy application trying to authenticate users using
+`capi-shim`, switching to use `bcrypt` would be as complex as setting the value
+for the aforementioned `use_bcrypt` config flag to `true`.
+
+Of course, if there aren't applications trying to auth users through `capi-shim`
+the CAPI shim application should be disabled (`svcadm disable ufds-capi`).

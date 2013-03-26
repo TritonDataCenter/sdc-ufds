@@ -10,7 +10,7 @@ var os = require('os');
 var Logger = require('bunyan');
 var nopt = require('nopt');
 
-// TODO: groups and blacklist
+// TODO: groups
 
 // --- Globals
 

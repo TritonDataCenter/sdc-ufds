@@ -1,16 +1,18 @@
 {
     "host": "127.0.0.1",
     "port": 1389,
+    "ufds": "ldap://127.0.0.1:1389",
     "rootDN": "cn=root",
     "rootPassword": "secret",
+    "logLevel": "info",
+    "use_bcrypt": false,
     "moray": {
-        "url": "http://127.0.0.1:2020",
+        "url": "tcp://10.99.99.17:2020",
         "connectTimeout": 1000,
         "retry": {
-            "retries": 1,
+            "retries": 3,
             "minTimeout": 1000
-        },
-        "noCache": true
+        }
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",

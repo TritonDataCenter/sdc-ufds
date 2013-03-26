@@ -165,12 +165,13 @@ module.exports = {
                 });
             });
         });
-
-
-
     }
 };
 
 module.exports.__defineGetter__('log', function () {
     return LOG;
+});
+
+module.exports.__defineGetter__('config', function () {
+    return CONFIG;
 });

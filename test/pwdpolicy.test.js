@@ -131,7 +131,7 @@ test('CAPI Imported sdcPerson entry', function (t) {
         t.ifError(err, 'Imported entry error');
         getUser(entry.uuid, function (er1, user) {
             t.ifError(er1);
-            t.equal(39, user._salt.length);
+            t.ok(user._salt.length !== 29);
             IMPORTED = user;
             t.ok(user.pwdchangedtime);
             t.done();
@@ -169,7 +169,11 @@ test('UFDS new sdcPerson entry', function (t) {
         t.ifError(err, 'New sdcPerson entry error');
         getUser(entry.uuid, function (er1, user) {
             t.ifError(er1);
-            t.equal(29, user._salt.length);
+            if (helper.config.use_bcrypt === false) {
+                t.ok(user._salt.length !== 29);
+            } else {
+                t.equal(29, user._salt.length);
+            }
             t.ok(user.pwdchangedtime);
             NOT_IMPORTED = user;
             t.done();
@@ -202,8 +206,12 @@ test('Update CAPI imported entry', function (t) {
         t.ifError(er1);
         getUser(IMPORTED.uuid, function (er2, user) {
             t.ifError(er2);
-            t.ok(user._sha1_salt);
-            t.equal(29, user._salt.length);
+            if (helper.config.use_bcrypt === false) {
+                t.ok(user._salt.length !== 29);
+            } else {
+                t.equal(29, user._salt.length);
+                t.ok(user._sha1_salt);
+            }
             t.ok(user.pwdchangedtime);
             t.ok(user.pwdchangedtime > IMPORTED.pwdchangedtime);
             t.ok(user.pwdendtime);
@@ -238,8 +246,11 @@ test('Update not imported entry', function (t) {
         getUser(NOT_IMPORTED.uuid, function (er2, user) {
             t.ifError(er2);
             t.ok(!user._sha1_salt);
-            t.equal(29, user._salt.length);
-            t.equal(user._salt, NOT_IMPORTED._salt);
+            if (helper.config.use_bcrypt === false) {
+                t.ok(user._salt.length !== 29);
+            } else {
+                t.equal(29, user._salt.length);
+            }
             t.ok(user.pwdchangedtime);
             t.ok(user.pwdchangedtime > IMPORTED.pwdchangedtime);
             t.ok(user.pwdendtime);
@@ -369,7 +380,9 @@ test('Password history', function (t) {
                         getUser(IMPORTED.uuid, function (er8, user1) {
                             // At this point, we do have exactly 4 pwd in
                             // history and the new one. We should keep the 1st
-                            t.ok(user1._sha1_salt);
+                            if (helper.config.use_bcrypt !== false) {
+                                t.ok(user1._sha1_salt);
+                            }
                             t.equal(pwdPolicy.pwdinhistory,
                                 user1.pwdhistory.length);
                             change.modification.userpassword = '123foobar';
@@ -378,7 +391,9 @@ test('Password history', function (t) {
                                 getUser(IMPORTED.uuid, function (er5, user) {
                                     // And now, given we got rid of the orig.
                                     // pwd, we should also get rid of old salt:
-                                    t.ok(!user._sha1_salt);
+                                    if (helper.config.use_bcrypt !== false) {
+                                        t.ok(!user._sha1_salt);
+                                    }
                                     t.equal(pwdPolicy.pwdinhistory,
                                         user.pwdhistory.length);
                                     t.done();

@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 //
 // A firewall rule for the firewall API
 //
@@ -44,7 +44,6 @@ function FWRule() {
         required: {
             uuid: 1,
             protocol: 1,
-            ports: 10,
             action: 1,
             enabled: 1
         },
@@ -58,7 +57,9 @@ function FWRule() {
             fromsubnet: 0,
             tosubnet: 0,
             fromwildcard: 0,
-            towildcard: 0
+            towildcard: 0,
+            ports: 10,
+            types: 10
         }
     });
 }

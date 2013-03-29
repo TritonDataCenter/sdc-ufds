@@ -119,6 +119,10 @@ FWRule.prototype.validate = function validate(entry, callback) {
 
     for (i in attrs.ports) {
         var port = attrs.ports[i];
+        if (port === 'all') {
+            continue;
+        }
+
         if (!parseInt(port, 10) || port < 1 || port > 65535) {
             errors.push(util.format('port "%s" is invalid', port));
         }

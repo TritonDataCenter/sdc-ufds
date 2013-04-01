@@ -10,7 +10,7 @@
     "remotes": [{
         "url": "ldaps://REMOTE_UFDS_IP",
         "queries": [
-            "REMOTE_QUERY",
+            "REMOTE_QUERY"
         ],
         "maxConnections": 1,
         "bindDN": "REMOTE_ROOT_DN",

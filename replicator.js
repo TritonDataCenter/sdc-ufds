@@ -77,7 +77,7 @@ function processConfig() {
         process.exit(1);
     }
 
-    LOG.level(_config.logLevel || 'debug');
+    LOG.level(_config.logLevel || 'info');
 
     LOG.debug('config processed: %j', _config);
     _config.log = LOG;

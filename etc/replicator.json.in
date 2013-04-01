@@ -1,5 +1,5 @@
 {
-    "logLevel": "debug",
+    "logLevel": "info",
     "checkpointDn": "cn=replicator, datacenter=DATACENTER_NAME, o=smartdc",
     "localUfds": {
         "url": "ldaps://UFDS_ADMIN_IP",

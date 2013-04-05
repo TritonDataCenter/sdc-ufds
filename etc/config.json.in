@@ -27,6 +27,7 @@
         "pwdPolicyRDN": "cn=pwdPolicy",
         "bucket": "ufds_o_smartdc",
         "administratorsGroupRDN": "cn=operators, ou=groups",
+        "readersGroupRDN": "cn=readers, ou=groups",
         "schema": {
             "login": {
                 "type": "string",

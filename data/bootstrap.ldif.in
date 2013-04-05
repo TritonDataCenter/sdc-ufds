@@ -51,3 +51,6 @@ pwdminlength: 7
 pwdmaxfailure: 6
 pwdlockoutduration: 1800
 pwdmaxage: 7776000
+
+dn: cn=readers, ou=groups, o=smartdc
+objectclass: groupOfUniqueNames

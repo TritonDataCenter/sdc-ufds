@@ -25,6 +25,9 @@ dn: cn=operators, ou=groups, o=smartdc
 uniquemember: uuid=00000000-0000-0000-0000-000000000000, ou=users, o=smartdc
 objectclass: groupOfUniqueNames
 
+dn: cn=readers, ou=groups, o=smartdc
+objectclass: groupOfUniqueNames
+
 dn: datacenter=coal, o=smartdc
 datacenter: coal
 company: Joyent Inc.

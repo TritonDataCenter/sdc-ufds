@@ -58,13 +58,13 @@ entries, and contains all the attributes for a "user".
 These objects should always be stored by uuid.  Here's the
 bootstrapped user:
 
-    dn: uuid=00000000-0000-0000-0000-000000000000, ou=users, o=smartdc
+    dn: uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc
     cn: Admin
     email: root@localhost
     login: admin
     objectclass: sdcperson
     sn: User
-    uuid: 00000000-0000-0000-0000-000000000000
+    uuid: 930896af-bf8c-48d4-885c-6573a94b1853
 
 Please, note that login and email values may be different, given they are part
 of the headnode configuration.

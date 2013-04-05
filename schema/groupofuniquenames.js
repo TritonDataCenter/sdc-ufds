@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var util = require('util');
 
@@ -19,10 +19,8 @@ var ConstraintViolationError = ldap.ConstraintViolationError;
 function GroupOfUniqueNames() {
     Validator.call(this, {
         name: 'groupofuniquenames',
-        required: {
-            uniquemember: 1000000
-        },
         optional: {
+            uniquemember: 1000000,
             description: 1
         },
         strict: true
@@ -32,7 +30,7 @@ util.inherits(GroupOfUniqueNames, Validator);
 
 
 GroupOfUniqueNames.prototype.validate = function validate(entry, callback) {
-    var members = entry.attributes.uniquemember;
+    var members = entry.attributes.uniquemember || [];
 
     members.sort();
     for (var i = 0; i < members.length; i++) {

@@ -76,7 +76,10 @@ module.exports = {
         var client = ldapjs.createClient({
             connectTimeout: 1000,
             log: LOG,
-            url: url
+            url: url,
+            tlsOptions: {
+                rejectUnauthorized: false
+            }
         });
 
         client.once('error', function (err) {

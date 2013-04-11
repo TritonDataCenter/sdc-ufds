@@ -45,6 +45,7 @@
             "fingerprint": { "type": "string" },
             "cn": { "type": "string" },
             "sn": { "type": "string" },
+            "givenName": { "type": "string" },
             "city": { "type": "string" },
             "state": { "type": "string" },
             "country": { "type": "string" },

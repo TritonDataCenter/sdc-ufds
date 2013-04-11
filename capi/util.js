@@ -84,7 +84,7 @@ function _translate(entry) {
         customer_uuid: entry.uuid,
         login: entry.login,
         email_address: entry.email,
-        first_name: entry.givenName,
+        first_name: entry.givenname,
         last_name: entry.sn,
         company_name: entry.company || null
     };

@@ -84,7 +84,7 @@ function _translate(entry) {
         customer_uuid: entry.uuid,
         login: entry.login,
         email_address: entry.email,
-        first_name: entry.cn,
+        first_name: entry.givenName,
         last_name: entry.sn,
         company_name: entry.company || null
     };
@@ -168,6 +168,7 @@ module.exports = {
                 'phone',
                 'email',
                 'cn',
+                'givenName',
                 'sn',
                 'company',
                 'address',

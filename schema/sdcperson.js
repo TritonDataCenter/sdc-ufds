@@ -39,6 +39,7 @@ function SDCPerson() {
         optional: {
             cn: 5,
             sn: 5,
+            givenName: 5,
             company: 5,
             address: 10,
             city: 5,

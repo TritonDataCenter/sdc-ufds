@@ -74,7 +74,7 @@ module.exports = {
                     filter += sprintf(WC_FILTER, 'email', req.params[k]);
                     break;
                 case 'first_name':
-                    filter += sprintf(WC_FILTER, 'cn', req.params[k]);
+                    filter += sprintf(WC_FILTER, 'givenName', req.params[k]);
                     break;
                 case 'last_name':
                     filter += sprintf(WC_FILTER, 'sn', req.params[k]);
@@ -211,10 +211,13 @@ module.exports = {
         };
 
         if (req.params.first_name) {
-            customer.cn = req.params.first_name;
+            customer.givenName = req.params.first_name;
         }
         if (req.params.last_name) {
             customer.sn = req.params.last_name;
+        }
+        if (req.params.first_name && req.params.last_name) {
+            customer.cn = req.params.first_name + ' ' + req.params.last_name;
         }
         if (req.params.company_name) {
             customer.company = req.params.company_name;
@@ -416,6 +419,9 @@ module.exports = {
         var changes = [];
         var address = [];
         var password = [];
+        if (req.params.first_name && req.params.last_name) {
+            req.params.cn = req.params.first_name + ' ' + req.params.last_name;
+        }
         Object.keys(req.params).forEach(function (k) {
             var _key;
             switch (k) {
@@ -430,7 +436,7 @@ module.exports = {
                 _key = 'userpassword';
                 break;
             case 'first_name':
-                _key = 'cn';
+                _key = 'givenName';
                 break;
             case 'last_name':
                 _key = 'sn';
@@ -456,6 +462,9 @@ module.exports = {
                 break;
             case 'phone_number':
                 _key = 'phone';
+                break;
+            case 'cn':
+                _key = 'cn';
                 break;
             default:
                 break;

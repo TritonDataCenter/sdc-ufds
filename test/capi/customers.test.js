@@ -314,6 +314,7 @@ test('list limits', function (t) {
         t.ok(obj);
         t.ok(Array.isArray(obj));
         t.equal(obj[0].limit, 7);
+        t.equal(obj[0].value, 7);
         t.done();
     });
 });

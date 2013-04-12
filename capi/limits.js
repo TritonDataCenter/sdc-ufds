@@ -61,7 +61,8 @@ function loadLimits(req, callback) {
                 entries.push({
                     data_center: e.datacenter,
                     zone_type: k,
-                    limit: parseInt(e[k], 10)
+                    limit: parseInt(e[k], 10),
+                    value: parseInt(e[k], 10)
                 });
             });
         });

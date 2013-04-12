@@ -1,4 +1,4 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+// Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var util = require('util');
@@ -64,6 +64,10 @@ SDCPerson.prototype.validate = function validate(entry, callback) {
     var attrs = entry.attributes;
     var errors = [];
 
+    // Skip validation when importing legacy entries:
+    if (attrs._imported) {
+        return callback();
+    }
     if (!LOGIN_RE.test(attrs.login[0]) ||
         attrs.login[0].length < 3 ||
         attrs.login[0].length > 32 ||
@@ -71,8 +75,9 @@ SDCPerson.prototype.validate = function validate(entry, callback) {
         errors.push('login: ' + attrs.login[0] + ' is invalid');
     }
 
-    if (errors.length)
+    if (errors.length) {
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
+    }
 
     return callback();
 };

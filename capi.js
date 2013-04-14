@@ -20,6 +20,33 @@ var metadata = require('./capi/metadata');
 var utils = require('./capi/util');
 
 
+function entitify(str) {
+    str = '' + str;
+    /* BEGIN JSSTYLED */
+    str = str.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/'/g, '&apos;')
+        .replace(/"/g, '&quot;');
+    /* END JSSTYLED */
+    return str;
+}
+
+function toXml(elm) {
+    var xml = '';
+    if (Array.isArray(elm)) {
+        xml += elm.map(function (e) {
+            return (toXml(e));
+        }).join('\n');
+    } else if (typeof (elm) === 'object' && Object.keys(elm)) {
+        Object.keys(elm).forEach(function (k) {
+            if (elm[k]) {
+                xml += sprintf('<%s>%s</%s>', k, toXml(elm[k]), k);
+            }
+        });
+    } else {
+        xml += entitify(elm);
+    }
+    return (xml);
+}
 
 ///--- Globals
 
@@ -86,23 +113,30 @@ function CAPI(config) {
 
     function before(req, res, next) {
         req.ldap = client;
-
-        res.sendError = function sendError(errors) {
-            if (req.xml) {
-                errors = { errors: { error: errors } };
-            } else {
-                errors = { errors: errors };
-            }
-            log.warn({errors: errors}, 'These are the errors');
-            res.send(409, errors);
-        };
-
         return next();
     }
 
     var server = restify.createServer({
         name: 'capi',
-        log: log
+        log: log,
+        formatters: {
+            'application/xml': function formatXml(req, res, body) {
+                var o;
+                var xml = '<?xml version="1.0" encoding="utf-8"?>\n';
+                if (body instanceof Error) {
+                    o = { errors: { error: body.body } };
+                } else if (Buffer.isBuffer(body)) {
+                    o = JSON.parse(body.toString('base64'));
+                } else {
+                    o = body;
+                }
+
+                xml += toXml(o);
+
+                res.setHeader('Content-Length', Buffer.byteLength(xml));
+                return xml;
+            }
+        }
     });
 
     server.use(restify.acceptParser(server.acceptable));

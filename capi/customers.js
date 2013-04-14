@@ -146,7 +146,7 @@ module.exports = {
             }
 
             var count = customers.length;
-            if (req.xml) {
+            if (req.accepts('application/xml')) {
                 customers = { customers: { customer: customers } };
             }
 
@@ -264,7 +264,7 @@ module.exports = {
                 util.forgotPasswordCode(customer.uuid[0]);
 
             function done() {
-                if (req.xml) {
+                if (req.accepts('application/xml')) {
                     customer = { customer : customer };
                 }
 
@@ -334,7 +334,7 @@ module.exports = {
 
             if (customers.length > 1) {
                 result = customers;
-                if (req.xml) {
+                if (req.accepts('application/xml')) {
                     result = { customers: { customer: customers } };
                 }
                 log.debug({
@@ -379,7 +379,7 @@ module.exports = {
                         }
 
                         result = c;
-                        if (req.xml) {
+                        if (req.accepts('application/xml')) {
                             result = { customer: c };
                         }
                         log.debug({

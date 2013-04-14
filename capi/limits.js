@@ -96,7 +96,7 @@ module.exports = {
                 return next(err);
             }
 
-            if (req.xml) {
+            if (req.accepts('application/xml')) {
                 entries = { limits: { limit: entries } };
             }
 

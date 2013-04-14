@@ -180,7 +180,7 @@ module.exports = {
                 if (err2)
                     return next(err2);
 
-                if (req.xml)
+                if (req.accepts('application/xml'))
                     key = { key: key };
 
                 log.debug({
@@ -205,7 +205,7 @@ module.exports = {
             if (err)
                 return next(err);
 
-            if (req.xml)
+            if (req.accepts('application/xml'))
                 keys = { keys: { key: keys } };
 
             log.debug({
@@ -232,7 +232,7 @@ module.exports = {
             if (err)
                 return next(err);
 
-            if (req.xml)
+            if (req.accepts('application/xml'))
                 key = { key: key };
 
             log.debug({

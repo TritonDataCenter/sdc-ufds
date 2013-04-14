@@ -74,7 +74,7 @@ module.exports = {
             var result = null;
             if (customers[0].userpassword === req.params.digest) {
                 result = util.translateCustomer(customers[0]);
-                if (req.xml) {
+                if (req.accepts('application/xml')) {
                     result = { customer: result };
                 }
             }
@@ -114,7 +114,7 @@ module.exports = {
                 return next(new ResourceNotFoundError(req.params.email));
             }
 
-            if (req.xml) {
+            if (req.accepts('application/xml')) {
                 customers = { customers: customers };
             }
 

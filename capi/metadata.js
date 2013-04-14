@@ -101,7 +101,7 @@ module.exports = {
                 return (k !== 'datacenter' && !/^_.*/.test(k) && k !== 'controls');
             });
 
-            if (req.xml) {
+            if (req.accepts('application/xml')) {
                 keys = { keys: { key: keys } };
             }
             log.debug({

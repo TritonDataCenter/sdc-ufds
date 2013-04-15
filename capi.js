@@ -113,6 +113,15 @@ function CAPI(config) {
 
     function before(req, res, next) {
         req.ldap = client;
+        res.sendError = function sendError(errors) {
+            if (req.xml) {
+                errors = { errors: { error: errors } };
+            } else {
+                errors = { errors: errors };
+            }
+            log.warn({errors: errors}, 'These are the errors');
+            res.send(409, errors);
+        };
         return next();
     }
 

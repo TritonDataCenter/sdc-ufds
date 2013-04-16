@@ -173,7 +173,7 @@ module.exports = {
                     try {
                         req.params = JSON.parse(req.params.customer);
                     } catch (e) {
-                        return res.sendError([e.message]);
+                        return next(res.sendError([e.message]));
                     }
                 }
             }
@@ -195,7 +195,7 @@ module.exports = {
 
         if (errors.length) {
             log.debug({errors: errors}, 'Create Customer: have errors!');
-            return res.sendError(errors);
+            return next(res.sendError(errors));
         }
 
         // We need to set the password "6.5 style" here (UFDS will then set
@@ -249,11 +249,11 @@ module.exports = {
         return req.ldap.add(dn, customer, function (err) {
             if (err) {
                 if (err instanceof ldap.EntryAlreadyExistsError) {
-                    return res.sendError(['Username is already taken']);
+                    return next(res.sendError(['Username is already taken']));
                 } else if (err instanceof ldap.ConstraintViolationError) {
-                    return res.sendError([err.message]);
+                    return next(res.sendError([err.message]));
                 } else {
-                    return res.sendError([err.toString()]);
+                    return next(res.sendError([err.toString()]));
                 }
             }
 
@@ -287,7 +287,7 @@ module.exports = {
                     req.ldap.del(dn, function () {});
                     log.error('Unable to add %s to operators group.',
                               dn.toString());
-                    return res.sendError([err2.toString()]);
+                    return next(res.sendError([err2.toString()]));
                 }
                 // Need to explicitly override role here, since we already
                 // translated customer before.
@@ -520,9 +520,9 @@ module.exports = {
         return req.ldap.modify(_dn, changes, function (err) {
             if (err) {
                 if (err instanceof ldap.ConstraintViolationError) {
-                    return res.sendError([err.message]);
+                    return next(res.sendError([err.message]));
                 } else {
-                    return res.sendError([err.toString()]);
+                    return next(res.sendError([err.toString()]));
                 }
             }
 

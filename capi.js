@@ -109,10 +109,8 @@ function CAPI(config) {
         serializers: restify.bunyan.serializers
     });
 
-    var client;
-
     function before(req, res, next) {
-        req.ldap = client;
+
         res.sendError = function sendError(errors) {
             if (req.xml) {
                 errors = { errors: { error: errors } };
@@ -122,7 +120,28 @@ function CAPI(config) {
             log.warn({errors: errors}, 'These are the errors');
             res.send(409, errors);
         };
-        return next();
+
+        req.ldap = ldap.createClient({
+            url: config.ufds,
+            log: log
+        });
+
+        req.ldap.once('error', function (err) {
+            req.ldap = null;
+            next(err);
+        });
+
+        req.ldap.once('connect', function () {
+            log.debug('LDAP Client Connected');
+            req.ldap.bind(config.rootDN, config.rootPassword, function (err) {
+                if (err) {
+                    log.error(err, 'Unable to bind to UFDS');
+                    return next(err);
+                }
+                log.debug('Bound to UFDS');
+                return next();
+            });
+        });
     }
 
     var server = restify.createServer({
@@ -157,6 +176,16 @@ function CAPI(config) {
     server.on('after', restify.auditLogger({log: log}));
 
     server.use(before);
+    server.on('after', function (req, res, route, err) {
+        if (req.ldap) {
+            req.ldap.unbind(function (err1) {
+                if (err1) {
+                    log.error(err1, 'Unable to unbind LDAP client');
+                }
+                log.debug('LDAP client unbound');
+            });
+        }
+    });
 
     // Show
     server.get('/customers', customers.list);
@@ -218,53 +247,20 @@ function CAPI(config) {
     server.del('/customers/:uuid/limits/:dc/:dataset', limits.del);
 
 
-    // FIXME: Replace with proper backoff
-    // hack to get backoff+retry
-    var _attempt = 0;
-    var _sleep = 1000;
-    var _try = 10;
 
-    function initError(err) {
-        if (err) {
-            process.stderr.write('Unable to bind to UFDS: ');
-            process.stderr.write(err.stack);
-            process.stderr.write('\n');
-            if (++_attempt <= _try) {
-                setTimeout(connect, _sleep);
-            } else {
-                process.stderr.write('Giving up trying to connect to UFDS\n');
-                process.exit(1);
-            }
-        }
-    }
 
 
     ///-- Start up
 
     function connect() {
-        client = ldap.createClient({
-            url: config.ufds,
-            log: log
-        });
-        client.on('error', initError);
-        client.on('connect', function () {
-            client.bind(config.rootDN, config.rootPassword, function (err) {
-                client.removeListener('error', initError);
-                if (err) {
-                    console.error('Unable to bind to UFDS: ' + err.stack);
-                    process.exit(1);
-                }
-                server.listen(config.port, function () {
-                    console.error('CAPI listening on port %d', config.port);
-                });
-            });
+        server.listen(config.port, function () {
+            console.error('CAPI listening on port %d', config.port);
         });
     }
 
 
     return {
         server: server,
-        client: client,
         log: log,
         connect: connect
     };

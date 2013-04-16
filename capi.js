@@ -119,6 +119,7 @@ function CAPI(config) {
             }
             log.warn({errors: errors}, 'These are the errors');
             res.send(409, errors);
+            return (false);
         };
 
         req.ldap = ldap.createClient({
@@ -181,8 +182,9 @@ function CAPI(config) {
             req.ldap.unbind(function (err1) {
                 if (err1) {
                     log.error(err1, 'Unable to unbind LDAP client');
+                } else {
+                    log.debug('LDAP client unbound');
                 }
-                log.debug('LDAP client unbound');
             });
         }
     });

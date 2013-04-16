@@ -492,7 +492,7 @@ test('limit cleanup', function (t) {
 
 // --- Metadata:
 test('add app meta key', function (t) {
-    var appKeyMetaPath = util.format('/auth/customers/%s/metadata/%s/%s',
+    var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
         CUSTOMER.uuid, 'myapp', 'foo');
     var restify = require('restify');
     var client = restify.createStringClient({
@@ -507,7 +507,7 @@ test('add app meta key', function (t) {
 
 
 test('get app meta key', function (t) {
-    var appKeyMetaPath = util.format('/auth/customers/%s/metadata/%s/%s',
+    var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
         CUSTOMER.uuid, 'myapp', 'foo');
     CAPI.get(appKeyMetaPath, function (err, req, res, obj) {
         t.ifError(err);
@@ -519,7 +519,7 @@ test('get app meta key', function (t) {
 
 
 test('update app meta key', function (t) {
-    var appKeyMetaPath = util.format('/auth/customers/%s/metadata/%s/%s',
+    var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
         CUSTOMER.uuid, 'myapp', 'foo');
     var restify = require('restify');
     var client = restify.createStringClient({
@@ -534,7 +534,7 @@ test('update app meta key', function (t) {
 
 
 test('get app meta', function (t) {
-    var appMetaPath = util.format('/auth/customers/%s/metadata/%s',
+    var appMetaPath = util.format('/customers/%s/metadata/%s',
         CUSTOMER.uuid, 'myapp');
     CAPI.get(appMetaPath, function (err, req, res, obj) {
         t.ifError(err);
@@ -548,7 +548,7 @@ test('get app meta', function (t) {
 
 
 test('delete app meta key', function (t) {
-    var appKeyMetaPath = util.format('/auth/customers/%s/metadata/%s/%s',
+    var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
         CUSTOMER.uuid, 'myapp', 'foo');
     CAPI.del(appKeyMetaPath, function (err, req, res) {
         t.ifError(err);

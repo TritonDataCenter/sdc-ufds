@@ -233,10 +233,10 @@ function CAPI(config) {
     server.use(utils.loadCustomer);
 
     /// Metadata
-    server.get('/auth/customers/:uuid/metadata/:appkey', metadata.list);
-    server.put('/auth/customers/:uuid/metadata/:appkey/:key', metadata.put);
-    server.get('/auth/customers/:uuid/metadata/:appkey/:key', metadata.get);
-    server.del('/auth/customers/:uuid/metadata/:appkey/:key', metadata.del);
+    server.get('/customers/:uuid/metadata/:appkey', metadata.list);
+    server.put('/customers/:uuid/metadata/:appkey/:key', metadata.put);
+    server.get('/customers/:uuid/metadata/:appkey/:key', metadata.get);
+    server.del('/customers/:uuid/metadata/:appkey/:key', metadata.del);
 
     /// Keys
     server.post('/customers/:uuid/keys', keys.post);

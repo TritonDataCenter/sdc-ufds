@@ -228,7 +228,7 @@ function CAPI(config) {
     server.post('/login', login.login);
 
     // ForgotPassword
-    server.post('/auth/forgot_password', login.forgotPassword);
+    server.post('/forgot_password', login.forgotPassword);
 
     server.use(utils.loadCustomer);
 

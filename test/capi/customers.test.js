@@ -192,7 +192,7 @@ test('login', function (t) {
 
 // --- ForgotPassword:
 test('forgot password', function (t) {
-    CAPI.post('/auth/forgot_password', {
+    CAPI.post('/forgot_password', {
         email: CUSTOMER.email_address
     }, function (err, req, res, obj) {
         t.ifError(err);

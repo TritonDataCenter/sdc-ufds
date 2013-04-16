@@ -99,6 +99,8 @@ module.exports = {
             var keys = Object.keys(entry).filter(function (k) {
                 /* JSSTYLED */
                 return (k !== 'datacenter' && !/^_.*/.test(k) && k !== 'controls');
+            }).map(function (k) {
+                return (k.toLowerCase());
             });
 
             if (req.accepts('application/xml')) {
@@ -118,14 +120,15 @@ module.exports = {
         assert.ok(req.ldap);
 
         var dn = sprintf(MD_DN, req.params.appkey, req.customer.dn.toString());
+        var key = req.params.key.toLowerCase();
         var log = req.log;
 
         log.debug({
             uuid: req.params.uuid,
             appkey: req.params.appkey,
-            key: req.params.key
+            key: key
         }, 'PutMetadataKey: entered');
-        return loadMetadata(req, true, function (err, entry) {
+        loadMetadata(req, true, function (err, entry) {
             if (err) {
                 return next(err);
             }
@@ -134,14 +137,14 @@ module.exports = {
                 log.debug({
                     uuid: req.params.uuid,
                     appkey: req.params.appkey,
-                    key: req.params.key
+                    key: key
                 }, 'PutMetadataKey: need to add');
 
                 entry = {
                     cn: [req.params.appkey],
                     objectclass: ['capimetadata']
                 };
-                entry[req.params.key] = [req.body];
+                entry[key] = [req.body];
                 return req.ldap.add(dn, entry, function (err2) {
                     if (err2) {
                         return next(err2);
@@ -149,7 +152,7 @@ module.exports = {
                     log.debug({
                         uuid: req.params.uuid,
                         appkey: req.params.appkey,
-                        key: req.params.key
+                        key: key
                     }, 'PutMetadataKey: added');
 
                     res.send(201);
@@ -158,7 +161,7 @@ module.exports = {
             }
 
             var mod = {};
-            mod[req.params.key] = [req.body];
+            mod[key] = [req.body];
             var change = new Change({
                 type: 'replace',
                 modification: mod
@@ -166,7 +169,7 @@ module.exports = {
             log.debug({
                 uuid: req.params.uuid,
                 appkey: req.params.appkey,
-                key: req.params.key
+                key: key
             }, 'PutMetadataKey: updating');
 
             return req.ldap.modify(dn, change, function (err2) {
@@ -177,9 +180,9 @@ module.exports = {
                 log.debug({
                     uuid: req.params.uuid,
                     appkey: req.params.appkey,
-                    key: req.params.key
+                    key: key
                 }, 'PutMetadataKey: updated');
-                res.send(entry[req.params.key] ? 200 : 201);
+                res.send(entry[key] ? 200 : 201);
                 return next();
             });
         });
@@ -188,29 +191,30 @@ module.exports = {
     get: function get(req, res, next) {
         assert.ok(req.ldap);
 
+        var key = req.params.key.toLowerCase();
         var log = req.log;
         log.debug({
             uuid: req.params.uuid,
             appkey: req.params.appkey,
-            key: req.params.key
+            key: key
         }, 'GetMetadataKey: updated');
 
-        return loadMetadata(req, function (err, entry) {
+        loadMetadata(req, function (err, entry) {
             if (err) {
                 return next(err);
             }
 
-            if (!entry[req.params.key]) {
-                return next(new restify.ResourceNotFoundError(req.params.key));
+            if (!entry[key]) {
+                return next(new restify.ResourceNotFoundError(key));
             }
 
             // force this on the client, like a true CAPI would!
             res._accept = 'text/plain';
-            var value = entry[req.params.key];
+            var value = entry[key];
             log.debug({
                 uuid: req.params.uuid,
                 appkey: req.params.appkey,
-                key: req.params.key,
+                key: key,
                 value: value
             }, 'GetMetadataKey: done');
             res.send(200, value);
@@ -222,11 +226,12 @@ module.exports = {
         assert.ok(req.customer);
         assert.ok(req.ldap);
 
+        var key = req.params.key.toLowerCase();
         var log = req.log;
         log.debug({
             uuid: req.params.uuid,
             appkey: req.params.appkey,
-            key: req.params.key
+            key: key
         }, 'DeleteMetadataKey: updated');
 
         return loadMetadata(req, function (err, entry) {
@@ -234,12 +239,12 @@ module.exports = {
                 return next(err);
             }
 
-            if (!entry[req.params.key]) {
-                return next(new restify.ResourceNotFoundError(req.params.key));
+            if (!entry[key]) {
+                return next(new restify.ResourceNotFoundError(key));
             }
 
             var mod = {};
-            mod[req.params.key] = entry[req.params.key];
+            mod[key] = entry[key];
             var change = new Change({
                 type: 'delete',
                 modification: mod
@@ -249,17 +254,17 @@ module.exports = {
                              req.customer.dn.toString());
             log.debug({
                 dn: dn,
-                key: req.params.key
+                key: key
             }, 'DeleteMetadataKey: deleting');
 
-            log.debug('DeletMetadataKey %s: deleting %s', dn, req.params.key);
+            log.debug('DeletMetadataKey %s: deleting %s', dn, key);
             return req.ldap.modify(dn, change, function (err2) {
                 if (err2) {
                     return next(err2);
                 }
                 log.debug({
                     dn: dn,
-                    key: req.params.key
+                    key: key
                 }, 'DeleteMetadataKey: deleted');
                 res.send(200);
                 return next();

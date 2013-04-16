@@ -160,6 +160,7 @@ module.exports = {
         if (!base)
             base = 'o=smartdc';
 
+        var log = ld.log;
         var opts = {
             scope: 'sub',
             filter: filter,
@@ -182,30 +183,64 @@ module.exports = {
                 '_salt'
             ]
         };
-        return ld.search(base, opts, hidden, function (err, result) {
-            if (err)
-                return callback(err);
+
+        log.debug({
+            base: base,
+            filter: opts.filter
+        }, 'loadCustomers: starting search');
+        ld.search(base, opts, hidden, function (err, result) {
+            if (err) {
+                log.debug({
+                    base: base,
+                    filter: opts.filter,
+                    err: err
+                }, 'loadCustomers: error in search (starting)');
+                callback(err);
+                return;
+            }
 
             var entries = [];
             var done = false;
             result.on('searchEntry', function (entry) {
+                log.debug({
+                    entry: entry.object
+                }, 'loadCustomers: entry received');
+
                 entries.push((translate ?
                               _translate(entry.object) :
                               entry.object));
             });
+
             result.on('error', function (err2) {
+                result.removeAllListeners('searchEntry');
+                result.removeAllListeners('end');
+
+                log.debug({
+                    base: base,
+                    filter: opts.filter,
+                    err: err
+                }, 'loadCustomers: error in search (mid stream)');
+
                 if (done)
                     return;
 
                 done = true;
-                return callback(err2);
+                callback(err2);
             });
-            result.on('end', function () {
+
+            result.once('end', function () {
+                log.debug({
+                    base: base,
+                    filter: opts.filter
+                }, 'loadCustomers: search done');
+
+                result.removeAllListeners('searchEntry');
+                result.removeAllListeners('error');
                 if (done)
                     return;
 
                 done = true;
-                return callback(null, entries);
+                callback(null, entries);
             });
         });
     },
@@ -214,31 +249,45 @@ module.exports = {
         if (!req.params.uuid)
             return next();
 
-        req.log.debug('LoadCustomer(%s) entered', req.params.uuid);
+        var log = req.log;
         var sent = false;
         function returnError(err) {
             if (!sent) {
+                log.debug(err, 'loadCustomer: returning error');
                 sent = true;
-                return next(new restify.InternalError(err.message));
+                next(new restify.InternalError(err.message));
             }
         }
         var opts = {
             scope: 'sub',
             filter: '(uuid=' + req.params.uuid + ')'
         };
-        return req.ldap.search('o=smartdc', opts, hidden, function (e, result) {
-            if (e)
-                return returnError(e);
 
-            result.on('searchEntry', function (entry) {
+        log.debug({
+            filter: opts.filter
+        }, 'LoadCustomer(%s) entered', req.params.uuid);
+        req.ldap.search('o=smartdc', opts, hidden, function (e, result) {
+            if (e) {
+                log.debug({
+                    err: e,
+                    filter: opts.filter
+                }, 'loadCustomer: error starting search');
+                returnError(e);
+                return;
+            }
+
+            result.once('searchEntry', function (entry) {
+                log.debug({
+                    entry: entry.object,
+                    filter: opts.filter
+                }, 'LoadCustomer(%s): entry found', req.params.uuid);
                 req.customer = entry;
             });
-            result.on('error', function (err) {
-                return returnError(err);
-            });
-            result.on('end', function () {
+
+            result.once('error', returnError);
+            result.once('end', function () {
                 if (req.customer) {
-                    req.log.debug('LoadCustomer(%s) -> %j',
+                    log.debug('LoadCustomer(%s) -> %j',
                               req.params.uuid,
                               req.customer.object);
                 }
@@ -246,9 +295,10 @@ module.exports = {
                 if (!sent) {
                     sent = true;
                     if (!req.customer) {
-                        return next(new ResourceNotFoundError(req.params.uuid));
+                        next(new ResourceNotFoundError(req.params.uuid));
+                    } else {
+                        next();
                     }
-                    return next();
                 }
             });
         });

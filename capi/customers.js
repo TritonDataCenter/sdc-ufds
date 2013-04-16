@@ -191,7 +191,7 @@ module.exports = {
         if (req.params.password_confirmation &&
             req.params.password_confirmation !== req.params.password) {
             errors.push('password confirmation missmatch');
-            }
+        }
 
         if (errors.length) {
             log.debug({errors: errors}, 'Create Customer: have errors!');
@@ -263,13 +263,18 @@ module.exports = {
             customer.forgot_password_code =
                 util.forgotPasswordCode(customer.uuid[0]);
 
+            var _done = false;
             function done() {
+                if (_done)
+                    return;
+
+                _done = true;
                 if (req.accepts('application/xml')) {
                     customer = { customer : customer };
                 }
 
                 res.send(201, customer);
-                return next();
+                next();
             }
 
             if (req.params.role !== '2') {
@@ -343,54 +348,51 @@ module.exports = {
                 }, 'GetCustomer: done');
                 res.send(200, result);
                 return next();
-            } else {
-                var c = customers[0];
+            }
 
-                // Now load the groups it is in
-                var dn = sprintf('uuid=%s, ou=users, o=smartdc', c.uuid);
-                var opts = {
-                    scope: 'one',
-                    filter: sprintf(
-                        '(&(objectclass=groupofuniquenames)(uniquemember=%s))',
-                        dn)
-                };
-                return req.ldap.search(GROUPS, opts, function (gErr, gRes) {
-                    if (gErr) {
-                        return next(gErr);
+            // Now load the groups it is in
+            var c = customers[0];
+            var dn = sprintf('uuid=%s, ou=users, o=smartdc', c.uuid);
+            var opts = {
+                scope: 'one',
+                filter: sprintf(
+                    '(&(objectclass=groupofuniquenames)(uniquemember=%s))',
+                    dn)
+            };
+            return req.ldap.search(GROUPS, opts, function (gErr, gRes) {
+                if (gErr) {
+                    return next(gErr);
+                }
+
+                var groups = [];
+
+                gRes.on('searchEntry', function (entry) {
+                    groups.push(entry);
+                });
+                gRes.on('error', next);
+                gRes.on('end', function () {
+
+                    c.memberof = groups.map(function (v) {
+                        return v.dn;
+                    });
+
+                    if (c.memberof.indexOf(OPERATORS_DN) !== -1) {
+                        c.role_type = 2;
+                        c.role = 2;
                     }
 
-                    var groups = [];
-
-                    gRes.on('searchEntry', function (entry) {
-                        groups.push(entry);
-                    });
-                    gRes.on('error', function (er) {
-                        return next(er);
-                    });
-                    gRes.on('end', function () {
-
-                        c.memberof = groups.map(function (v) {
-                            return v.dn;
-                        });
-
-                        if (c.memberof.indexOf(OPERATORS_DN) !== -1) {
-                            c.role_type = 2;
-                            c.role = 2;
-                        }
-
-                        result = c;
-                        if (req.accepts('application/xml')) {
-                            result = { customer: c };
-                        }
-                        log.debug({
-                            uuid: req.params.uuid,
-                            result: result
-                        }, 'GetCustomer: done');
-                        res.send(200, result);
-                        return next();
-                    });
+                    result = c;
+                    if (req.accepts('application/xml')) {
+                        result = { customer: c };
+                    }
+                    log.debug({
+                        uuid: req.params.uuid,
+                        result: result
+                    }, 'GetCustomer: done');
+                    res.send(200, result);
+                    return next();
                 });
-            }
+            });
         });
     },
 
@@ -410,7 +412,7 @@ module.exports = {
                     try {
                         req.params = JSON.parse(req.params.customer);
                     } catch (e) {
-                        return res.send([e.message]);
+                        return next(res.sendError([e.message]));
                     }
                 }
             }

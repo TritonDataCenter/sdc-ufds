@@ -122,25 +122,32 @@ function CAPI(config) {
             return (false);
         };
 
-        req.ldap = ldap.createClient({
+        var ldapClient = ldap.createClient({
             url: config.ufds,
             log: log
         });
 
-        req.ldap.once('error', function (err) {
+        ldapClient.once('error', function (err) {
+            ldapClient.removeAllListeners('connect');
+            log.error(err, 'LDAP Client connect error');
             req.ldap = null;
             next(err);
         });
 
-        req.ldap.once('connect', function () {
+        ldapClient.once('connect', function () {
+            ldapClient.removeAllListeners('error');
             log.debug('LDAP Client Connected');
-            req.ldap.bind(config.rootDN, config.rootPassword, function (err) {
+
+            ldapClient.bind(config.rootDN, config.rootPassword, function (err) {
                 if (err) {
                     log.error(err, 'Unable to bind to UFDS');
-                    return next(err);
+                    next(err);
+                    return;
                 }
+
+                req.ldap = ldapClient;
                 log.debug('Bound to UFDS');
-                return next();
+                next();
             });
         });
     }
@@ -173,18 +180,18 @@ function CAPI(config) {
     server.use(restify.queryParser());
     server.use(restify.bodyParser());
     server.use(restify.fullResponse());
+    server.use(before);
 
     server.on('after', restify.auditLogger({log: log}));
-
-    server.use(before);
-    server.on('after', function (req, res, route, err) {
+    server.on('after', function cleanup(req, res, route) {
         if (req.ldap) {
-            req.ldap.unbind(function (err1) {
-                if (err1) {
-                    log.error(err1, 'Unable to unbind LDAP client');
+            req.ldap.unbind(function (err) {
+                if (err) {
+                    log.error(err, 'Unable to unbind LDAP client');
                 } else {
                     log.debug('LDAP client unbound');
                 }
+                delete req.ldap;
             });
         }
     });
@@ -197,14 +204,14 @@ function CAPI(config) {
     server.post('/customers', customers.create);
 
     // UpdateCustomer
-    server.put('/customers/:uuid', before, utils.loadCustomer,
-            customers.update, utils.loadCustomer,
-            function respond(req, res, next) {
-                var customer = utils.translateCustomer(
-                    req.customer.toObject());
-                res.send(200, customer);
-                return next();
-            });
+    server.put('/customers/:uuid', utils.loadCustomer,
+               customers.update, utils.loadCustomer,
+               function respond(req, res, next) {
+                   var customer = utils.translateCustomer(
+                       req.customer.toObject());
+                   res.send(200, customer);
+                   next();
+               });
 
     // GetCustomer
     server.get('/customers/:uuid', utils.loadCustomer, customers.get);
@@ -248,10 +255,6 @@ function CAPI(config) {
     server.put('/customers/:uuid/limits/:dc/:dataset', limits.put);
     server.del('/customers/:uuid/limits/:dc/:dataset', limits.del);
 
-
-
-
-
     ///-- Start up
 
     function connect() {
@@ -259,7 +262,6 @@ function CAPI(config) {
             console.error('CAPI listening on port %d', config.port);
         });
     }
-
 
     return {
         server: server,

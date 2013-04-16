@@ -294,6 +294,34 @@ test('login with new password', function (t) {
 });
 
 
+// Searching customers, by login mostly:
+test('search customer by login (positive match)', function (t) {
+    var u = util.format('/customers?login=%s', CUSTOMER.login);
+    CAPI.get(u, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(Array.isArray(obj));
+        t.ok(obj.length);
+        t.equal(obj[0].login, CUSTOMER.login);
+        t.done();
+    });
+});
+
+
+test('search customer by login (negative match)', function (t) {
+    var id = uuid();
+    var login = 'a' + id.substr(0, 7);
+    var u = util.format('/customers?login=%s', login);
+    CAPI.get(u, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(Array.isArray(obj));
+        t.ok(!obj.length);
+        t.done();
+    });
+});
+
+
 // --- SSH KEYS:
 var KEYS_PATH = '/customers/%s/keys';
 var KEY_PATH = KEYS_PATH + '/%s';

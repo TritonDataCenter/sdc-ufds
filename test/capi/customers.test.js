@@ -160,6 +160,140 @@ test('update customer', function (t) {
 });
 
 
+// --- SALT:
+var SALT;
+test('get salt', function (t) {
+    CAPI.get('/login/' + CUSTOMER.login, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(obj.salt);
+        SALT = obj.salt;
+        t.done();
+    });
+});
+
+
+// --- LOGIN:
+test('login', function (t) {
+    CAPI.post('/login', {
+        login: CUSTOMER.login,
+        digest: salt.saltPasswordSHA1('sup3rs3cr3t', SALT).password
+    }, function (err, req, res, obj) {
+        t.ifError(err);
+        // If login attempt fails, we'll receive an empty JSON object as
+        // the response
+        t.ok(obj);
+        t.ok(Object.keys(obj).length !== 0);
+        t.equal(obj.uuid, CUSTOMER.uuid);
+        t.done();
+    });
+});
+
+
+// --- ForgotPassword:
+test('forgot password', function (t) {
+    CAPI.post('/auth/forgot_password', {
+        email: CUSTOMER.email_address
+    }, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.ok(Array.isArray(obj));
+        t.ok(obj.length);
+        t.equal(obj[0].uuid, CUSTOMER.uuid);
+        t.ok(obj[0].forgot_password_code);
+        t.done();
+    });
+});
+
+
+test('update customer password too short', function (t) {
+    CAPI.put('/customers/' + CUSTOMER.uuid, {
+        password: 'foobar',
+        password_confirmation: 'foobar'
+    }, function (err, req, res, obj) {
+        t.ok(err);
+        t.equal(res.statusCode, 409);
+        t.ok(obj);
+        t.ok(obj.errors);
+        t.ok(Array.isArray(obj.errors));
+        t.equal(obj.errors[0], 'passwordTooShort');
+        t.done();
+    });
+});
+
+
+test('update customer password insuficient quality', function (t) {
+    CAPI.put('/customers/' + CUSTOMER.uuid, {
+        password: 'supersecret',
+        password_confirmation: 'supersecret'
+    }, function (err, req, res, obj) {
+        t.ok(err);
+        t.equal(res.statusCode, 409);
+        t.ok(obj);
+        t.ok(obj.errors);
+        t.ok(Array.isArray(obj.errors));
+        t.equal(obj.errors[0], 'insufficientPasswordQuality');
+        t.done();
+    });
+});
+
+
+test('update customer password do not match', function (t) {
+    CAPI.put('/customers/' + CUSTOMER.uuid, {
+        password: 'supers3cret',
+        password_confirmation: 'sup3rsecret'
+    }, function (err, req, res, obj) {
+        t.ok(err);
+        t.equal(res.statusCode, 409);
+        t.ok(obj.code);
+        t.equal(obj.code, 'InvalidArgument');
+        t.ok(obj.message);
+        t.equal(obj.message, 'passwords do not match');
+        t.done();
+    });
+});
+
+
+
+test('update customer password', function (t) {
+    CAPI.put('/customers/' + CUSTOMER.uuid, {
+        password: 'supers3cret',
+        password_confirmation: 'supers3cret'
+    }, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.done();
+    });
+});
+
+
+test('login with new password', function (t) {
+    // First, we try to login with the old one, to verify it doesn't work:
+    CAPI.post('/login', {
+        login: CUSTOMER.login,
+        digest: salt.saltPasswordSHA1('sup3rs3cr3t', SALT).password
+    }, function (err, req, res, obj) {
+        t.ifError(err);
+        // If login attempt fails, we'll receive an empty JSON object as
+        // the response
+        t.ok(obj);
+        t.ok(Object.keys(obj).length === 0);
+        // Now with the new password
+        CAPI.post('/login', {
+            login: CUSTOMER.login,
+            digest: salt.saltPasswordSHA1('supers3cret', SALT).password
+        }, function (err2, req2, res2, obj2) {
+            t.ifError(err2);
+            // If login attempt fails, we'll receive an empty JSON object as
+            // the response
+            t.ok(obj2);
+            t.ok(Object.keys(obj2).length !== 0);
+            t.done();
+        });
+    });
+});
+
+
 // --- SSH KEYS:
 var KEYS_PATH = '/customers/%s/keys';
 var KEY_PATH = KEYS_PATH + '/%s';
@@ -245,50 +379,6 @@ test('update key', function (t) {
     });
 });
 
-// --- SALT:
-var SALT;
-test('get salt', function (t) {
-    CAPI.get('/login/' + CUSTOMER.login, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.salt);
-        SALT = obj.salt;
-        t.done();
-    });
-});
-
-
-// --- LOGIN:
-test('login', function (t) {
-    CAPI.post('/login', {
-        login: CUSTOMER.login,
-        digest: salt.saltPasswordSHA1('sup3rs3cr3t', SALT).password
-    }, function (err, req, res, obj) {
-        t.ifError(err);
-        // If login attempt fails, we'll receive an empty JSON object as
-        // the response
-        t.ok(obj);
-        t.ok(Object.keys(obj).length !== 0);
-        t.equal(obj.uuid, CUSTOMER.uuid);
-        t.done();
-    });
-});
-
-
-// --- ForgotPassword:
-test('forgot password', function (t) {
-    CAPI.post('/auth/forgot_password', {
-        email: CUSTOMER.email_address
-    }, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(Array.isArray(obj));
-        t.ok(obj.length);
-        t.equal(obj[0].uuid, CUSTOMER.uuid);
-        t.ok(obj[0].forgot_password_code);
-        t.done();
-    });
-});
 
 // --- Limits:
 test('add limit', function (t) {

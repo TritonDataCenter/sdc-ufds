@@ -519,7 +519,11 @@ module.exports = {
         var _dn = req.customer.dn.toString();
         return req.ldap.modify(_dn, changes, function (err) {
             if (err) {
-                return next(err);
+                if (err instanceof ldap.ConstraintViolationError) {
+                    return res.sendError([err.message]);
+                } else {
+                    return res.sendError([err.toString()]);
+                }
             }
 
             log.debug({id: req.params.uuid}, 'UpdateCustomer: ok');

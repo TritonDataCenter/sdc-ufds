@@ -498,7 +498,7 @@ test('add app meta key', function (t) {
     var client = restify.createStringClient({
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
-    client.put(appKeyMetaPath, 'bar', function (err, req, res, obj) {
+    client.put(appKeyMetaPath, 'caseSensitive', function (err, req, res, obj) {
         t.equal(res.statusCode, 201);
         client.close();
         t.done();
@@ -512,7 +512,7 @@ test('get app meta key', function (t) {
     CAPI.get(appKeyMetaPath, function (err, req, res, obj) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
-        t.equal('bar', obj);
+        t.equal('caseSensitive', obj);
         t.done();
     });
 });
@@ -525,7 +525,7 @@ test('update app meta key', function (t) {
     var client = restify.createStringClient({
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
-    client.put(appKeyMetaPath, 'baz', function (err, req, res, obj) {
+    client.put(appKeyMetaPath, 'caseSensitive', function (err, req, res, obj) {
         t.equal(res.statusCode, 200);
         client.close();
         t.done();

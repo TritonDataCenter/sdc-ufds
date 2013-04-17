@@ -17,6 +17,7 @@ var keys = require('./capi/keys');
 var login = require('./capi/login');
 var limits = require('./capi/limits');
 var metadata = require('./capi/metadata');
+var fraud = require('./capi/fraud');
 var utils = require('./capi/util');
 
 
@@ -257,6 +258,9 @@ function CAPI(config) {
     server.get('/customers/:uuid/limits', limits.list);
     server.put('/customers/:uuid/limits/:dc/:dataset', limits.put);
     server.del('/customers/:uuid/limits/:dc/:dataset', limits.del);
+
+    /// Fraud
+    server.get('/fraud', fraud.loadBlackList, fraud.list);
 
     ///-- Start up
 

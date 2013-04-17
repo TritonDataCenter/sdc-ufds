@@ -649,6 +649,20 @@ test('meta cleanup', function (t) {
 });
 
 
+// CAPI-234: Blacklist "/fraud"
+test('get blacklist', function (t) {
+    CAPI.get('/fraud', function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(200, res.statusCode);
+        t.ok(Array.isArray(obj));
+        if (obj.length) {
+            t.ok(obj[0].email_address);
+            t.ok(obj[0].id);
+        }
+        t.done();
+    });
+});
+
 test('delete key', function (t) {
     var p = util.format(KEY_PATH, CUSTOMER.uuid, KEY.id);
     CAPI.del(p, function (err, req, res) {

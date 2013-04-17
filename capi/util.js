@@ -306,6 +306,8 @@ module.exports = {
 
     translateCustomer: _translate,
 
-    forgotPasswordCode: _forgotPasswordCode
+    forgotPasswordCode: _forgotPasswordCode,
+
+    randomId: _randomId
 
 };

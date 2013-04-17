@@ -676,6 +676,29 @@ test('add email to blacklist', function (t) {
     });
 });
 
+
+test('search email in blacklist', function (t) {
+    CAPI.get('/fraud/' + FRAUD_EMAIL, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(200, res.statusCode);
+        t.ok(obj.email_address);
+        t.ok(obj.id);
+        t.done();
+    });
+});
+
+
+test('search email not in blacklist', function (t) {
+    CAPI.get('/fraud/' + DUP_EMAIL, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(200, res.statusCode);
+        t.ok(obj); // it is actually a plain []
+        t.ok(!obj.email_address);
+        t.done();
+    });
+});
+
+
 test('delete key', function (t) {
     var p = util.format(KEY_PATH, CUSTOMER.uuid, KEY.id);
     CAPI.del(p, function (err, req, res) {

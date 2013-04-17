@@ -1,20 +1,20 @@
 // Copyright 2013 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
-var sprintf = require('util').format;
+var mod_util = require('util');
+var sprintf = mod_util.format;
 
 var restify = require('restify');
 
 var ldap = require('ldapjs');
 var Change = ldap.Change;
-
 var util = require('./util');
 
 
 
 ///--- Globals
 
-var BLACKLIST_FILTER = '(objectclass=emailblacklist)';
+var BLACKLIST_FILTER = '(&(email=%s)(objectclass=emailblacklist))';
 var BLACKLIST_DN = 'cn=blacklist, o=smartdc';
 
 var BadRequestError = restify.BadRequestError;
@@ -147,5 +147,62 @@ module.exports = {
                 return;
             });
         }
+    },
+
+    search: function search(req, res, next) {
+
+        assert.ok(req.ldap);
+
+        var log = req.log;
+
+        if (!req.params.email) {
+            return next(new BadRequestError('email is required'));
+        }
+
+        var sent = false;
+        log.debug({uuid: req.params.email}, 'searchBlackList: entered');
+
+        function returnError(err) {
+            if (!sent) {
+                log.debug(err, 'searchBlackList: returning error');
+                sent = true;
+                next(new restify.InternalError(err.message));
+            }
+        }
+
+        var filter = sprintf(BLACKLIST_FILTER, req.params.email);
+        req.ldap.search(BLACKLIST_DN, filter, function (e, result) {
+            if (e) {
+                log.debug({
+                    err: e
+                }, 'loadBlackList: error starting search');
+                returnError(e);
+                return;
+            }
+
+            result.once('searchEntry', function (entry) {
+                log.debug({
+                    entry: entry.object
+                }, 'BlackList Search found email');
+                req.blacklist = entry.object;
+            });
+
+            result.once('error', returnError);
+            result.once('end', function () {
+                if (req.blacklist) {
+                    log.debug('BlackList search done');
+                }
+
+                if (!sent) {
+                    sent = true;
+                    if (!req.blacklist) {
+                        res.send(200, []);
+                    } else {
+                        res.send(200, translateBlackList(req.params.email));
+                        return next();
+                    }
+                }
+            });
+        });
     }
 };

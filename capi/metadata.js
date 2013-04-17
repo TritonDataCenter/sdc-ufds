@@ -7,7 +7,7 @@ var sprintf = mod_util.format;
 var ldap = require('ldapjs');
 var restify = require('restify');
 var uuid = require('node-uuid');
-
+var qs = require('querystring');
 var util = require('./util');
 
 
@@ -122,12 +122,15 @@ module.exports = {
         var dn = sprintf(MD_DN, req.params.appkey, req.customer.dn.toString());
         var key = req.params.key.toLowerCase();
         var log = req.log;
+        var v = (req.body.indexOf('=') !== -1) ? qs.parse(req.body) : req.body;
+        var value = (typeof (v) === 'string') ? v : JSON.stringify(v);
 
         log.debug({
             uuid: req.params.uuid,
             appkey: req.params.appkey,
             key: key
         }, 'PutMetadataKey: entered');
+
         loadMetadata(req, true, function (err, entry) {
             if (err) {
                 return next(err);
@@ -144,7 +147,7 @@ module.exports = {
                     cn: [req.params.appkey],
                     objectclass: ['capimetadata']
                 };
-                entry[key] = [req.body];
+                entry[key] = [value];
                 return req.ldap.add(dn, entry, function (err2) {
                     if (err2) {
                         return next(err2);
@@ -161,7 +164,7 @@ module.exports = {
             }
 
             var mod = {};
-            mod[key] = [req.body];
+            mod[key] = [value];
             var change = new Change({
                 type: 'replace',
                 modification: mod
@@ -211,6 +214,17 @@ module.exports = {
             // force this on the client, like a true CAPI would!
             res._accept = 'text/plain';
             var value = entry[key];
+            try {
+                value = JSON.parse(value);
+            } catch (e) {
+                // At this point, we may have some values like
+                // secretkey=OFRVW3Z6HJ6XXXXXXXXXXXXXXXX due to import. We want
+                // those being returned as objects too:
+                if (value.indexOf('=') !== -1) {
+                    value = qs.parse(value);
+                }
+                // Otherwise, just a plain text string, return "as is".
+            }
             log.debug({
                 uuid: req.params.uuid,
                 appkey: req.params.appkey,

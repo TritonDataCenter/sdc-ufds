@@ -3,6 +3,7 @@
 
 var path = require('path');
 var util = require('util');
+var qs = require('querystring');
 // Just to avoid rewriting here the saltPassword(SHA1) functions:
 var salt = require('../../lib/salt');
 
@@ -23,6 +24,18 @@ var DUP_ID = uuid();
 var DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
 var DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
 var CUSTOMER;
+
+var METADATA_OBJ_KEY = 'private-api-key';
+var METADATA_OBJ_VAL = {
+    stat: 'httpd_ops',
+    uri: '/ca/customers/' + DUP_ID + '/instrumentations/1'
+};
+
+var METADATA_APP = 'portal';
+var METADATA_STR_KEY = 'useMoreSecurity';
+var METADATA_STR_VAL = 'secretkey=OFRVW3Z6HJ6SQZT5JRLXGV2PG5CWSQCY';
+var METADATA_STR_VAL_PLAIN = 'notQueryStringParseable';
+
 ///--- Tests
 
 test('setup', function (t) {
@@ -502,14 +515,14 @@ test('limit cleanup', function (t) {
 
 
 // --- Metadata:
-test('add app meta key', function (t) {
+test('add app meta key (parseable string)', function (t) {
     var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
-        CUSTOMER.uuid, 'myapp', 'foo');
+        CUSTOMER.uuid, METADATA_APP, METADATA_STR_KEY);
     var restify = require('restify');
     var client = restify.createStringClient({
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
-    client.put(appKeyMetaPath, 'caseSensitive', function (err, req, res, obj) {
+    client.put(appKeyMetaPath, METADATA_STR_VAL, function (err, req, res, obj) {
         t.equal(res.statusCode, 201);
         client.close();
         t.done();
@@ -517,28 +530,76 @@ test('add app meta key', function (t) {
 });
 
 
-test('get app meta key', function (t) {
+test('get app meta key (parseable string)', function (t) {
     var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
-        CUSTOMER.uuid, 'myapp', 'foo');
+        CUSTOMER.uuid, METADATA_APP, METADATA_STR_KEY);
     CAPI.get(appKeyMetaPath, function (err, req, res, obj) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
-        t.equal('caseSensitive', obj);
+        var orig = qs.parse(METADATA_STR_VAL);
+        var vals = Object.keys(orig);
+        vals.forEach(function (k) {
+            t.equal(orig[k], obj[k]);
+        });
         t.done();
     });
 });
 
 
-test('update app meta key', function (t) {
+test('update app meta key (to plain string)', function (t) {
     var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
-        CUSTOMER.uuid, 'myapp', 'foo');
+        CUSTOMER.uuid, METADATA_APP, METADATA_STR_KEY);
     var restify = require('restify');
     var client = restify.createStringClient({
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
-    client.put(appKeyMetaPath, 'caseSensitive', function (err, req, res, obj) {
+    client.put(appKeyMetaPath, METADATA_STR_VAL_PLAIN,
+        function (err, req, res, obj) {
+            t.equal(res.statusCode, 200);
+            client.close();
+            t.done();
+        });
+});
+
+
+test('get app meta key (string plain)', function (t) {
+    var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
+        CUSTOMER.uuid, METADATA_APP, METADATA_STR_KEY);
+    CAPI.get(appKeyMetaPath, function (err, req, res, obj) {
+        t.ifError(err);
         t.equal(res.statusCode, 200);
+        t.equal(METADATA_STR_VAL_PLAIN, obj);
+        t.done();
+    });
+});
+
+
+test('add app meta key (object)', function (t) {
+    var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
+        CUSTOMER.uuid, METADATA_APP, METADATA_OBJ_KEY);
+    var restify = require('restify');
+    var client = restify.createStringClient({
+        url: CAPI.url.protocol + '//' + CAPI.url.host
+    });
+    client.put(appKeyMetaPath, METADATA_OBJ_VAL, function (err, req, res, obj) {
+        t.equal(res.statusCode, 201);
         client.close();
+        t.done();
+    });
+});
+
+
+test('get app meta key (object)', function (t) {
+    var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
+        CUSTOMER.uuid, METADATA_APP, METADATA_OBJ_KEY);
+    CAPI.get(appKeyMetaPath, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(res.statusCode, 200);
+        var keys = Object.keys(obj);
+        t.ok(keys.length);
+        keys.forEach(function (k) {
+            t.equal(METADATA_OBJ_VAL[k], obj[k]);
+        });
         t.done();
     });
 });
@@ -546,13 +607,13 @@ test('update app meta key', function (t) {
 
 test('get app meta', function (t) {
     var appMetaPath = util.format('/customers/%s/metadata/%s',
-        CUSTOMER.uuid, 'myapp');
+        CUSTOMER.uuid, METADATA_APP);
     CAPI.get(appMetaPath, function (err, req, res, obj) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
         t.ok(Array.isArray(obj));
-        t.equal(obj.length, 1);
-        t.equal(obj[0], 'foo');
+        t.equal(obj.length, 2);
+        t.ok(obj.indexOf(METADATA_STR_KEY.toLowerCase()) !== -1);
         t.done();
     });
 });
@@ -560,7 +621,7 @@ test('get app meta', function (t) {
 
 test('delete app meta key', function (t) {
     var appKeyMetaPath = util.format('/customers/%s/metadata/%s/%s',
-        CUSTOMER.uuid, 'myapp', 'foo');
+        CUSTOMER.uuid, METADATA_APP, METADATA_STR_KEY);
     CAPI.del(appKeyMetaPath, function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
@@ -571,7 +632,7 @@ test('delete app meta key', function (t) {
 
 // Or we'll raise a NotAllowedOnNonLeafError from delete customer:
 test('meta cleanup', function (t) {
-    var limitDn = util.format('metadata=myapp, %s',
+    var limitDn = util.format('metadata=%s, %s', METADATA_APP,
         'uuid=' + CUSTOMER.uuid + ', ou=users, ' + SUFFIX);
 
     helper.createClient(function (err, client) {

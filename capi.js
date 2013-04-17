@@ -217,7 +217,8 @@ function CAPI(config) {
     server.get('/customers/:uuid', utils.loadCustomer, customers.get);
     server.head('/customers/:uuid', utils.loadCustomer, customers.get);
     // CustomerForgotPassword
-    server.put('/customers/:uuid/forgot_password', utils.loadCustomer, customers.get);
+    server.put('/customers/:uuid/forgot_password',
+                utils.loadCustomer, customers.get);
 
     // DeleteCustomer
     server.del('/customers/:uuid', utils.loadCustomer, customers.del);

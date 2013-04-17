@@ -198,7 +198,7 @@ function CAPI(config) {
     server.use(restify.fullResponse());
     server.use(function capiSetup(req, res, next) {
         res.sendError = function sendError(errors) {
-            if (req.xml) {
+            if (req.accepts('application/xml')) {
                 errors = { errors: { error: errors } };
             } else {
                 errors = { errors: errors };

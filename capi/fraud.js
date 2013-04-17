@@ -5,6 +5,8 @@ var sprintf = require('util').format;
 
 var restify = require('restify');
 
+var ldap = require('ldapjs');
+var Change = ldap.Change;
 
 var util = require('./util');
 
@@ -36,6 +38,8 @@ function translateBlackList(blacklist) {
 
 module.exports = {
     loadBlackList: function loadBlackList(req, res, next) {
+        assert.ok(req.ldap);
+
         var log = req.log;
         var sent = false;
         function returnError(err) {
@@ -70,11 +74,7 @@ module.exports = {
 
                 if (!sent) {
                     sent = true;
-                    if (!req.blacklist) {
-                        next(new ResourceNotFoundError(BLACKLIST_DN));
-                    } else {
-                        next();
-                    }
+                    next();
                 }
             });
         });
@@ -94,5 +94,58 @@ module.exports = {
         }, 'ListBlacklist: done');
         res.send(200, blacklist);
         return next();
+    },
+
+    create: function create(req, res, next) {
+        var log = req.log;
+
+        if (!req.params.email) {
+            return next(new BadRequestError('email is required'));
+        }
+
+        var dn = BLACKLIST_DN;
+
+        if (req.blacklist) {
+            var changes = [];
+            changes.push(new Change({
+                type: 'add',
+                modification: {
+                    email: req.params.email
+                }
+            }));
+            return req.ldap.modify(dn, changes, function (err) {
+                if (err) {
+                    return next(res.sendError([err.toString()]));
+                }
+
+                log.debug({email: req.params.email}, 'Update Blacklist: ok');
+                var blacklist = req.blacklist;
+                blacklist.email.push(req.params.email);
+                blacklist = translateBlackList(blacklist.email);
+                if (req.accepts('application/xml')) {
+                    blacklist = { blacklist: blacklist };
+                }
+                res.send(201, blacklist);
+                next();
+                return;
+            });
+        } else {
+            return req.ldap.add(dn, {
+                email: req.params.email,
+                objectclass: ['emailblacklist']
+            }, function (err) {
+                if (err) {
+                    return next(res.sendError([err.toString()]));
+                }
+                log.debug({email: req.params.email}, 'Blacklist Created: ok');
+                var blacklist = translateBlackList(req.params.email);
+                if (req.accepts('application/xml')) {
+                    blacklist = { blacklist: blacklist };
+                }
+                res.send(201, blacklist);
+                next();
+                return;
+            });
+        }
     }
 };

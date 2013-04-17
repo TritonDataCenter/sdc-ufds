@@ -25,6 +25,8 @@ var DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
 var DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
 var CUSTOMER;
 
+var FRAUD_EMAIL = DUP_LOGIN + '_fraud_test@joyent.com';
+
 var METADATA_OBJ_KEY = 'private-api-key';
 var METADATA_OBJ_VAL = {
     stat: 'httpd_ops',
@@ -659,6 +661,17 @@ test('get blacklist', function (t) {
             t.ok(obj[0].email_address);
             t.ok(obj[0].id);
         }
+        t.done();
+    });
+});
+
+
+test('add email to blacklist', function (t) {
+    CAPI.post('/fraud', {email: FRAUD_EMAIL}, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(201, res.statusCode);
+        t.ok(Array.isArray(obj));
+        t.equal(obj[obj.length - 1].email_address, FRAUD_EMAIL);
         t.done();
     });
 });

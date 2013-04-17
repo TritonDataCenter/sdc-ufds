@@ -207,15 +207,17 @@ function CAPI(config) {
     server.put('/customers/:uuid', utils.loadCustomer,
                customers.update, utils.loadCustomer,
                function respond(req, res, next) {
-                   var customer = utils.translateCustomer(
-                       req.customer.toObject());
-                   res.send(200, customer);
-                   next();
+                    var customer = utils.translateCustomer(
+                        req.customer.toObject());
+                    res.send(200, customer);
+                    next();
                });
 
     // GetCustomer
     server.get('/customers/:uuid', utils.loadCustomer, customers.get);
     server.head('/customers/:uuid', utils.loadCustomer, customers.get);
+    // CustomerForgotPassword
+    server.put('/customers/:uuid/forgot_password', utils.loadCustomer, customers.get);
 
     // DeleteCustomer
     server.del('/customers/:uuid', utils.loadCustomer, customers.del);

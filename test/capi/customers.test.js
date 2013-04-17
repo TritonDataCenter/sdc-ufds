@@ -133,6 +133,17 @@ test('get customer', function (t) {
     });
 });
 
+// CAPI-233: Missing /customers/:uuid/forgot_password route
+test('customer forgot_password', function (t) {
+    var p = '/customers/' + CUSTOMER.uuid + '/forgot_password';
+    CAPI.put(p, {}, function (err, req, res, obj) {
+        t.ifError(err);
+        t.ok(obj);
+        t.equal(CUSTOMER.login, obj.login);
+        t.ok(obj.forgot_password_code);
+        t.done();
+    });
+});
 
 test('get customer (404)', function (t) {
     CAPI.get('/customers/' + CUSTOMER.login, function (err, req, res, obj) {

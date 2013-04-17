@@ -381,6 +381,7 @@ module.exports = {
                         c.role = 2;
                     }
 
+                    delete c.memberof;
                     result = c;
                     if (req.accepts('application/xml')) {
                         result = { customer: c };

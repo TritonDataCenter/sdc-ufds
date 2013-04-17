@@ -195,7 +195,9 @@ module.exports = {
 
         if (errors.length) {
             log.debug({errors: errors}, 'Create Customer: have errors!');
-            return next(res.sendError(errors));
+            res.sendError(errors);
+            next(false);
+            return;
         }
 
         // We need to set the password "6.5 style" here (UFDS will then set

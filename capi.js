@@ -51,7 +51,7 @@ function toXml(elm) {
 
 ///--- Globals
 
-
+var LDAP_CLIENT;
 
 var opts = {
     'certificate': String,
@@ -77,6 +77,64 @@ var shortOpts = {
 
 
 ///--- Helpers
+
+function createLDAPClient(options) {
+    var cfg = options.config;
+    var log = options.log;
+
+    function connect(t) {
+        var client = ldap.createClient({
+            log: log,
+            url: cfg.ufds,
+            timeout: (cfg.clientTimeout || 2000)
+        });
+        var _t = Math.min(t * 2, 60000);
+
+        client.once('error', function (err) {
+            client.removeAllListeners('connect');
+            log.error(err, 'LDAP Client connect error');
+            setTimeout(connect.bind(null, _t), _t);
+        });
+
+        client.once('connect', function () {
+            client.removeAllListeners('error');
+            log.debug('LDAP Client Connected');
+
+            client.bind(cfg.rootDN, cfg.rootPassword, function (err) {
+                if (err) {
+                    log.error(err, 'Unable to bind to UFDS');
+                    setTimeout(connect.bind(null, _t), _t);
+                    return;
+                }
+
+                log.debug('Bound to UFDS');
+                LDAP_CLIENT = client;
+
+
+                function cleanup(ldap_err) {
+                    log.error(ldap_err, 'LDAP Client error');
+
+                    client.removeAllListeners('error');
+                    client.removeAllListeners('timeout');
+
+                    LDAP_CLIENT = null;
+                    connect(500);
+                    client.unbind(function () {});
+                }
+
+                var timeouts = 0;
+                client.once('error', cleanup);
+                client.on('timeout', function () {
+                    if (++timeouts === 3)
+                        cleanup(new Error('request timeouts'));
+                });
+            });
+        });
+    }
+
+    connect(500);
+}
+
 
 function usage(code, message) {
     var _opts = '';
@@ -110,49 +168,6 @@ function CAPI(config) {
         serializers: restify.bunyan.serializers
     });
 
-    function before(req, res, next) {
-
-        res.sendError = function sendError(errors) {
-            if (req.xml) {
-                errors = { errors: { error: errors } };
-            } else {
-                errors = { errors: errors };
-            }
-            log.warn({errors: errors}, 'These are the errors');
-            res.send(409, errors);
-            return (false);
-        };
-
-        var ldapClient = ldap.createClient({
-            url: config.ufds,
-            log: log
-        });
-
-        ldapClient.once('error', function (err) {
-            ldapClient.removeAllListeners('connect');
-            log.error(err, 'LDAP Client connect error');
-            req.ldap = null;
-            next(err);
-        });
-
-        ldapClient.once('connect', function () {
-            ldapClient.removeAllListeners('error');
-            log.debug('LDAP Client Connected');
-
-            ldapClient.bind(config.rootDN, config.rootPassword, function (err) {
-                if (err) {
-                    log.error(err, 'Unable to bind to UFDS');
-                    next(err);
-                    return;
-                }
-
-                req.ldap = ldapClient;
-                log.debug('Bound to UFDS');
-                next();
-            });
-        });
-    }
-
     var server = restify.createServer({
         name: 'capi',
         log: log,
@@ -181,21 +196,27 @@ function CAPI(config) {
     server.use(restify.queryParser());
     server.use(restify.bodyParser());
     server.use(restify.fullResponse());
-    server.use(before);
+    server.use(function capiSetup(req, res, next) {
+        res.sendError = function sendError(errors) {
+            if (req.xml) {
+                errors = { errors: { error: errors } };
+            } else {
+                errors = { errors: errors };
+            }
+            log.warn({errors: errors}, 'These are the errors');
+            res.send(409, errors);
+            return (false);
+        };
 
-    server.on('after', restify.auditLogger({log: log}));
-    server.on('after', function cleanup(req, res, route) {
-        if (req.ldap) {
-            req.ldap.unbind(function (err) {
-                if (err) {
-                    log.error(err, 'Unable to unbind LDAP client');
-                } else {
-                    log.debug('LDAP client unbound');
-                }
-                delete req.ldap;
-            });
+        if (!LDAP_CLIENT) {
+            next(new restify.InternalError('Upstream server down'));
+        } else {
+            req.ldap = LDAP_CLIENT;
+            next();
         }
     });
+
+    server.on('after', restify.auditLogger({log: log}));
 
     // Show
     server.get('/customers', customers.list);
@@ -267,8 +288,12 @@ function CAPI(config) {
     ///-- Start up
 
     function connect() {
+        createLDAPClient({
+            config: config,
+            log: log
+        });
         server.listen(config.port, function () {
-            console.error('CAPI listening on port %d', config.port);
+            log.info('CAPI listening on port %d', config.port);
         });
     }
 
@@ -320,12 +345,18 @@ function processConfig() {
     return _config;
 }
 
-var cfg = processConfig();
 
-var capi = CAPI(cfg);
 
-capi.connect();
+///--- Mainline
 
-// Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
-var sigyan = require('sigyan');
-sigyan.add([capi.log]);
+(function main() {
+    var cfg = processConfig();
+
+    var capi = CAPI(cfg);
+
+    capi.connect();
+
+    // Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
+    var sigyan = require('sigyan');
+    sigyan.add([capi.log]);
+}());

@@ -69,7 +69,8 @@ test('create customer (missing login)', function (t) {
         t.ok(err);
         t.equal(res.statusCode, 409);
         t.ok(obj.errors);
-        t.ok(/login/.test(obj.errors[0]));
+        if (obj.errors)
+            t.ok(/login/.test(obj.errors[0]));
         t.done();
     });
 });

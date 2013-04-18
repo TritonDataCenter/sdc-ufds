@@ -26,6 +26,7 @@ var DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
 var CUSTOMER;
 
 var FRAUD_EMAIL = DUP_LOGIN + '_fraud_test@joyent.com';
+var FRAUD_WILDCARD = '*_test@joyent.com';
 
 var METADATA_OBJ_KEY = 'private-api-key';
 var METADATA_OBJ_VAL = {
@@ -59,7 +60,7 @@ test('list customers', function (t) {
     });
 });
 
-
+// REVIEW: This should always return obj.errors
 test('create customer (missing login)', function (t) {
     CAPI.post('/customers', {
         email_address: DUP_EMAIL,
@@ -69,8 +70,9 @@ test('create customer (missing login)', function (t) {
         t.ok(err);
         t.equal(res.statusCode, 409);
         t.ok(obj.errors);
-        if (obj.errors)
+        if (obj.errors) {
             t.ok(/login/.test(obj.errors[0]));
+        }
         t.done();
     });
 });
@@ -653,6 +655,17 @@ test('meta cleanup', function (t) {
 
 
 // CAPI-234: Blacklist "/fraud"
+test('add email to blacklist', function (t) {
+    CAPI.post('/fraud', {email: FRAUD_EMAIL}, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(201, res.statusCode);
+        t.ok(Array.isArray(obj));
+        t.equal(obj[obj.length - 1].email_address, FRAUD_EMAIL);
+        t.done();
+    });
+});
+
+
 test('get blacklist', function (t) {
     CAPI.get('/fraud', function (err, req, res, obj) {
         t.ifError(err);
@@ -662,17 +675,6 @@ test('get blacklist', function (t) {
             t.ok(obj[0].email_address);
             t.ok(obj[0].id);
         }
-        t.done();
-    });
-});
-
-
-test('add email to blacklist', function (t) {
-    CAPI.post('/fraud', {email: FRAUD_EMAIL}, function (err, req, res, obj) {
-        t.ifError(err);
-        t.equal(201, res.statusCode);
-        t.ok(Array.isArray(obj));
-        t.equal(obj[obj.length - 1].email_address, FRAUD_EMAIL);
         t.done();
     });
 });
@@ -696,6 +698,44 @@ test('search email not in blacklist', function (t) {
         t.ok(obj); // it is actually a plain []
         t.ok(!obj.email_address);
         t.done();
+    });
+});
+
+
+test('add wildcard to blacklist', function (t) {
+    CAPI.post('/fraud', {email: FRAUD_WILDCARD}, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(201, res.statusCode);
+        t.ok(Array.isArray(obj));
+        t.equal(obj[obj.length - 1].email_address, FRAUD_WILDCARD);
+        t.done();
+    });
+});
+
+
+test('search email wildcard in blacklist', function (t) {
+    CAPI.get('/fraud/' + DUP_EMAIL, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(200, res.statusCode);
+        t.ok(obj.email_address);
+        t.ok(obj.id);
+        t.done();
+    });
+});
+
+
+// Go with clean blacklist for the next time:
+test('blacklist cleanup', function (t) {
+    helper.createClient(function (err, client) {
+        t.ifError(err);
+        t.ok(client);
+        client.del('cn=blacklist, o=smartdc', function (err1) {
+            t.ifError(err1);
+            client.unbind(function (err2) {
+                t.ifError(err2);
+                t.done();
+            });
+        });
     });
 });
 

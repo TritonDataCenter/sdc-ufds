@@ -36,6 +36,26 @@ function translateBlackList(blacklist) {
     }
 }
 
+function createBlackList(ld, email, callback) {
+    if (typeof (email) === 'function') {
+        callback = email;
+        email = null;
+    }
+    var blacklist = {
+        objectclass: ['emailblacklist']
+    };
+
+    if (email) {
+        blacklist.email = email;
+    }
+    return ld.add(BLACKLIST_DN, blacklist, function (err) {
+        if (err) {
+            return callback(err);
+        }
+        return callback(null);
+    });
+}
+
 module.exports = {
     loadBlackList: function loadBlackList(req, res, next) {
         assert.ok(req.ldap);
@@ -43,14 +63,32 @@ module.exports = {
         var log = req.log;
         var sent = false;
         function returnError(err) {
-            if (!sent) {
+            if (err instanceof ldap.NoSuchObjectError) {
+                return createBlackList(req.ldap, function (err2) {
+                    if (err2) {
+                        if (!sent) {
+                            log.debug(err, 'create Blacklist error');
+                            sent = true;
+                            next(new restify.InternalError(err2.message));
+                        }
+                    } else {
+                        log.debug(err, 'Blacklist created');
+                        req.blacklist = { email: []};
+                        if (!sent) {
+                            sent = true;
+                            next();
+                        }
+                    }
+                });
+            } else if (!sent) {
                 log.debug(err, 'loadBlackList: returning error');
                 sent = true;
                 next(new restify.InternalError(err.message));
             }
         }
 
-        req.ldap.search(BLACKLIST_DN, '(objectclass=*)', function (e, result) {
+        req.ldap.search(BLACKLIST_DN, '(objectclass=emailblacklist)',
+                function (e, result) {
             if (e) {
                 log.debug({
                     err: e
@@ -64,12 +102,20 @@ module.exports = {
                     entry: entry.object
                 }, 'BlackList Loaded');
                 req.blacklist = entry.object;
+                // Just in case we have a single email
+                if (!Array.isArray(req.blacklist.email)) {
+                    req.blacklist.email = [req.blacklist.email];
+                    log.debug({
+                        entry: req.blacklist
+                    }, 'BlackList Modified');
+                }
+
             });
 
             result.once('error', returnError);
             result.once('end', function () {
                 if (req.blacklist) {
-                    log.debug('BlackList load done');
+                    log.debug(req.blacklist, 'BlackList load done');
                 }
 
                 if (!sent) {
@@ -105,104 +151,66 @@ module.exports = {
 
         var dn = BLACKLIST_DN;
 
-        if (req.blacklist) {
-            var changes = [];
-            changes.push(new Change({
-                type: 'add',
-                modification: {
-                    email: req.params.email
-                }
-            }));
-            return req.ldap.modify(dn, changes, function (err) {
-                if (err) {
-                    return next(res.sendError([err.toString()]));
-                }
+        var changes = [];
+        changes.push(new Change({
+            type: 'add',
+            modification: {
+                email: req.params.email
+            }
+        }));
 
-                log.debug({email: req.params.email}, 'Update Blacklist: ok');
-                var blacklist = req.blacklist;
-                blacklist.email.push(req.params.email);
-                blacklist = translateBlackList(blacklist.email);
-                if (req.accepts('application/xml')) {
-                    blacklist = { blacklist: blacklist };
-                }
-                res.send(201, blacklist);
-                next();
-                return;
-            });
-        } else {
-            return req.ldap.add(dn, {
-                email: req.params.email,
-                objectclass: ['emailblacklist']
-            }, function (err) {
-                if (err) {
-                    return next(res.sendError([err.toString()]));
-                }
-                log.debug({email: req.params.email}, 'Blacklist Created: ok');
-                var blacklist = translateBlackList(req.params.email);
-                if (req.accepts('application/xml')) {
-                    blacklist = { blacklist: blacklist };
-                }
-                res.send(201, blacklist);
-                next();
-                return;
-            });
-        }
+        return req.ldap.modify(dn, changes, function (err) {
+            if (err) {
+                return next(res.sendError([err.toString()]));
+            }
+
+            log.debug({email: req.params.email}, 'Update Blacklist: ok');
+            var blacklist = req.blacklist;
+            blacklist.email.push(req.params.email);
+            blacklist = translateBlackList(blacklist.email);
+            if (req.accepts('application/xml')) {
+                blacklist = { blacklist: blacklist };
+            }
+            res.send(201, blacklist);
+            next();
+            return;
+        });
     },
 
     search: function search(req, res, next) {
 
         assert.ok(req.ldap);
-
+        assert.ok(req.blacklist);
         var log = req.log;
 
         if (!req.params.email) {
             return next(new BadRequestError('email is required'));
         }
 
-        var sent = false;
         log.debug({uuid: req.params.email}, 'searchBlackList: entered');
 
-        function returnError(err) {
-            if (!sent) {
-                log.debug(err, 'searchBlackList: returning error');
-                sent = true;
-                next(new restify.InternalError(err.message));
+        var blacklisted = req.blacklist.email.some(function (x) {
+            var email = req.params.email;
+            if (x === email) {
+                return true;
             }
+            /* JSSTYLED */
+            var re = new RegExp(x.replace(/\*/, '.\*'));
+            return re.test(email);
+        });
+
+        var blacklist;
+
+        if (blacklisted) {
+            blacklist = translateBlackList(req.params.email);
+        } else {
+            blacklist = [];
         }
 
-        var filter = sprintf(BLACKLIST_FILTER, req.params.email);
-        req.ldap.search(BLACKLIST_DN, filter, function (e, result) {
-            if (e) {
-                log.debug({
-                    err: e
-                }, 'loadBlackList: error starting search');
-                returnError(e);
-                return;
-            }
-
-            result.once('searchEntry', function (entry) {
-                log.debug({
-                    entry: entry.object
-                }, 'BlackList Search found email');
-                req.blacklist = entry.object;
-            });
-
-            result.once('error', returnError);
-            result.once('end', function () {
-                if (req.blacklist) {
-                    log.debug('BlackList search done');
-                }
-
-                if (!sent) {
-                    sent = true;
-                    if (!req.blacklist) {
-                        res.send(200, []);
-                    } else {
-                        res.send(200, translateBlackList(req.params.email));
-                        return next();
-                    }
-                }
-            });
-        });
+        if (req.accepts('application/xml')) {
+            blacklist = { blacklist: blacklist };
+        }
+        res.send(200, blacklist);
+        return next();
     }
 };

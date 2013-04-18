@@ -283,7 +283,7 @@ function CAPI(config) {
     /// Fraud
     server.get('/fraud', fraud.loadBlackList, fraud.list);
     server.post('/fraud', fraud.loadBlackList, fraud.create);
-    server.get('/fraud/:email', fraud.search);
+    server.get('/fraud/:email', fraud.loadBlackList, fraud.search);
 
     ///-- Start up
 

@@ -77,6 +77,9 @@ function _forgotPasswordCode(customerId) {
 function _translate(entry) {
     assert.ok(entry);
 
+    var d = new Date().toISOString();
+    var created_at = (entry.created_at) ? (new Date(parseInt(entry.created_at, 10)).toISOString()) : d;
+    var updated_at = (entry.updated_at) ? (new Date(parseInt(entry.updated_at, 10)).toISOString()) : d;
     var customer = {
         id: _randomId(),
         uuid: entry.uuid,
@@ -86,14 +89,20 @@ function _translate(entry) {
         email_address: entry.email,
         first_name: entry.givenname,
         last_name: entry.sn,
-        company_name: entry.company || null
+        company_name: entry.company || null,
+        approved_for_provisioning: entry.approved_for_provisioning || false,
+        created_at: created_at,
+        updated_at: updated_at
     };
 
     if (entry.address && entry.address.length) {
-        if (!Array.isArray(entry.address))
+        if (!Array.isArray(entry.address)) {
             entry.address = [entry.address];
-        for (var i = 0; i < entry.address.length; i++)
+        }
+
+        for (var i = 0; i < entry.address.length; i++) {
             customer['street_' + (i + 1)] = entry.address[i];
+        }
     }
 
     if (!customer.street_1)
@@ -130,9 +139,7 @@ function _translate(entry) {
         alternate_email_address: null,
         forgot_password_code: _forgotPasswordCode(entry.uuid),
         activation_code: null,
-        activated_at: entry._ctime,
-        created_at: entry._ctime,
-        updated_at: entry._mtime
+        activated_at: entry._ctime
     });
 }
 

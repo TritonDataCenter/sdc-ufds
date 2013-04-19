@@ -212,6 +212,23 @@ module.exports = {
             objectclass: ['sdcperson']
         };
 
+        customer.approved_for_provisioning =
+            (req.params.approved_for_provisioning) ? true : false;
+
+        var now = new Date().getTime();
+
+        if (req.params.created_at) {
+            customer.created_at = new Date(req.params.created_at).getTime();
+        } else {
+            customer.created_at = now;
+        }
+
+        if (req.params.updated_at) {
+            customer.updated_at = new Date(req.params.updated_at).getTime();
+        } else {
+            customer.updated_at = now;
+        }
+
         if (req.params.first_name) {
             customer.givenName = req.params.first_name;
         }
@@ -471,6 +488,9 @@ module.exports = {
             case 'cn':
                 _key = 'cn';
                 break;
+            case 'approved_for_provisioning':
+                _key = 'approved_for_provisioning';
+                break;
             default:
                 break;
             }
@@ -484,6 +504,7 @@ module.exports = {
                 password.push(req.params[k]);
                 return;
             }
+
 
             var mod = {};
             mod[_key] = [req.params[k]];

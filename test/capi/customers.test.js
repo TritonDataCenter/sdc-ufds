@@ -151,6 +151,7 @@ test('get customer', function (t) {
         t.ifError(err);
         t.ok(obj);
         t.equal(CUSTOMER.login, obj.login);
+        t.ok(obj.approved_for_provisioning);
         t.done();
     });
 });

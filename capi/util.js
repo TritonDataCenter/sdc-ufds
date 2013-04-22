@@ -187,7 +187,10 @@ module.exports = {
                 'memberof',
                 'uuid',
                 'userpassword',
-                '_salt'
+                '_salt',
+                'created_at',
+                'updated_at',
+                'approved_for_provisioning'
             ]
         };
 

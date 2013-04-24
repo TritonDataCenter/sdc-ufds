@@ -38,6 +38,10 @@ dn: ou=fwrules, o=smartdc
 ou: fwrules
 objectclass: organizationalUnit
 
+dn: ou=keyapiprivkeys, o=smartdc
+ou: keyapiprivkeys
+objectclass: organizationalUnit
+
 dn: cn=replicator, datacenter=DATACENTER_NAME, o=smartdc
 cn: replicator
 objectclass: sdcreplicator

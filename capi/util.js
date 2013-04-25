@@ -78,8 +78,10 @@ function _translate(entry) {
     assert.ok(entry);
 
     var d = new Date().toISOString();
-    var created_at = (entry.created_at) ? (new Date(parseInt(entry.created_at, 10)).toISOString()) : d;
-    var updated_at = (entry.updated_at) ? (new Date(parseInt(entry.updated_at, 10)).toISOString()) : d;
+    var created_at = (entry.created_at) ?
+        (new Date(parseInt(entry.created_at, 10)).toISOString()) : d;
+    var updated_at = (entry.updated_at) ?
+        (new Date(parseInt(entry.updated_at, 10)).toISOString()) : d;
     var customer = {
         id: _randomId(),
         uuid: entry.uuid,

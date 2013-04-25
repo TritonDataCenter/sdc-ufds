@@ -11,7 +11,7 @@ if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];
 }
 var helper = require('./helper.js');
-
+var ldap = require('ldapjs');
 
 
 ///--- Globals
@@ -284,6 +284,54 @@ test('search sub filter compound ok', function (t) {
         t.ifError(err);
         t.equal(count, 0);
         t.done();
+    });
+});
+
+
+test('changelog search', function (t) {
+    CLIENT.search('cn=changelog', {
+        scope: 'sub',
+        filter: '(&(changenumber>=0)(changenumber<=5))'
+    }, function (err, res) {
+        t.ifError(err, 'changelog search error');
+        var retrieved = 0;
+        res.on('searchEntry', function (entry) {
+            t.ok(entry.attributes);
+            retrieved++;
+        });
+
+        res.on('error', function (error) {
+            t.ifError(error);
+        });
+
+        res.on('end', function (result) {
+            t.equal(retrieved, 5);
+            t.done();
+        });
+    });
+});
+
+
+test('changelog count', function (t) {
+    CLIENT.search('cn=changelogcount', {
+        filter: '(&(objectclass=*))'
+    }, function (err, res) {
+        t.ifError(err, 'changelogcount search error');
+
+        res.on('searchEntry', function (entry) {
+            t.ok(entry.attributes);
+            t.ok(entry.attributes.some(function (attr) {
+                return (attr.type === 'count');
+            }), 'count attr present');
+        });
+
+        res.on('error', function (error) {
+            t.ifError(error);
+        });
+
+        res.on('end', function (result) {
+            t.done();
+        });
     });
 });
 

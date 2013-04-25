@@ -53,7 +53,8 @@ function SDCPerson() {
             pwdhistory: 4,
             pwdpolicysubentry: 1,
             pwdendtime: 1,
-            _imported: 1
+            _imported: 1,
+            _replicated: 1
         }
     });
 }
@@ -65,7 +66,7 @@ SDCPerson.prototype.validate = function validate(entry, callback) {
     var errors = [];
 
     // Skip validation when importing legacy entries:
-    if (attrs._imported) {
+    if (attrs._imported || attrs._replicated) {
         return callback();
     }
     if (!LOGIN_RE.test(attrs.login[0]) ||

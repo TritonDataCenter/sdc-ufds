@@ -20,7 +20,7 @@
         "crc": "0.2.0",
         "microtime": "0.3.1",
         "moray": "git+ssh://git@git.joyent.com:node-moray.git#6248cbed48f0e86d9eb25bb708cc54ee99ddadde",
-        "ufds-replicator": "git+ssh://git@git.joyent.com:ufds-replicator.git#fd48748",
+        "ufds-replicator": "git+ssh://git@git.joyent.com:ufds-replicator.git#890851e",
         "sigyan": "0.2.0",
         "bcrypt": "0.7.3"
     },

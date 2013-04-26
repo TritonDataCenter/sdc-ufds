@@ -27,7 +27,6 @@ function SDCImage() {
             disabled: 1,
             type: 1,
             os: 1,
-            type: 1,
             activated: 1,
             state: 1
         },

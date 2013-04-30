@@ -124,6 +124,7 @@ test('create customer', function (t) {
         t.ok(obj.approved_for_provisioning);
         t.ok(obj.created_at);
         t.ok(obj.updated_at);
+        t.ok(obj.forgot_password_code);
         CUSTOMER = obj;
         t.done();
     });
@@ -164,6 +165,7 @@ test('customer forgot_password', function (t) {
         t.ok(obj);
         t.equal(CUSTOMER.login, obj.login);
         t.ok(obj.forgot_password_code);
+        t.ok(obj.forgot_password_code !== CUSTOMER.forgot_password_code);
         t.done();
     });
 });

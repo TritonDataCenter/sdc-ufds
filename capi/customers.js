@@ -263,6 +263,9 @@ module.exports = {
             customer.phone = req.params.phone_number;
         }
 
+        customer.forgot_password_code =
+                util.forgotPasswordCode(customer.uuid[0]);
+
         var dn = sprintf('uuid=%s, ou=users, o=smartdc', customer.uuid);
         log.debug({dn: dn, customer: customer}, 'CreateCustomer: saving');
         return req.ldap.add(dn, customer, function (err) {
@@ -278,9 +281,6 @@ module.exports = {
 
             customer.dn = dn;
             customer = util.translateCustomer(customer);
-
-            customer.forgot_password_code =
-                util.forgotPasswordCode(customer.uuid[0]);
 
             var _done = false;
             function done() {
@@ -558,8 +558,41 @@ module.exports = {
     },
 
 
-    del: function del(req, res, next) {
+    forgot_password: function forgot_password(req, res, next) {
         assert.ok(req.customer);
+        assert.ok(req.ldap);
+
+        var log = req.log;
+        var changes = [];
+
+        log.debug({params: req.params}, 'fucking_forgot_password: entered');
+        // If a request has been made to forgot_password, modify it:
+        if (/\/forgot_password/.test(req.url)) {
+            changes.push(new Change({
+                type: 'replace',
+                modification: {
+                    forgot_password_code:
+                        util.forgotPasswordCode(req.params.uuid)
+                }
+            }));
+        }
+        var _dn = req.customer.dn.toString();
+        return req.ldap.modify(_dn, changes, function (err) {
+            if (err) {
+                if (err instanceof ldap.ConstraintViolationError) {
+                    return next(res.sendError([err.message]));
+                } else {
+                    return next(res.sendError([err.toString()]));
+                }
+            }
+
+            log.debug({id: req.params.uuid}, 'fucking_forgot_password: ok');
+            return next();
+        });
+    },
+
+    del: function del(req, res, next) {
+        assert.ok(req.params.uuid);
         assert.ok(req.ldap);
 
         var log = req.log;

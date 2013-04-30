@@ -44,27 +44,13 @@ function _merge(obj1, obj2) {
 }
 
 
-//
-// http://www.youtube.com/watch?v=J7RsYvRSyXs
-//
-// In the ghetto
-// On a cold and gray Chicago mornin'
-// Another little baby child is born
-// In the ghetto
-// (In the ghetto)
-// And his mama cries
-// because if there's one thing that she don't need
-// it's another little hungry mouth to feed
-// In the ghetto
-//
-// Basically, this lets a password token last up to a day, statelessly, since
-// the client doesn't call capi back for a token.
-//
-// Asking for a token at 23:59? fuck off.
-//
+// Damned legacy stuff ...
 function _forgotPasswordCode(customerId) {
     var cipher = crypto.createCipher('aes-128-cbc', AES_KEY);
     var now = new Date();
+    cipher.update('' + (now.getUTCMilliseconds));
+    cipher.update('' + (now.getUTCSeconds() + 1));
+    cipher.update('' + (now.getUTCMinutes() + 1));
     cipher.update('' + (now.getUTCDay() + 1));
     cipher.update('' + now.getUTCDate());
     cipher.update('' + (now.getUTCMonth() + 1));
@@ -139,7 +125,8 @@ function _translate(entry) {
         legacy_id: null,
         deleted_at: null,
         alternate_email_address: null,
-        forgot_password_code: _forgotPasswordCode(entry.uuid),
+        forgot_password_code: entry.forgot_password_code ||
+            _forgotPasswordCode(entry.uuid),
         activation_code: null,
         activated_at: entry._ctime
     });
@@ -192,7 +179,8 @@ module.exports = {
                 '_salt',
                 'created_at',
                 'updated_at',
-                'approved_for_provisioning'
+                'approved_for_provisioning',
+                'forgot_password_code'
             ]
         };
 

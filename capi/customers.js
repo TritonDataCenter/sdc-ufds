@@ -592,7 +592,7 @@ module.exports = {
     },
 
     del: function del(req, res, next) {
-        assert.ok(req.params.uuid);
+        assert.ok(req.customer);
         assert.ok(req.ldap);
 
         var log = req.log;

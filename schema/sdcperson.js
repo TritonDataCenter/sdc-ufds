@@ -54,7 +54,10 @@ function SDCPerson() {
             pwdpolicysubentry: 1,
             pwdendtime: 1,
             _imported: 1,
-            _replicated: 1
+            _replicated: 1,
+            approved_for_provisioning: 1,
+            created_at: 1,
+            updated_at: 1
         }
     });
 }

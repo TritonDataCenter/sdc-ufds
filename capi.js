@@ -241,7 +241,7 @@ function CAPI(config) {
     // CustomerForgotPassword
     server.put('/customers/:uuid/forgot_password',
                 utils.loadCustomer, customers.forgot_password,
-                utils.loadCustomer, function respond(req, res, next) {
+                utils.loadCustomer, function respondForgotPwd(req, res, next) {
                     var customer = utils.translateCustomer(
                         req.customer.toObject());
                     res.send(200, customer);

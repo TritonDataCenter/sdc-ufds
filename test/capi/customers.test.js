@@ -115,12 +115,16 @@ test('create customer', function (t) {
         email_address: DUP_EMAIL,
         password: 'sup3rs3cr3t',
         role: '2',
-        approved_for_provisioning: true
+        approved_for_provisioning: true,
+        first_name: 'Reed',
+        last_name: 'Richards'
     }, function (err, req, res, obj) {
         t.ifError(err);
         t.ok(obj);
         t.equal(obj.login, DUP_LOGIN);
         t.equal(obj.email_address, DUP_EMAIL);
+        t.ok(obj.first_name);
+        t.ok(obj.last_name);
         t.ok(obj.approved_for_provisioning);
         t.ok(obj.created_at);
         t.ok(obj.updated_at);

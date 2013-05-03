@@ -3,7 +3,6 @@
 // See helper.js for customization options.
 //
 
-var extend = require('node.extend');
 var uuid = require('node-uuid');
 var util = require('util');
 
@@ -148,7 +147,9 @@ test('modify add ok', function (t) {
         get(function (err2, entry) {
             t.ifError(err2);
             t.ok(entry);
-            t.deepEqual(extend(USER, change.modification), entry);
+            change.modification.pets.forEach(function (pet) {
+                t.ok(entry.pets.indexOf(pet) !== -1);
+            });
             t.done();
         });
     });
@@ -168,7 +169,7 @@ test('modify replace ok', function (t) {
         get(function (err2, entry) {
             t.ifError(err2);
             t.ok(entry);
-            t.deepEqual(extend(USER, change.modification), entry);
+            t.equal(entry.pets, change.modification.pets);
             t.done();
         });
     });
@@ -179,7 +180,7 @@ test('modify delete ok', function (t) {
     var change = {
         type: 'delete',
         modification: {
-            pets: false
+            pets: []
         }
     };
     CLIENT.modify(USER_DN, change, function (err) {
@@ -188,7 +189,7 @@ test('modify delete ok', function (t) {
         get(function (err2, entry) {
             t.ifError(err2);
             t.ok(entry);
-            t.deepEqual(USER, entry);
+            t.ok(!entry.pets);
             t.done();
         });
     });

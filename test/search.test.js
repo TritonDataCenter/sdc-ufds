@@ -3,7 +3,6 @@
 // See helper.js for customization options.
 //
 
-var extend = require('node.extend');
 var uuid = require('node-uuid');
 var sprintf = require('util').format;
 
@@ -163,7 +162,9 @@ test('search base objectclass=*', function (t) {
         t.equal(count, 1);
         t.equal(results.length, 1);
         t.equal(dn, results[0].dn);
-        t.deepEqual(results[0].attributes, USERS[dn]);
+        Object.keys(USERS[dn]).forEach(function (attr) {
+            t.equal(USERS[dn][attr], results[0].attributes[attr]);
+        });
         t.done();
 
     });
@@ -178,7 +179,9 @@ test('search base eq filter ok', function (t) {
         t.equal(count, 1);
         t.equal(results.length, 1);
         t.equal(dn, results[0].dn);
-        t.deepEqual(results[0].attributes, USERS[dn]);
+        Object.keys(USERS[dn]).forEach(function (attr) {
+            t.equal(USERS[dn][attr], results[0].attributes[attr]);
+        });
         t.done();
     });
 });
@@ -199,7 +202,9 @@ test('search sub substr filter ok', function (t) {
         t.ifError(err);
         t.equal(count, TOTAL_ENTRIES);
         results.forEach(function (r) {
-            t.deepEqual(r.attributes, USERS[r.dn]);
+            Object.keys(USERS[r.dn]).forEach(function (attr) {
+                t.equal(USERS[r.dn][attr], r.attributes[attr]);
+            });
         });
         t.done();
     });
@@ -230,7 +235,9 @@ test('search sub filter ge ok', function (t) {
         t.ifError(err);
         t.equal(count, 1);
         results.forEach(function (r) {
-            t.deepEqual(r.attributes, USERS[r.dn]);
+            Object.keys(USERS[r.dn]).forEach(function (attr) {
+                t.equal(USERS[r.dn][attr], r.attributes[attr]);
+            });
         });
         t.done();
     });
@@ -243,7 +250,9 @@ test('search sub filter le ok', function (t) {
         t.ifError(err);
         t.equal(count, 9);
         results.forEach(function (r) {
-            t.deepEqual(r.attributes, USERS[r.dn]);
+            Object.keys(USERS[r.dn]).forEach(function (attr) {
+                t.equal(USERS[r.dn][attr], r.attributes[attr]);
+            });
         });
         t.done();
     });
@@ -256,7 +265,9 @@ test('search sub filter and ok', function (t) {
         t.ifError(err);
         t.equal(count, 1);
         results.forEach(function (r) {
-            t.deepEqual(r.attributes, USERS[r.dn]);
+            Object.keys(USERS[r.dn]).forEach(function (attr) {
+                t.equal(USERS[r.dn][attr], r.attributes[attr]);
+            });
         });
         t.done();
     });
@@ -270,7 +281,9 @@ test('search sub filter or ok', function (t) {
         t.ifError(err);
         t.equal(count, 2);
         results.forEach(function (r) {
-            t.deepEqual(r.attributes, USERS[r.dn]);
+            Object.keys(USERS[r.dn]).forEach(function (attr) {
+                t.equal(USERS[r.dn][attr], r.attributes[attr]);
+            });
         });
         t.done();
     });

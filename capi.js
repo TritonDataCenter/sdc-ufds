@@ -219,8 +219,8 @@ function CAPI(config) {
     server.on('after', restify.auditLogger({log: log}));
 
     // Show
-    server.get('/customers', customers.list);
-    server.head('/customers', customers.list);
+    server.get('/customers', customers.operators, customers.list);
+    server.head('/customers', customers.operators, customers.list);
 
     // CreateCustomer
     server.post('/customers', customers.create);

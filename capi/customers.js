@@ -30,6 +30,39 @@ var Change = ldap.Change;
 
 module.exports = {
 
+    operators: function operators(req, res, next) {
+        var log = req.log;
+        log.debug('Preload Operators: entered');
+        var opts = {
+            scope: 'base',
+            filter: '(objectclass=groupofuniquenames)'
+        };
+
+        return req.ldap.search(OPERATORS_DN, opts, function (err, gRes) {
+            if (err) {
+                return next(err);
+            }
+
+            gRes.on('searchEntry', function (entry) {
+                if (entry && entry.attributes) {
+                    entry.attributes.forEach(function (a) {
+                        if (a.type === 'uniquemember') {
+                            req.operator_dns = a.vals;
+                        }
+                    });
+                }
+            });
+            gRes.once('error', function (er) {
+                gRes.removeAllListeners('end');
+                return next(er);
+            });
+            gRes.once('end', function () {
+                log.debug('Preload Operators: done');
+                return next();
+            });
+        });
+    },
+
     list: function list(req, res, next) {
         assert.ok(req.ldap);
 
@@ -144,6 +177,15 @@ module.exports = {
             if (limit !== false) {
                 customers = customers.splice(0, limit);
             }
+
+            // CAPI-254: Once we're done, flag operators properly:
+            customers.forEach(function (c) {
+                var c_dn = sprintf('uuid=%s, ou=users, o=smartdc', c.uuid);
+                if (req.operator_dns.indexOf(c_dn) !== -1) {
+                    c.role = 2;
+                    c.role_type = 2;
+                }
+            });
 
             var count = customers.length;
             if (req.accepts('application/xml')) {

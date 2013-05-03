@@ -343,6 +343,7 @@ test('search customer by login (positive match)', function (t) {
         t.ok(Array.isArray(obj));
         t.ok(obj.length);
         t.equal(obj[0].login, CUSTOMER.login);
+        t.equal(obj[0].role, CUSTOMER.role);
         t.done();
     });
 });

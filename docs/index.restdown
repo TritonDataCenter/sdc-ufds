@@ -209,8 +209,8 @@ password reset form in Portal, there's also the possibility to unlock the
 account w/o modifying the password talking straight to the ldap server.
 
 An user is locked when the `sdcPerson` entry has the attribute
-`pwdaccountlockedtime` set, and that value is smaller than the current time,
-(in a way the user will get automatically unlocked after 30 minutes).
+`pwdaccountlockedtime` set, and that value is greater than the current time,
+(it is set in a way the user will get automatically unlocked after 30 minutes).
 
 To immediately unlock an user, the easier way is to save the user information
 into a file and use ldap modify to remove the `pwdaccountlockedtime` attr. For

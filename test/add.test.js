@@ -193,6 +193,25 @@ test('add blacklisted email', function (t) {
 });
 
 
+test('Add case-only different login', function (t) {
+    var ID = uuid();
+    var EMAIL = 'a' + ID.substr(0, 7) + '_test@joyent.com';
+    var DN = sprintf(DN_FMT, ID);
+    var entry = {
+        login: 'ADMIN',
+        email: EMAIL,
+        uuid: ID,
+        userpassword: 'secret123',
+        objectclass: 'sdcperson'
+    };
+    CLIENT.add(DN, entry, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'ConstraintViolationError');
+        t.done();
+    });
+});
+
+
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {
         t.ifError(err);

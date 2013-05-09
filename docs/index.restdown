@@ -394,3 +394,136 @@ for the aforementioned `use_bcrypt` config flag to `true`.
 
 Of course, if there aren't applications trying to auth users through `capi-shim`
 the CAPI shim application should be disabled (`svcadm disable ufds-capi`).
+
+# Working with capi limits
+
+### Find a given user UUID by user login (let's go with mine, remember to restore!):
+
+    sdc-ldap search '(&(objectclass=sdcperson)(login=<login>))'
+
+#### Example:
+
+    sdc-ldap search '(&(objectclass=sdcperson)(login=pedro))'
+
+    dn: uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc
+    cn: Pedro P. Candel
+    company: Joyent Inc.
+    email: example@example.com
+    givenname: Pedro
+    login: pedro
+    objectclass: sdcperson
+    phone: +1234567890
+    pwdchangedtime: 1366098276550
+    sn: P. Candel
+    uuid: dfc6bef2-7f4a-4c24-bb74-949ff395cd72
+    approved_for_provisioning: true
+    created_at: 1366382409973
+    updated_at: 1366382409973
+
+### Find user limits for all DCs using USER UUID
+
+    sdc-ldap search -b 'uuid=<UUID>, ou=users, o=smartdc' objectclass=capilimit
+
+#### Example:
+
+    sdc-ldap search -b 'uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc' objectclass=capilimit
+
+
+### Add a limit for a given user on a given DC
+
+    dn: dclimit=<DC_NAME>, uuid=<UUID>, ou=users, o=smartdc
+    datacenter: <DC_NAME>
+    objectclass: capilimit
+    <IMAGE_NAME>: <VALUE>
+    <IMAGE_NAME>: <VALUE>
+    <IMAGE_NAME>: <VALUE>
+
+
+Save the following on a file, say `dfc6bef2-7f4a-4c24-bb74-949ff395cd72.ldif`:
+
+    dn: dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc
+    datacenter: coal
+    objectclass: capilimit
+    smartos: 5
+
+Make sure your ldif file has no spaces at the beginning of these lines, neither right after the values.
+Then, add with:
+
+    sdc-ldap add -f dfc6bef2-7f4a-4c24-bb74-949ff395cd72.ldif
+
+You should see something like:
+
+    adding new entry "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
+
+
+### Update existing user limit for a given DC
+
+
+    dn: dclimit=<DC_NAME>, uuid=<UUID>, ou=users, o=smartdc
+    changetype: modify
+    replace: <IMAGE_NAME>|add: <IMAGE_NAME>|delete: <IMAGE_NAME>
+    <IMAGE_NAME>: <VALUE>
+
+
+### Case one: Modifying existing limit for a given dataset/image
+
+Let's say we want to change `smartos: 5` to something higher, say 8. We need the following file:
+
+    dn: dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc
+    changetype: modify
+    replace: smartos
+    smartos: 8
+
+Of course, we've saved the file with the same name than before, so we can update by running:
+
+    sdc-ldap modify -f dfc6bef2-7f4a-4c24-bb74-949ff395cd72.ldif
+
+And you will see the following output now:
+
+    modifying entry "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
+
+
+### Case two: Adding a new property (a limit for another image/dataset):
+
+Now, we'll add a limit for an image not already limited for the user:
+
+    dn: dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc
+    changetype: modify
+    add: multiarch
+    multiarch: 3 
+
+Again, we saved as the same file name, we'll run the same command:
+
+    sdc-ldap modify -f dfc6bef2-7f4a-4c24-bb74-949ff395cd72.ldif
+
+And we'll see the same output:
+
+    modifying entry "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
+
+### Case three: We want to remove limits completely for a given image/dataset:
+
+On this case, we're gonna remove the limit for `multiarch`:
+
+    dn: dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc
+    changetype: modify
+    delete: multiarch
+
+Note the absence of the `<IMAGE_NAME>: <VALUE>` line on this case.
+
+Once again!, we saved as the same file name, we'll run the same command:
+
+    sdc-ldap modify -f dfc6bef2-7f4a-4c24-bb74-949ff395cd72.ldif
+
+And we'll see the same output:
+
+    modifying entry "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
+
+
+### Remove a limit completely:
+
+If you want to remove the whole capilimit object from UFDS:
+
+    sdc-ldap delete "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
+
+And, again: please, please, please, make sure you don't have EOL neither EOF whitespaces.
+

@@ -73,6 +73,65 @@ All the attributes starting with `pwd` are related to password policy. Unlike
 the attributes beginning with and underscore, the password policy related
 attributes are not hidden
 
+## Instance Types / Packages (sdcPackage)
+
+The `sdcPackage` type is one of the `uuid=:uuid, ou=packages, o=smartdc`
+entries, and contains all the attributes for a "package".
+These objects should always be stored by uuid.  Here's an example of
+an instance type:
+
+    dn: uuid=7fc87f43-2def-4e6f-9f8c-980b0385b36e, ou=packages, o=smartdc
+    uuid: 7fc87f43-2def-4e6f-9f8c-980b0385b36e
+    active: true
+    cpu_cap: 25
+    default: false
+    group: Standard
+    description: Micro 0.25 GB RAM 0.125 CPUs 16 GB Disk
+    max_lwps: 4000
+    max_physical_memory: 256
+    max_swap: 512
+    name: g3-standard-0.25-smartos
+    common_name: Standard 0.25
+    quota: 16384
+    networks: ["1e7bb0e1-25a9-43b6-bb19-f79ae9540b39", "193d6804-256c-4e89-a4cd-46f045959993"]
+    version: 1.0.0
+    zfs_io_priority: 100
+    fss: 25.0625
+    cpu_burst_ratio: 0.5
+    ram_ratio: 1.995012469
+    overprovision_cpu: 2
+    overprovision_memory: 1
+    objectclass: sdcPackage
+
+||**Attribute**||**Required**||**Explanation**||
+||uuid||Mandatory||UUID for the sdcPackage||
+||owner_uuid||Optional||UUID of the owner of this sdcPackage||
+||active||Mandatory||is this provisionable: true or false||
+||vcpus||Mandatory if type == kvm||number of cpus to show, Integer 1 - 64||
+||cpu_cap||Mandatory||CPU CAP,Integer 20-1000, formula: VCPU * Bursting Ratio * OverProvision Ratio * 100 + (vCPU <= 1 ? 50: 100)||
+||default||Mandatory||is this the default instance type: true or false||
+||group||Mandatory||group of associated instance types, either: Standard, High CPU, High Memory, High Storage, High IO or the Customer's Name||
+||description||Mandatory||description of this instance type||
+||max_lwps||Mandatory||max processes, Integer||
+||max_physical_memory||Mandatory||max RAM in MB, Integer||
+||max_swap||Mandatory||max SWAP in MB, Integer||
+||name||Mandatory||API name, using this formula: [version]-[familyname]-[RAM GB]-[type]-[flags], version is currently g3, familyname is group, type is either smartos or kvm, flags is to catch cluster computes (cc)||
+||common_name||Mandatory||Name displayed in the Portal||
+||quota||Mandatory||disk size in MB||
+||networks||Optional||List of networks to associate with||
+||version||Mandatory||semver version number||
+||parent||Mandatory, if created for customer||API name of the instance type this was cloned from||
+||traits||Optional||set of traits for provisioning, currently limited to ssd:true and storage:true by current server installation||
+||zfs_io_priority||Mandatory||ZFS IO Priority, Integer 0 - 1000||
+||fss||Mandatory||Typically computed value, formula: OverProvision Ratio == 1 ? CPU_CAP: (Guest DRAM/Host DRAM provisionable) * Host CPUs * 100||
+||cpu_burst_ratio||Optional||Typically computed value, formula: (CPU_CAP / (OverProvision Ratio * Burst Ratio))/FSS||
+||ram_ratio||Optional||Typically computed value, formula: RAM GB/((CPU_CAP/100)*Bursting Ratio * OverProvision Ratio)||
+||overprovision_cpu||Optional||Overprovision CPU, 1=don't overprovision, 2=overprovision||
+||overprovision_memory||Optional||Overprovision Memory, 1=don't overprovision, 2=overprovision||
+||overprovision_storage||Optional||Overprovision Storage, 1=don't overprovision, 2=overprovision||
+||overprovision_network||Optional||Overprovision Network, 1=don't overprovision, 2=overprovision||
+||overprovision_io||Optional||Overprovision IO, 1=don't overprovision, 2=overprovision||
+
 ## SSH Keys (sdcKey)
 
 The `sdcKey` objectclass holds SSH keys for tenants, as well as the

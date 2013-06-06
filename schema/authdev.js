@@ -26,7 +26,7 @@ function Authdev() {
 util.inherits(Authdev, Validator);
 
 
-Authdev.prototype.validate = function validate(entry, callback) {
+Authdev.prototype.validate = function validate(entry, config, callback) {
     var attrs = entry.attributes;
     var errors = [];
 

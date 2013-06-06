@@ -40,7 +40,7 @@ function AmonProbe() {
 util.inherits(AmonProbe, Validator);
 
 
-AmonProbe.prototype.validate = function validate(entry, callback) {
+AmonProbe.prototype.validate = function validate(entry, config, callback) {
     var attrs = entry.attributes;
     var errors = [];
 

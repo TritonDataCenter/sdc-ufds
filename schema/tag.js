@@ -36,7 +36,7 @@ function Tag() {
 util.inherits(Tag, Validator);
 
 
-Tag.prototype.validate = function validate(entry, callback) {
+Tag.prototype.validate = function validate(entry, config, callback) {
     var errors = [];
     var attrs = entry.attributes;
 

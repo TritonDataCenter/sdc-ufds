@@ -45,7 +45,7 @@ function VM() {
 util.inherits(VM, Validator);
 
 
-VM.prototype.validate = function validate(entry, callback) {
+VM.prototype.validate = function validate(entry, config, callback) {
     var attrs = entry.attributes;
     var errors = [];
 

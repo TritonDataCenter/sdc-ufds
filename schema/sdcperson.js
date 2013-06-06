@@ -64,12 +64,12 @@ function SDCPerson() {
 util.inherits(SDCPerson, Validator);
 
 
-SDCPerson.prototype.validate = function validate(entry, callback) {
+SDCPerson.prototype.validate = function validate(entry, config, callback) {
     var attrs = entry.attributes;
     var errors = [];
 
     // Skip validation when importing legacy entries:
-    if (attrs._imported || attrs._replicated) {
+    if (attrs._imported || (attrs._replicated && !config.ufds_is_master)) {
         return callback();
     }
     if (!LOGIN_RE.test(attrs.login[0]) ||

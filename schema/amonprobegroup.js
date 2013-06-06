@@ -34,7 +34,7 @@ function AmonProbeGroup() {
 util.inherits(AmonProbeGroup, Validator);
 
 
-AmonProbeGroup.prototype.validate = function validate(entry, callback) {
+AmonProbeGroup.prototype.validate = function validate(entry, config, callback) {
     var errors = [];
     if (errors.length)
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));

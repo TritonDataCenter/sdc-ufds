@@ -29,7 +29,8 @@ function GroupOfUniqueNames() {
 util.inherits(GroupOfUniqueNames, Validator);
 
 
-GroupOfUniqueNames.prototype.validate = function validate(entry, callback) {
+GroupOfUniqueNames.prototype.validate =
+function validate(entry, config, callback) {
     var members = entry.attributes.uniquemember || [];
 
     members.sort();

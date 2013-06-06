@@ -6,6 +6,7 @@
     "rootPassword": "secret",
     "logLevel": "info",
     "use_bcrypt": false,
+    "ufds_is_master": true,
     "moray": {
         "url": "tcp://10.2.201.13:2020",
         "connectTimeout": 1000,

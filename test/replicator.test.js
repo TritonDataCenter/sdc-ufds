@@ -43,7 +43,7 @@ var QUERIES_TWO = [
 ];
 
 var REMOTE_ONE = {
-	url: process.env.REMOTE_UFDS_URL || 'ldaps://10.99.99.14',
+	url: process.env.REMOTE_UFDS_URL || 'ldaps://10.99.99.18',
 	queries: QUERIES_ONE,
 	maxConnections: 1,
 	bindDN: 'cn=root',
@@ -51,7 +51,7 @@ var REMOTE_ONE = {
 };
 
 var REMOTE_TWO = {
-	url: process.env.REMOTE_UFDS_URL || 'ldaps://10.99.99.14',
+	url: process.env.REMOTE_UFDS_URL || 'ldaps://10.99.99.18',
 	queries: QUERIES_TWO,
 	maxConnections: 1,
 	bindDN: 'cn=root',
@@ -169,9 +169,8 @@ exports.catchUpDelete = function(t) {
 
 
 exports.cleanup = function(t) {
-    rep.once('stopped', function () {
+	rep.stop();
+	rep.once('stopped', function () {
         t.done();
     });
-
-	rep.stop();
 };

@@ -15,7 +15,7 @@ var LOG = bunyan.createLogger({
 });
 
 var client = moray.createClient({
-    host: process.env.MORAY_IP || '10.99.99.13',
+    host: process.env.MORAY_IP || '10.99.99.17',
     port: 2020,
     log: LOG
 });

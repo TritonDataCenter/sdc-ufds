@@ -243,7 +243,7 @@
     "moray": {
       "version": "1.0.0",
       "from": "moray@git+ssh://git@git.joyent.com:node-moray.git#6248cbed48f0e86d9eb25bb708cc54ee99ddadde",
-      "resolved": "git+ssh://git@git.joyent.com/:node-moray.git#6248cbed48f0e86d9eb25bb708cc54ee99ddadde",
+      "resolved": "git+ssh://git@git.joyent.com:node-moray.git#6248cbed48f0e86d9eb25bb708cc54ee99ddadde",
       "dependencies": {
         "assert-plus": {
           "version": "0.1.2",
@@ -337,7 +337,7 @@
     "ufds-replicator": {
       "version": "0.1.0",
       "from": "ufds-replicator@git+ssh://git@git.joyent.com:ufds-replicator.git#f079b13",
-      "resolved": "git+ssh://git@git.joyent.com/:ufds-replicator.git#f079b13c8f2c1e8f80acde24ddd81a5d83b6f8b1",
+      "resolved": "git+ssh://git@git.joyent.com:ufds-replicator.git#f079b13c8f2c1e8f80acde24ddd81a5d83b6f8b1",
       "dependencies": {
         "nopt": {
           "version": "1.0.10",

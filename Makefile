@@ -123,6 +123,7 @@ release: all docs
                 $(ROOT)/capi.js \
                 $(ROOT)/replicator.js \
                 $(ROOT)/data \
+		$(ROOT)/bin \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \

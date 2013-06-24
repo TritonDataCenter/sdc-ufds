@@ -349,6 +349,31 @@ test('changelog count', function (t) {
 });
 
 
+test('latestchangenumber', function (t) {
+    CLIENT.search('cn=latestchangenumber', {
+        filter: '(&(objectclass=*))'
+    }, function (err, res) {
+        t.ifError(err, 'latestchangenumber search error');
+
+        res.on('searchEntry', function (entry) {
+            t.ok(entry.attributes);
+            t.ok(entry.attributes.some(function (attr) {
+                return (attr.type === 'count');
+            }), 'count attr present');
+        });
+
+        res.on('error', function (error) {
+            t.ifError(error);
+            t.done();
+        });
+
+        res.on('end', function (result) {
+            t.done();
+        });
+    });
+});
+
+
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {
         t.ifError(err);

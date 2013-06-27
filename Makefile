@@ -130,6 +130,7 @@ release: all docs
 		$(ROOT)/package.json \
 		$(ROOT)/npm-shrinkwrap.json \
 		$(ROOT)/schema \
+		$(ROOT)/sapi_manifests \
 		$(ROOT)/smf \
 		$(ROOT)/test \
 		$(TMPDIR)/root/opt/smartdc/ufds/

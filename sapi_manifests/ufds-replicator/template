@@ -12,7 +12,8 @@
         "queries": [
             "/ou=users, o=smartdc??sub?(&(!(objectclass=amonprobe))(!(objectclass=amonprobegroup)))",
             "/o=smartdc??sub?(objectclass=emailblacklist)",
-            "/ou=groups, o=smartdc??sub?(objectclass=groupofuniquenames)"
+            "/ou=groups, o=smartdc??sub?(objectclass=groupofuniquenames)",
+            "/o=smartdc??sub?(objectclass=keyapiprivkey)"
         ],
         "maxConnections": 1,
         "bindDN": "{{{ufds_ldap_root_dn}}}",

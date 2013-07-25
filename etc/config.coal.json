@@ -1,4 +1,5 @@
 {
+    "// Note": "This is a convenience config file. sapi_manifests/ufds/template is the authority.",
     "host": "127.0.0.1",
     "port": 1389,
     "ufds": "ldap://127.0.0.1:1389",
@@ -86,7 +87,8 @@
             "_replicated": { "type": "string" },
             "approved_for_provisioning": { "type": "string" },
             "created_at": { "type": "number" },
-            "updated_at": { "type": "number" }
+            "updated_at": { "type": "number" },
+            "origin": { "type": "string" }
         }
     }
 }

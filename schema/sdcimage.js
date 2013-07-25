@@ -35,6 +35,7 @@ function SDCImage() {
             files: 1,
             description: 1,
             requirements: 1,
+            origin: 1,
             acl: 0,  /* zero or more */
             datacenter: 0,  /* one or more */
             urn: 1  /* DEPRECATED */

@@ -135,7 +135,6 @@ release: all docs
 		$(ROOT)/smf \
 		$(ROOT)/test \
 		$(TMPDIR)/root/opt/smartdc/ufds/
-	cp $(ROOT)/etc/config.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
 	cp $(ROOT)/etc/replicator.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(TMPDIR)

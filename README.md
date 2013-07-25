@@ -20,12 +20,12 @@ backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
     cd ufds
     git submodule update --init
     make all
-    node main.js -f ./etc/ufds.laptop.config.json -d 2 2>&1 | bunyan
+    node main.js -f ./etc/config.coal.json -d 2 2>&1 | bunyan
 
 This assumes several things:
 
 - You've got a moray instance running exactly how it's specified on the
-  config file `ufds.laptop.config.json`.
+  config file `etc/config.coal.json`.
 - Your node version is greater than 0.6 (package says 0.7, but it's working OK
   with 0.6.x so far).
 - You want to see debug output. If you don't, remove the `-d 2`, but it's

@@ -36,6 +36,8 @@ function SDCImage() {
             description: 1,
             requirements: 1,
             origin: 1,
+            tag: 0,  /* zero or more */
+            billingtag: 0,  /* zero or more */
             acl: 0,  /* zero or more */
             datacenter: 0,  /* one or more */
             urn: 1  /* DEPRECATED */

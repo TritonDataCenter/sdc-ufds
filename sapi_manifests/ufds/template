@@ -89,7 +89,9 @@
             "approved_for_provisioning": { "type": "string" },
             "created_at": { "type": "number" },
             "updated_at": { "type": "number" },
-            "origin": { "type": "string" }
+            "origin": { "type": "string" },
+            "tag": { "type": "string" },
+            "billingtag": { "type": "string" }
         }
     }
 }

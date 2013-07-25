@@ -53,8 +53,6 @@
             "postalcode": { "type": "string" },
             "agent": { "type": "string" },
             "owner": { "type": "string" },
-            "name": { "type": "string" },
-            "version": { "type": "string" },
             "fromtag": { "type": "string" },
             "totag": { "type": "string" },
             "fromvm": { "type": "string" },
@@ -88,10 +86,7 @@
             "_replicated": { "type": "string" },
             "approved_for_provisioning": { "type": "string" },
             "created_at": { "type": "number" },
-            "updated_at": { "type": "number" },
-            "origin": { "type": "string" },
-            "tag": { "type": "string" },
-            "billingtag": { "type": "string" }
+            "updated_at": { "type": "number" }
         }
     }
 }

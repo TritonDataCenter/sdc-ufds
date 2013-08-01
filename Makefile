@@ -32,6 +32,10 @@ JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -f tools/jsstyle.conf
 SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 			smf/manifests/ufds-capi.xml.in \
+			smf/manifests/ufds-capi-8081.xml.in \
+			smf/manifests/ufds-capi-8082.xml.in \
+			smf/manifests/ufds-capi-8083.xml.in \
+			smf/manifests/ufds-capi-8084.xml.in \
 			smf/manifests/ufds-replicator.xml.in
 
 CLEAN_FILES	+= node_modules cscope.files

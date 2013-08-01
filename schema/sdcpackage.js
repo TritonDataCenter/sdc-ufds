@@ -57,7 +57,8 @@ function Package() {
         },
         optional: {
             vcpus: 1,
-            traits: 1
+            traits: 1,
+            min_platform: 1
         },
         immutable: [
             'uuid',

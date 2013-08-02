@@ -19,7 +19,7 @@
         "restify": "2.3.4",
         "crc": "0.2.0",
         "microtime": "0.3.1",
-        "moray": "git+ssh://git@git.joyent.com:node-moray.git#6248cbed48f0e86d9eb25bb708cc54ee99ddadde",
+        "moray": "git+ssh://git@git.joyent.com:node-moray.git#ad55e78f",
         "ufds-replicator": "git+ssh://git@git.joyent.com:ufds-replicator.git#4468eca",
         "sigyan": "0.2.0",
         "bcrypt": "0.7.3"

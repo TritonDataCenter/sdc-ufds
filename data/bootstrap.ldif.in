@@ -54,7 +54,7 @@ pwdcheckquality: function checkPassword(pwd, cb) {if (!/[a-zA-Z]+/.test(pwd) || 
 pwdminlength: 7
 pwdmaxfailure: 6
 pwdlockoutduration: 1800
-pwdmaxage: 7776000
+pwdmaxage: 253404889200000
 
 dn: cn=readers, ou=groups, o=smartdc
 objectclass: groupOfUniqueNames

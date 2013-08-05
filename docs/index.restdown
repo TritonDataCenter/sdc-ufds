@@ -281,11 +281,22 @@ we'll save the information into a file `/tmp/298ef9d9-512e-419b-8dc2-915b7c99c75
 including:
 
     dn: uuid=298ef9d9-512e-419b-8dc2-915b7c99c75b, ou=users, o=smartdc
+    changetype: modify
     delete: pwdaccountlockedtime
 
 and then modify the entry with:
 
     sdc-ldap modify -f /tmp/298ef9d9-512e-419b-8dc2-915b7c99c75b.ldif
+
+
+Additionally, if an user password has expired, the user will have a `pwdendtime`
+value smaller than the current time in milliseconds, and the account will be
+locked. In order to remove this lock, the procedure above can also be used to
+remove the `pwdendtime` value:
+
+    dn: uuid=298ef9d9-512e-419b-8dc2-915b7c99c75b, ou=users, o=smartdc
+    changetype: modify
+    delete: pwdendtime
 
 
 ## Adding emails to blacklist
@@ -585,4 +596,46 @@ If you want to remove the whole capilimit object from UFDS:
     sdc-ldap delete "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
 
 And, again: please, please, please, make sure you don't have EOL neither EOF whitespaces.
+
+# Development
+
+## Manually encrypting passwords using SHA1
+
+In case you need to manually encrypt a password to compare with the automatically encrypted
+values for development purposes, the procedure to follow would be:
+
+1. Login into the `ufds` zone and get the `salt` value for the desired user UUID using
+   `ldapjs-search`:
+
+    [root@headnode (coal) ~]# sdc-login ufds
+    [Connected to zone 'ad83eb90-a9e0-4ba5-ab90-3fef6047ca4a' pts/2]
+    Last login: Mon Aug  5 11:37:58 on pts/2
+    [root@ad83eb90-a9e0-4ba5-ab90-3fef6047ca4a (coal:ufds0) ~]# ldapjs-search -u ldaps://127.0.0.1 -D cn=root -w secret -c 1.3.6.1.4.1.38678.1 -b o=smartdc "(uuid=930896af-bf8c-48d4-885c-6573a94b1853)"|json _salt
+    396824f1cce568df18e09482eb60ae3e3d5fcf96
+
+2. Use `node` from the `ufds` zone to encrypt the password with the desired value:
+
+
+    [root@ad83eb90-a9e0-4ba5-ab90-3fef6047ca4a (coal:ufds0) ~]# node
+    > var crypto = require('crypto');
+    undefined
+    > var salt = '396824f1cce568df18e09482eb60ae3e3d5fcf96'
+    undefined
+    > var password = 'testing123'
+    undefined
+    > var hash = crypto.createHash('sha1');
+    undefined
+    > hash.update('--');
+    {}
+    > hash.update(salt);
+    {}
+    > hash.update('--');
+    {}
+    > hash.update(password);
+    {}
+    > hash.update('--');
+    {}
+    > hash.digest('hex');
+    'bf5c7ad26e7a7a7d8459075a19e8930596281410'
+
 

@@ -86,7 +86,8 @@
             "_replicated": { "type": "string" },
             "approved_for_provisioning": { "type": "string" },
             "created_at": { "type": "number" },
-            "updated_at": { "type": "number" }
+            "updated_at": { "type": "number" },
+            "expires_at": { "type": "string" }
         }
     }
 }

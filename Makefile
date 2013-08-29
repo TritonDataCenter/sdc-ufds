@@ -74,7 +74,7 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS)
+all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS) sdc-scripts
 	$(NPM) install && $(NPM) update
 
 $(NODEUNIT): | $(NPM_EXEC)
@@ -139,6 +139,9 @@ release: all docs
 		$(ROOT)/smf \
 		$(ROOT)/test \
 		$(TMPDIR)/root/opt/smartdc/ufds/
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/sdc-boot/scripts
+	cp $(ROOT)/deps/sdc-scripts/*.sh $(TMPDIR)/root/opt/smartdc/sdc-boot/scripts
+	cp $(ROOT)/sdc-boot/*.sh $(TMPDIR)/root/opt/smartdc/sdc-boot/
 	cp $(ROOT)/etc/replicator.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(TMPDIR)

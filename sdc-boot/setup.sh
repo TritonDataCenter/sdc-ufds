@@ -47,8 +47,6 @@ UFDS_ADMIN_KEY_OPENSSH=$(json -f ${METADATA} ufds_admin_key_openssh)
 
 IS_UPDATE=$(json -f ${METADATA} IS_UPDATE)
 
-/opt/smartdc/bin/configure || fatal "Unable to configure zone."
-
 echo "Adding log rotation"
 logadm -w ufds-master -C 48 -s 100m -p 1h \
     /var/svc/log/smartdc-application-ufds-master:default.log

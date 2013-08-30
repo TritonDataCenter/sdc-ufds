@@ -13,7 +13,8 @@
         "retry": {
             "retries": 3,
             "minTimeout": 1000
-        }
+        },
+        "version": 3
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -53,6 +54,8 @@
             "postalcode": { "type": "string" },
             "agent": { "type": "string" },
             "owner": { "type": "string" },
+            "name": { "type": "string" },
+            "version": { "type": "string" },
             "fromtag": { "type": "string" },
             "totag": { "type": "string" },
             "fromvm": { "type": "string" },

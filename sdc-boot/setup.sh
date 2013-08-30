@@ -47,6 +47,25 @@ UFDS_ADMIN_KEY_OPENSSH=$(json -f ${METADATA} ufds_admin_key_openssh)
 
 IS_UPDATE=$(json -f ${METADATA} IS_UPDATE)
 
+# NOTE: this was moved here from configure where it used to live and be called
+# from configure.  There doesn't seem to be a good reason to import the manifest
+# on every boot.
+LDAPTLS_REQCERT=allow
+
+echo "Importing SMF Manifests"
+/usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-master.xml
+/usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-capi.xml
+
+IS_MASTER=$(cat /opt/smartdc/ufds/etc/config.json | /usr/bin/json ufds_is_master)
+if [[ "${IS_MASTER}" == "false" ]]; then
+  /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-replicator.xml
+fi
+
+# We are intentionally giving UFDS service some room to create the required
+# moray buckets before it gets called to add bootstrap data.
+# XXX: do we still need to do this?
+sleep 10
+
 echo "Adding log rotation"
 logadm -w ufds-master -C 48 -s 100m -p 1h \
     /var/svc/log/smartdc-application-ufds-master:default.log

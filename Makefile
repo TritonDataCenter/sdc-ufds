@@ -139,9 +139,9 @@ release: all docs
 		$(ROOT)/smf \
 		$(ROOT)/test \
 		$(TMPDIR)/root/opt/smartdc/ufds/
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/sdc-boot/scripts
-	cp $(ROOT)/deps/sdc-scripts/*.sh $(TMPDIR)/root/opt/smartdc/sdc-boot/scripts
-	cp $(ROOT)/sdc-boot/*.sh $(TMPDIR)/root/opt/smartdc/sdc-boot/
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/sdc-boot
+	cp -R $(ROOT)/deps/sdc-scripts/* $(TMPDIR)/root/opt/smartdc/sdc-boot/
+	cp -R $(ROOT)/sdc-boot/* $(TMPDIR)/root/opt/smartdc/sdc-boot/
 	cp $(ROOT)/etc/replicator.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(TMPDIR)
@@ -164,3 +164,5 @@ else
 endif
 include ./tools/mk/Makefile.smf.targ
 include ./tools/mk/Makefile.targ
+
+sdc-scripts: deps/%/.git

@@ -165,4 +165,4 @@ endif
 include ./tools/mk/Makefile.smf.targ
 include ./tools/mk/Makefile.targ
 
-sdc-scripts: deps/%/.git
+sdc-scripts: deps/sdc-scripts/.git

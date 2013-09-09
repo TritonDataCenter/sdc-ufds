@@ -139,9 +139,9 @@ release: all docs
 		$(ROOT)/smf \
 		$(ROOT)/test \
 		$(TMPDIR)/root/opt/smartdc/ufds/
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/sdc-boot
-	cp -R $(ROOT)/deps/sdc-scripts/* $(TMPDIR)/root/opt/smartdc/sdc-boot/
-	cp -R $(ROOT)/sdc-boot/* $(TMPDIR)/root/opt/smartdc/sdc-boot/
+	@mkdir -p $(TMPDIR)/root/opt/smartdc/boot
+	cp -R $(ROOT)/deps/sdc-scripts/* $(TMPDIR)/root/opt/smartdc/boot/
+	cp -R $(ROOT)/boot/* $(TMPDIR)/root/opt/smartdc/boot/
 	cp $(ROOT)/etc/replicator.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
 	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(TMPDIR)

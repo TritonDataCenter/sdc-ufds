@@ -8,7 +8,8 @@
       "dependencies": {
         "mv": {
           "version": "0.0.4",
-          "from": "mv@0.0.4"
+          "from": "mv@0.0.4",
+          "resolved": "https://registry.npmjs.org/mv/-/mv-0.0.4.tgz"
         },
         "dtrace-provider": {
           "version": "0.2.8",
@@ -57,7 +58,8 @@
             },
             "mv": {
               "version": "0.0.4",
-              "from": "mv@0.0.4"
+              "from": "mv@0.0.4",
+              "resolved": "https://registry.npmjs.org/mv/-/mv-0.0.4.tgz"
             }
           }
         },
@@ -111,9 +113,9 @@
         }
       }
     },
-    "node-uuid": {
-      "version": "1.4.0",
-      "from": "node-uuid@1.4.0"
+    "libuuid": {
+      "version": "0.1.2",
+      "from": "libuuid@0.1.2"
     },
     "nopt": {
       "version": "2.1.1",
@@ -143,7 +145,8 @@
           "dependencies": {
             "mv": {
               "version": "0.0.4",
-              "from": "mv@0.0.4"
+              "from": "mv@0.0.4",
+              "resolved": "https://registry.npmjs.org/mv/-/mv-0.0.4.tgz"
             }
           }
         },
@@ -185,6 +188,10 @@
           "version": "0.2.5",
           "from": "negotiator@0.2.5"
         },
+        "node-uuid": {
+          "version": "1.4.0",
+          "from": "node-uuid@1.4.0"
+        },
         "once": {
           "version": "1.1.1",
           "from": "once@1.1.1"
@@ -199,7 +206,8 @@
         },
         "spdy": {
           "version": "1.4.6",
-          "from": "spdy@1.4.6"
+          "from": "spdy@1.4.6",
+          "resolved": "https://registry.npmjs.org/spdy/-/spdy-1.4.6.tgz"
         },
         "verror": {
           "version": "1.3.5",
@@ -320,6 +328,10 @@
             }
           }
         },
+        "node-uuid": {
+          "version": "1.4.0",
+          "from": "node-uuid@1.4.0"
+        },
         "once": {
           "version": "1.1.1",
           "from": "once@1.1.1"
@@ -335,6 +347,10 @@
       "from": "ufds-replicator@git+ssh://git@git.joyent.com:ufds-replicator.git#4468eca",
       "resolved": "git+ssh://git@git.joyent.com:ufds-replicator.git#4468ecab3ad6d2c1ecc73190ad38a8be3296c5d4",
       "dependencies": {
+        "node-uuid": {
+          "version": "1.4.0",
+          "from": "node-uuid@1.4.0"
+        },
         "nopt": {
           "version": "1.0.10",
           "from": "nopt@1.0.10",
@@ -441,6 +457,7 @@
         "vasync": {
           "version": "1.3.2",
           "from": "vasync@1.3.2",
+          "resolved": "https://registry.npmjs.org/vasync/-/vasync-1.3.2.tgz",
           "dependencies": {
             "verror": {
               "version": "1.1.0",
@@ -479,6 +496,7 @@
     "bcrypt": {
       "version": "0.7.3",
       "from": "bcrypt@0.7.3",
+      "resolved": "https://registry.npmjs.org/bcrypt/-/bcrypt-0.7.3.tgz",
       "dependencies": {
         "bindings": {
           "version": "1.0.0",

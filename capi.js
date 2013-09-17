@@ -10,7 +10,10 @@ var Logger = require('bunyan');
 var ldap = require('ldapjs');
 var nopt = require('nopt');
 var restify = require('restify');
-var uuid = require('node-uuid');
+var libuuid = require('libuuid');
+function uuid() {
+    return (libuuid.create());
+}
 
 var customers = require('./capi/customers');
 var keys = require('./capi/keys');

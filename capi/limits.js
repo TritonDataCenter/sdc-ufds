@@ -7,7 +7,10 @@ var sprintf = mod_util.format;
 
 var ldap = require('ldapjs');
 var restify = require('restify');
-var uuid = require('node-uuid');
+var libuuid = require('libuuid');
+function uuid() {
+    return (libuuid.create());
+}
 
 
 

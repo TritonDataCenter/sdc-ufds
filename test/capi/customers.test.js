@@ -13,7 +13,10 @@ if (require.cache[h]) {
     delete require.cache[h];
 }
 var helper = require('../helper.js');
-var uuid = require('node-uuid');
+var libuuid = require('libuuid');
+function uuid() {
+    return (libuuid.create());
+}
 
 ///--- Globals
 var test = helper.test;

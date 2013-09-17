@@ -6,7 +6,10 @@
 var ldap = require('ldapjs');
 var util = require('util');
 var sprintf = util.format;
-var uuid = require('node-uuid');
+var libuuid = require('libuuid');
+function uuid() {
+    return (libuuid.create());
+}
 
 if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];

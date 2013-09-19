@@ -143,7 +143,7 @@ test('add child manage DSA', function (t) {
         type: '2.16.840.1.113730.3.4.2',
         criticality: true
     }));
-    var dn = sprintf(DN_FMT, uuid.v4());
+    var dn = sprintf(DN_FMT, uuid());
     var entry = {
         login: 'a' + uuid().substr(0, 7),
         objectclass: 'sdcperson'

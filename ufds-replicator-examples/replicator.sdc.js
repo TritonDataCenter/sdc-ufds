@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2012, Joyent, Inc. All rights reserved.
+ *
+ * A brief overview of this source file: what is its purpose.
  */
 
 var path = require('path');
@@ -8,11 +10,11 @@ var fs = require('fs');
 var nopt = require('nopt');
 var bunyan = require('bunyan');
 
-var Replicator = require('./lib/ufds-replicator');
+var Replicator = require('../lib/ufds-replicator');
 
 
 var LOG = bunyan.createLogger({
-    name: 'ufds-replicator',
+	name: 'ufds-replicator',
     stream: process.stdout,
     serializers: bunyan.stdSerializers
 });
@@ -61,7 +63,7 @@ function errorAndExit(err, message) {
 function processConfig() {
     var _config,
         parsed = nopt(OPTS, SHORT_OPTS, process.argv, 2),
-        file = parsed.file || path.join(__dirname, 'etc/replicator.json');
+        file = parsed.file || __dirname + '/config.sdc.json';
 
     if (parsed.help) {
         usage(0);
@@ -77,7 +79,7 @@ function processConfig() {
         process.exit(1);
     }
 
-    LOG.level(_config.logLevel || 'info');
+    LOG.level(_config.logLevel || 'debug');
 
     LOG.debug('config processed: %j', _config);
     _config.log = LOG;
@@ -87,32 +89,31 @@ function processConfig() {
 
 function main() {
     var config = processConfig();
-    var rep;
+	var rep;
 
-    rep = new Replicator(config);
-    rep.init();
+	rep = new Replicator(config);
+	rep.init();
 
 
-    rep.once('started', function () {
+	rep.once('started', function () {
         LOG.info('Replicator has started!');
-    });
+	});
 
 
-    rep.on('caughtup', function (id, cn) {
-        LOG.info('Replicator %d has caught up with UFDS at changenumber %s',
-            id, cn);
-    });
+	rep.on('caughtup', function (id, cn) {
+		LOG.info('Replicator %d has caught up with UFDS at changenumber %s', id, cn);
+	});
 
 
-    rep.once('stopped', function () {
-        LOG.info('Replicator has stopped!');
-        process.exit(0);
-    });
+	rep.once('stopped', function () {
+		LOG.info('Replicator has stopped!');
+		process.exit(0);
+	});
 
 
-    process.on('SIGINT', function () {
-        rep.stop();
-    });
+	process.on('SIGINT', function () {
+		rep.stop();
+	});
 }
 
 process.on('uncaughtException', function (err) {

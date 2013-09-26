@@ -23,7 +23,7 @@ NODEUNIT	:= ./node_modules/.bin/nodeunit
 #
 # Files
 #
-DOC_FILES	 = index.restdown
+DOC_FILES	 = index.restdown ufds-replicator.restdown
 JS_FILES	:= $(shell ls *.js) \
                    $(shell find lib capi schema test -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf

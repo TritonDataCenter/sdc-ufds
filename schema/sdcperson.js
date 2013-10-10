@@ -12,6 +12,7 @@ var Validator = require('../lib/schema/validator');
 ///--- Globals
 
 var LOGIN_RE = /^[a-zA-Z][a-zA-Z0-9_\.@]+$/;
+var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 
 var RESERVED_LOGINS = [
     // Special 'local' user for Dataset.cloud_name for a dataset added to MAPI
@@ -72,11 +73,20 @@ SDCPerson.prototype.validate = function validate(entry, config, callback) {
     if (attrs._imported || (attrs._replicated && !config.ufds_is_master)) {
         return callback();
     }
-    if (!LOGIN_RE.test(attrs.login[0]) ||
-        attrs.login[0].length < 3 ||
-        attrs.login[0].length > 32 ||
-        RESERVED_LOGINS.indexOf(attrs.login[0]) !== -1) {
-        errors.push('login: ' + attrs.login[0] + ' is invalid');
+    // Account sub-users: If we find a pattern "UUID/<something>" for login,
+    // we'll extract '<something>' as login and run validations against it,
+    // not the whole thing.
+    var login = attrs.login[0];
+
+    if (login.indexOf('/') === 36 && UUID_RE.test(login.substr(0, 36))) {
+        login = login.substr(37);
+    }
+
+    if (!LOGIN_RE.test(login) ||
+        login.length < 3 ||
+        login.length > 32 ||
+        RESERVED_LOGINS.indexOf(login) !== -1) {
+        errors.push('login: ' + login + ' is invalid');
     }
 
     if (errors.length) {

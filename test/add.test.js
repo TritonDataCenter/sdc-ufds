@@ -214,6 +214,79 @@ test('Add case-only different login', function (t) {
     });
 });
 
+// Sub-users:
+var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
+
+test('Add sub-user', function (t) {
+    var ID = uuid();
+    var login = 'a' + ID.substr(0, 7);
+    var EMAIL = login + '_test@joyent.com';
+    var entry = {
+        login: login,
+        email: EMAIL,
+        uuid: ID,
+        userpassword: 'secret123',
+        objectclass: 'sdcperson'
+    };
+    var dn = sprintf(SUB_DN_FMT, ID, DUP_ID);
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ifError(err);
+        CLIENT.compare(dn, 'login', DUP_ID + '/' + login,
+            function (err2, matches) {
+            t.ifError(err2);
+            t.ok(matches, 'sub-user compare matches');
+            t.done();
+        });
+    });
+});
+
+
+test('Add sub-user (duplicated login outside account)', function (t) {
+    // Should be perfectly valid
+    var ID = uuid();
+    var EMAIL = 'a' + ID.substr(0, 7) + '_test@joyent.com';
+    var entry = {
+        login: DUP_LOGIN,
+        email: EMAIL,
+        uuid: ID,
+        userpassword: 'secret123',
+        objectclass: 'sdcperson'
+    };
+    var dn = sprintf(SUB_DN_FMT, ID, DUP_ID);
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ifError(err);
+        CLIENT.compare(dn, 'login', DUP_ID + '/' + DUP_LOGIN,
+            function (err2, matches) {
+            t.ifError(err2);
+            t.ok(matches, 'sub-user compare matches');
+            t.done();
+        });
+    });
+});
+
+
+test('Add sub-user (duplicated login within account)', function (t) {
+    // Should not be valid
+    var ID = uuid();
+    var EMAIL = 'a' + ID.substr(0, 7) + '_test@joyent.com';
+    var entry = {
+        login: DUP_LOGIN,
+        email: EMAIL,
+        uuid: ID,
+        userpassword: 'secret123',
+        objectclass: 'sdcperson'
+    };
+    var dn = sprintf(SUB_DN_FMT, ID, DUP_ID);
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'ConstraintViolationError');
+        t.done();
+    });
+});
+
 
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {

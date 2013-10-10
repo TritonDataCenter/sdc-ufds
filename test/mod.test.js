@@ -22,13 +22,14 @@ var test = helper.test;
 
 var CLIENT;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
+var ID = uuid();
 var USER_DN = 'cn=child, ' + SUFFIX;
 var USER = {
     email: 'modunittest@joyent.com',
     login: 'mod_unit_test',
     objectclass: 'sdcperson',
     userpassword: 'test123',
-    uuid: uuid()
+    uuid: ID
 };
 
 // Different than the real DN, which uses 'ou=packages':
@@ -240,6 +241,48 @@ test('modify immutable attribute', function (t) {
         t.ok(err);
         t.equal(err.name, 'ObjectclassModsProhibitedError');
         t.done();
+    });
+});
+
+
+test('modify sub-user login', function (t) {
+    var UUID = uuid();
+    var login = 'a' + ID.substr(0, 7);
+    var modified = 'b' + ID.substr(0, 7);
+    var EMAIL = login + '_test@joyent.com';
+    var entry = {
+        login: login,
+        email: EMAIL,
+        uuid: UUID,
+        userpassword: 'secret123',
+        objectclass: 'sdcperson'
+    };
+    var change = {
+        type: 'replace',
+        modification: {
+            login: modified
+        }
+    };
+    var dn = util.format('uuid=%s, ' + USER_DN, UUID);
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ifError(err, 'Add sub-user error');
+        CLIENT.compare(dn, 'login', ID + '/' + login, function (err2, matches) {
+            t.ifError(err2, 'Compare sub-user error');
+            t.ok(matches, 'sub-user compare matches');
+            CLIENT.modify(dn, change, function (err4) {
+                t.ifError(err4, 'Modify sub-user error');
+                CLIENT.compare(dn, 'login', ID + '/' + modified,
+                    function (err5, matches2) {
+                    t.ifError(err5, 'Compare sub-user error');
+                    t.ok(matches2, 'sub-user compare matches');
+                    CLIENT.del(dn, function (err3) {
+                        t.ifError(err3, 'Delete sub-user error');
+                        t.done();
+                    });
+                });
+            });
+        });
     });
 });
 

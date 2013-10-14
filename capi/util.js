@@ -168,7 +168,7 @@ module.exports = {
                 'phone',
                 'email',
                 'cn',
-                'givenName',
+                'givenname',
                 'sn',
                 'company',
                 'address',

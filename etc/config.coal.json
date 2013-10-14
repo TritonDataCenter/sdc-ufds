@@ -48,7 +48,7 @@
             "fingerprint": { "type": "string" },
             "cn": { "type": "string" },
             "sn": { "type": "string" },
-            "givenName": { "type": "string" },
+            "givenname": { "type": "string" },
             "city": { "type": "string" },
             "state": { "type": "string" },
             "country": { "type": "string" },
@@ -91,7 +91,8 @@
             "approved_for_provisioning": { "type": "string" },
             "created_at": { "type": "number" },
             "updated_at": { "type": "number" },
-            "expires_at": { "type": "string" }
+            "expires_at": { "type": "string" },
+            "company": { "type": "string" }
         }
     }
 }

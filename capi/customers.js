@@ -110,7 +110,7 @@ module.exports = {
                     filter += sprintf(WC_FILTER, 'email', req.params[k]);
                     break;
                 case 'first_name':
-                    filter += sprintf(WC_FILTER, 'givenName', req.params[k]);
+                    filter += sprintf(WC_FILTER, 'givenname', req.params[k]);
                     break;
                 case 'last_name':
                     filter += sprintf(WC_FILTER, 'sn', req.params[k]);
@@ -275,7 +275,7 @@ module.exports = {
         }
 
         if (req.params.first_name) {
-            customer.givenName = req.params.first_name;
+            customer.givenname = req.params.first_name;
         }
         if (req.params.last_name) {
             customer.sn = req.params.last_name;
@@ -503,7 +503,7 @@ module.exports = {
                 _key = 'userpassword';
                 break;
             case 'first_name':
-                _key = 'givenName';
+                _key = 'givenname';
                 break;
             case 'last_name':
                 _key = 'sn';

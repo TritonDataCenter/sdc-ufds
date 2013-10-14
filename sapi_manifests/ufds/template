@@ -14,7 +14,7 @@
             "retries": 3,
             "minTimeout": 1000
         },
-        "version": 4
+        "version": 6
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -47,7 +47,7 @@
             "fingerprint": { "type": "string" },
             "cn": { "type": "string" },
             "sn": { "type": "string" },
-            "givenName": { "type": "string" },
+            "givenname": { "type": "string" },
             "city": { "type": "string" },
             "state": { "type": "string" },
             "country": { "type": "string" },

@@ -114,7 +114,7 @@ userpassword: UFDS_ADMIN_PW
 email: UFDS_ADMIN_EMAIL
 cn: Admin User
 sn: User
-givenName: Admin
+givenname: Admin
 registered_developer: true
 objectclass: sdcPerson
 

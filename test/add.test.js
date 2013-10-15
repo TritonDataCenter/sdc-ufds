@@ -4,7 +4,8 @@
 //
 
 var ldap = require('ldapjs');
-var sprintf = require('util').format;
+var util = require('util'),
+    sprintf = util.format;
 var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
@@ -232,10 +233,11 @@ test('Add sub-user', function (t) {
 
     CLIENT.add(dn, entry, function (err) {
         t.ifError(err);
-        CLIENT.compare(dn, 'login', DUP_ID + '/' + login,
-            function (err2, matches) {
+        helper.get(CLIENT, dn, function (err2, obj) {
             t.ifError(err2);
-            t.ok(matches, 'sub-user compare matches');
+            t.equal(obj.account, DUP_ID);
+            t.equal(obj.login, login);
+            t.notEqual(-1, obj.objectclass.indexOf('sdcaccountuser'));
             t.done();
         });
     });
@@ -257,7 +259,7 @@ test('Add sub-user (duplicated login outside account)', function (t) {
 
     CLIENT.add(dn, entry, function (err) {
         t.ifError(err);
-        CLIENT.compare(dn, 'login', DUP_ID + '/' + DUP_LOGIN,
+        CLIENT.compare(dn, 'login', DUP_LOGIN,
             function (err2, matches) {
             t.ifError(err2);
             t.ok(matches, 'sub-user compare matches');

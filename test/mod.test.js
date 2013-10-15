@@ -267,12 +267,12 @@ test('modify sub-user login', function (t) {
 
     CLIENT.add(dn, entry, function (err) {
         t.ifError(err, 'Add sub-user error');
-        CLIENT.compare(dn, 'login', ID + '/' + login, function (err2, matches) {
+        CLIENT.compare(dn, 'login', login, function (err2, matches) {
             t.ifError(err2, 'Compare sub-user error');
             t.ok(matches, 'sub-user compare matches');
             CLIENT.modify(dn, change, function (err4) {
                 t.ifError(err4, 'Modify sub-user error');
-                CLIENT.compare(dn, 'login', ID + '/' + modified,
+                CLIENT.compare(dn, 'login', modified,
                     function (err5, matches2) {
                     t.ifError(err5, 'Compare sub-user error');
                     t.ok(matches2, 'sub-user compare matches');

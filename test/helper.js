@@ -35,6 +35,30 @@ var LOG = new Logger({
 });
 
 
+function get(client, DN, callback) {
+    return client.search(DN, '(objectclass=*)', function (err, res) {
+        if (err) {
+            return callback(err);
+        }
+
+        var obj;
+
+        res.on('searchEntry', function (entry) {
+            obj = entry.object;
+        });
+
+        res.once('error', function (err2) {
+            return callback(err2);
+        });
+
+        res.once('end', function (result) {
+            return callback(null, obj);
+        });
+
+        return;
+    });
+}
+
 
 ///--- Exports
 
@@ -168,7 +192,9 @@ module.exports = {
                 });
             });
         });
-    }
+    },
+
+    get: get
 };
 
 module.exports.__defineGetter__('log', function () {

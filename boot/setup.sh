@@ -68,10 +68,12 @@ fi
 sleep 10
 
 echo "Adding log rotation"
-logadm -w ufds-master -C 48 -s 100m -p 1h \
-    /var/svc/log/smartdc-application-ufds-master:default.log
-logadm -w ufds-capi -C 48 -s 100m -p 1h \
-    /var/svc/log/smartdc-application-ufds-capi:default.log
+sdc_log_rotation_add amon-agent /var/svc/log/*amon-agent*.log 1g
+sdc_log_rotation_add config-agent /var/svc/log/*config-agent*.log 1g
+sdc_log_rotation_add registrar /var/svc/log/*registrar*.log 1g
+sdc_log_rotation_add ufds-master /var/svc/log/*ufds-master*.log 1g
+sdc_log_rotation_add ufds-capi /var/svc/log/*ufds-capi*.log 1g
+sdc_log_rotation_setup_end
 
 # Add build/node/bin and node_modules/.bin to PATH
 echo "" >>/root/.profile

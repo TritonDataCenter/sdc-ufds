@@ -7,3 +7,6 @@ var/*
 smf/manifests/*.xml
 docs/*.html
 docs/*.json
+data/jpc
+etc/replicator.json
+etc/laptop.config.json

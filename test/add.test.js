@@ -1,7 +1,8 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
-//
-// See helper.js for customization options.
-//
+/*
+ * Copyright (c) 2013, Joyent, Inc. All rights reserved.
+ *
+ * See helper.js for customization options.
+ */
 
 var ldap = require('ldapjs');
 var util = require('util'),
@@ -18,11 +19,15 @@ var helper = require('./helper.js');
 
 
 
-///--- Globals
+// --- Globals
 
 var CLIENT;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'uuid=%s, ' + SUFFIX;
+
+// Sub-users:
+var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
+var ROLE_DN_FMT = 'cn=%s, uuid=%s, ' + SUFFIX;
 
 var test = helper.test;
 
@@ -31,7 +36,9 @@ var DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
 var DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
 var DUP_DN = sprintf(DN_FMT, DUP_ID);
 
-///--- Tests
+var SUB_USER_DN, ANOTHER_SUB_USER_DN, ROLE_DN;
+
+// --- Tests
 
 test('setup', function (t) {
     helper.createClient(function (err, client) {
@@ -215,8 +222,6 @@ test('Add case-only different login', function (t) {
     });
 });
 
-// Sub-users:
-var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
 
 test('Add sub-user', function (t) {
     var ID = uuid();
@@ -229,11 +234,11 @@ test('Add sub-user', function (t) {
         userpassword: 'secret123',
         objectclass: 'sdcperson'
     };
-    var dn = sprintf(SUB_DN_FMT, ID, DUP_ID);
+    SUB_USER_DN = sprintf(SUB_DN_FMT, ID, DUP_ID);
 
-    CLIENT.add(dn, entry, function (err) {
+    CLIENT.add(SUB_USER_DN, entry, function (err) {
         t.ifError(err);
-        helper.get(CLIENT, dn, function (err2, obj) {
+        helper.get(CLIENT, SUB_USER_DN, function (err2, obj) {
             t.ifError(err2);
             t.equal(obj.account, DUP_ID);
             t.equal(obj.login, login);
@@ -255,11 +260,11 @@ test('Add sub-user (duplicated login outside account)', function (t) {
         userpassword: 'secret123',
         objectclass: 'sdcperson'
     };
-    var dn = sprintf(SUB_DN_FMT, ID, DUP_ID);
+    ANOTHER_SUB_USER_DN = sprintf(SUB_DN_FMT, ID, DUP_ID);
 
-    CLIENT.add(dn, entry, function (err) {
+    CLIENT.add(ANOTHER_SUB_USER_DN, entry, function (err) {
         t.ifError(err);
-        CLIENT.compare(dn, 'login', DUP_LOGIN,
+        CLIENT.compare(ANOTHER_SUB_USER_DN, 'login', DUP_LOGIN,
             function (err2, matches) {
             t.ifError(err2);
             t.ok(matches, 'sub-user compare matches');
@@ -286,6 +291,49 @@ test('Add sub-user (duplicated login within account)', function (t) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
         t.done();
+    });
+});
+
+
+test('add account role', function (t) {
+    var cn = 'a' + uuid().substr(0, 7);
+    var entry = {
+        cn: cn,
+        policydocument: 'Any string would be OK here',
+        uniquemember: SUB_USER_DN,
+        account: DUP_ID,
+        description: 'This is completely optional',
+        objectclass: 'sdcaccountrole'
+    };
+
+    ROLE_DN = sprintf(ROLE_DN_FMT, cn, DUP_ID);
+
+    CLIENT.add(ROLE_DN, entry, function (err) {
+        t.ifError(err);
+        helper.get(CLIENT, ROLE_DN, function (err2, obj) {
+            t.ifError(err2);
+            t.ok(obj);
+            t.done();
+        });
+    });
+});
+
+
+test('add member to role', function (t) {
+    var change = {
+        operation: 'add',
+        modification: {
+            uniquemember: ANOTHER_SUB_USER_DN
+        }
+    };
+
+    CLIENT.modify(ROLE_DN, change, function (err) {
+        t.ifError(err);
+        helper.get(CLIENT, ROLE_DN, function (err2, obj) {
+            t.ifError(err2);
+            t.equal(2, obj.uniquemember.length);
+            t.done();
+        });
     });
 });
 

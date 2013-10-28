@@ -14,7 +14,7 @@
             "retries": 3,
             "minTimeout": 1000
         },
-        "version": 6
+        "version": 7
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -43,7 +43,7 @@
                 "type": "string",
                 "unique": true
             },
-            "objectclass": { "type": "string" },
+            "objectclass": { "type": "[string]" },
             "fingerprint": { "type": "string" },
             "cn": { "type": "string" },
             "sn": { "type": "string" },
@@ -80,11 +80,11 @@
             "pwdmaxage": { "type": "number" },
             "pwdcheckquality": { "type": "string" },
             "pwdchangedtime": { "type": "number" },
-            "pwdhistory": { "type": "string" },
+            "pwdhistory": { "type": "[string]" },
             "pwdpolicysubentry": { "type": "string" },
             "pwdendtime": { "type": "number" },
             "pwdaccountlockedtime": { "type": "number" },
-            "pwdfailuretime": { "type": "number" },
+            "pwdfailuretime": { "type": "[number]" },
             "_imported": { "type": "string" },
             "_replicated": { "type": "string" },
             "approved_for_provisioning": { "type": "string" },

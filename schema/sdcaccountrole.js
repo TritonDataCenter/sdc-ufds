@@ -46,7 +46,7 @@ SDCAccountRole.prototype.validate = function validate(entry, config, callback) {
     members.sort();
     for (var i = 0; i < members.length; i++) {
         if (members.indexOf(members[i], i + 1) !== -1) {
-            return callback(new ConstraintViolationError(members[i] +
+            return callback(new ldap.ConstraintViolationError(members[i] +
                                                          ' is not unique'));
         }
     }

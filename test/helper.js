@@ -151,6 +151,7 @@ module.exports = {
                 minTimeout: 1000,
                 retries: 3
             },
+            dns: CONFIG.moray.dns || {},
             connectTimeout: 1000,
             noCache: true
         });

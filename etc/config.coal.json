@@ -9,11 +9,14 @@
     "use_bcrypt": false,
     "ufds_is_master": true,
     "moray": {
-        "url": "tcp://10.99.99.17:2020",
+        "url": "tcp://moray.coal.joyent.us:2020",
         "connectTimeout": 1000,
         "retry": {
             "retries": 3,
             "minTimeout": 1000
+        },
+        "dns": {
+            "resolvers": ["10.99.99.11"]
         },
         "version": 6
     },

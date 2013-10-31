@@ -5,7 +5,6 @@
     "bunyan": {
       "version": "0.21.3",
       "from": "bunyan@0.21.3",
-      "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.21.3.tgz",
       "dependencies": {
         "mv": {
           "version": "0.0.5",
@@ -33,8 +32,8 @@
     },
     "ldapjs": {
       "version": "0.6.3",
-      "from": "ldapjs@git://github.com/mcavage/node-ldapjs.git#6c00ba",
-      "resolved": "git://github.com/mcavage/node-ldapjs.git#6c00badd951b0caccc2ef2cbb88aa10e638f690c",
+      "from": "ldapjs@git://github.com/mcavage/node-ldapjs.git#ebcba1",
+      "resolved": "git://github.com/mcavage/node-ldapjs.git#ebcba1205dbf9b0652180c2af67c4723db6d2561",
       "dependencies": {
         "asn1": {
           "version": "0.1.11",
@@ -47,7 +46,6 @@
         "bunyan": {
           "version": "0.21.1",
           "from": "bunyan@0.21.1",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.21.1.tgz",
           "dependencies": {
             "mv": {
               "version": "0.0.5",
@@ -231,7 +229,6 @@
         "bunyan": {
           "version": "0.21.4",
           "from": "bunyan@0.21.4",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.21.4.tgz",
           "dependencies": {
             "mv": {
               "version": "0.0.5",
@@ -250,8 +247,7 @@
           "dependencies": {
             "crc": {
               "version": "0.2.1",
-              "from": "crc@0.2.1",
-              "resolved": "https://registry.npmjs.org/crc/-/crc-0.2.1.tgz"
+              "from": "crc@0.2.1"
             },
             "dtrace-provider": {
               "version": "0.2.8",
@@ -260,7 +256,6 @@
             "microtime": {
               "version": "0.4.0",
               "from": "microtime@0.4.0",
-              "resolved": "https://registry.npmjs.org/microtime/-/microtime-0.4.0.tgz",
               "dependencies": {
                 "bindings": {
                   "version": "1.0.0",
@@ -271,12 +266,10 @@
             "readable-stream": {
               "version": "1.1.9",
               "from": "readable-stream@1.1.9",
-              "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.1.9.tgz",
               "dependencies": {
                 "core-util-is": {
                   "version": "1.0.0",
-                  "from": "core-util-is@~1.0.0",
-                  "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.0.tgz"
+                  "from": "core-util-is@~1.0.0"
                 },
                 "debuglog": {
                   "version": "0.0.2",
@@ -323,8 +316,7 @@
         },
         "once": {
           "version": "1.2.0",
-          "from": "once@1.2.0",
-          "resolved": "https://registry.npmjs.org/once/-/once-1.2.0.tgz"
+          "from": "once@1.2.0"
         },
         "posix-getopt": {
           "version": "1.0.0",
@@ -348,24 +340,7 @@
     },
     "sigyan": {
       "version": "0.2.0",
-      "from": "sigyan@0.2.0",
-      "dependencies": {
-        "bunyan": {
-          "version": "0.22.0",
-          "from": "bunyan@0.22.0",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.22.0.tgz",
-          "dependencies": {
-            "mv": {
-              "version": "0.0.5",
-              "from": "mv@0.0.5"
-            },
-            "dtrace-provider": {
-              "version": "0.2.8",
-              "from": "dtrace-provider@0.2.8"
-            }
-          }
-        }
-      }
+      "from": "sigyan@0.2.0"
     },
     "bcrypt": {
       "version": "0.7.3",

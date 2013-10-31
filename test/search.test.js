@@ -7,7 +7,8 @@ var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
 }
-var sprintf = require('util').format;
+var util = require('util'),
+    sprintf = util.format;
 
 if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];
@@ -190,6 +191,33 @@ test('search base eq filter ok', function (t) {
 });
 
 
+test('search base case sensitive search filter ok', function (t) {
+    var dn = sprintf('login=%s_child1, ' + SUFFIX, LOGIN);
+    search(dn, sprintf('(login=%s_child1)', 'A' + ID.substr(0, 7)),
+        function (err, results, count) {
+        t.ifError(err);
+        t.equal(count, 0);
+        t.done();
+    });
+});
+
+
+test('search base caseIgnoreMatch filter ok', function (t) {
+    var dn = sprintf('login=%s_child1, ' + SUFFIX, LOGIN);
+    search(dn, sprintf('(login:caseIgnoreMatch:=%s_child1)', 'A' + ID.substr(0, 7)),
+        function (err, results, count) {
+        t.ifError(err);
+        t.equal(count, 1);
+        t.equal(results.length, 1);
+        t.equal(dn, results[0].dn);
+        Object.keys(USERS[dn]).forEach(function (attr) {
+            t.equal(USERS[dn][attr], results[0].attributes[attr]);
+        });
+        t.done();
+    });
+});
+
+
 test('search base eq filter no match', function (t) {
     var dn = sprintf('login=%s_child1, ' + SUFFIX, LOGIN);
     search(dn, sprintf('(login=%s_child2)', LOGIN), function (err, _, count) {
@@ -209,6 +237,29 @@ test('search sub substr filter ok', function (t) {
                 t.equal(USERS[r.dn][attr], r.attributes[attr]);
             });
         });
+        t.done();
+    });
+});
+
+
+test('search sub substr caseIgnoreSubstringsMatch filter ok', function (t) {
+    search(SUFFIX, '(login:caseIgnoreSubstringsMatch:=A*c*d*)', 'sub', function (err, results, count) {
+        t.ifError(err);
+        t.equal(count, TOTAL_ENTRIES);
+        results.forEach(function (r) {
+            Object.keys(USERS[r.dn]).forEach(function (attr) {
+                t.equal(USERS[r.dn][attr], r.attributes[attr]);
+            });
+        });
+        t.done();
+    });
+});
+
+
+test('search sub substr case sensitive filter ok', function (t) {
+    search(SUFFIX, '(login=A*c*d*)', 'sub', function (err, results, count) {
+        t.ifError(err);
+        t.equal(count, 0);
         t.done();
     });
 });

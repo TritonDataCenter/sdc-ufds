@@ -9,13 +9,16 @@
     "use_bcrypt": false,
     "ufds_is_master": true,
     "moray": {
-        "url": "tcp://10.99.99.17:2020",
+        "url": "tcp://moray.coal.joyent.us:2020",
         "connectTimeout": 1000,
         "retry": {
             "retries": 3,
             "minTimeout": 1000
         },
-        "version": 6
+        "dns": {
+            "resolvers": ["10.99.99.11"]
+        },
+        "version": 8
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -44,7 +47,7 @@
                 "type": "string",
                 "unique": true
             },
-            "objectclass": { "type": "string" },
+            "objectclass": { "type": "[string]" },
             "fingerprint": { "type": "string" },
             "cn": { "type": "string" },
             "sn": { "type": "string" },
@@ -81,11 +84,11 @@
             "pwdmaxage": { "type": "number" },
             "pwdcheckquality": { "type": "string" },
             "pwdchangedtime": { "type": "number" },
-            "pwdhistory": { "type": "string" },
+            "pwdhistory": { "type": "[string]" },
             "pwdpolicysubentry": { "type": "string" },
             "pwdendtime": { "type": "number" },
             "pwdaccountlockedtime": { "type": "number" },
-            "pwdfailuretime": { "type": "number" },
+            "pwdfailuretime": { "type": "[number]" },
             "_imported": { "type": "string" },
             "_replicated": { "type": "string" },
             "approved_for_provisioning": { "type": "string" },

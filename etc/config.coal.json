@@ -18,7 +18,7 @@
         "dns": {
             "resolvers": ["10.99.99.11"]
         },
-        "version": 8
+        "version": 9
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -96,7 +96,8 @@
             "updated_at": { "type": "number" },
             "expires_at": { "type": "string" },
             "company": {"type": "string"},
-            "account": { "type": "string" }
+            "account": { "type": "string" },
+            "role": { "type": "string" }
         }
     }
 }

@@ -25,7 +25,7 @@ function SDCAccountRole() {
     Validator.call(this, {
         name: 'sdcaccountrole',
         required: {
-            cn: 1,
+            role: 1,
             account: 1,
             policydocument: 100000
         },

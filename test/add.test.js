@@ -27,7 +27,7 @@ var DN_FMT = 'uuid=%s, ' + SUFFIX;
 
 // Sub-users:
 var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
-var ROLE_DN_FMT = 'cn=%s, uuid=%s, ' + SUFFIX;
+var ROLE_DN_FMT = 'role=%s, uuid=%s, ' + SUFFIX;
 
 var test = helper.test;
 
@@ -296,9 +296,9 @@ test('Add sub-user (duplicated login within account)', function (t) {
 
 
 test('add account role', function (t) {
-    var cn = 'a' + uuid().substr(0, 7);
+    var role = 'a' + uuid().substr(0, 7);
     var entry = {
-        cn: cn,
+        role: role,
         policydocument: 'Any string would be OK here',
         uniquemember: SUB_USER_DN,
         account: DUP_ID,
@@ -306,7 +306,7 @@ test('add account role', function (t) {
         objectclass: 'sdcaccountrole'
     };
 
-    ROLE_DN = sprintf(ROLE_DN_FMT, cn, DUP_ID);
+    ROLE_DN = sprintf(ROLE_DN_FMT, role, DUP_ID);
 
     CLIENT.add(ROLE_DN, entry, function (err) {
         t.ifError(err);

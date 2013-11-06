@@ -28,6 +28,7 @@ var DN_FMT = 'uuid=%s, ' + SUFFIX;
 // Sub-users:
 var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
 var ROLE_DN_FMT = 'role=%s, uuid=%s, ' + SUFFIX;
+var GRP_DN_FMT = 'group=%s, uuid=%s, ' + SUFFIX;
 
 var test = helper.test;
 
@@ -36,7 +37,7 @@ var DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
 var DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
 var DUP_DN = sprintf(DN_FMT, DUP_ID);
 
-var SUB_USER_DN, ANOTHER_SUB_USER_DN, ROLE_DN;
+var SUB_USER_DN, ANOTHER_SUB_USER_DN, ROLE_DN, GRP_DN;
 
 // --- Tests
 
@@ -336,6 +337,30 @@ test('add member to role', function (t) {
         });
     });
 });
+
+
+test('add account group', function (t) {
+    var group = 'a' + uuid().substr(0, 7);
+    var entry = {
+        cn: group,
+        uniquemember: SUB_USER_DN,
+        account: DUP_ID,
+        memberrole: ROLE_DN,
+        objectclass: 'sdcaccountgroup'
+    };
+
+    GRP_DN = sprintf(GRP_DN_FMT, group, DUP_ID);
+
+    CLIENT.add(GRP_DN, entry, function (err) {
+        t.ifError(err);
+        helper.get(CLIENT, GRP_DN, function (err2, obj) {
+            t.ifError(err2);
+            t.ok(obj);
+            t.done();
+        });
+    });
+});
+
 
 
 test('teardown', function (t) {

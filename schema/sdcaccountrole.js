@@ -30,6 +30,7 @@ function SDCAccountRole() {
         required: {
             role: 1,
             account: 1,
+            uuid: 1,
             policydocument: 100000
         },
         optional: {
@@ -65,8 +66,33 @@ function validate(entry, config, changes, callback) {
         }
     }
 
-    if (!UUID_RE.test(attrs.account[0])) {
-        errors.push('account: ' + attrs.account[0] + ' is invalid');
+    var account = attrs.account[0];
+    if (!UUID_RE.test(account)) {
+        errors.push('account: ' + account + ' is invalid');
+    }
+
+    var dn = (typeof (entry.dn) === 'string') ?
+        ldap.parseDN(entry.dn) : entry.dn;
+
+    if (dn.rdns[1].uuid && dn.rdns[1].uuid !== account) {
+        errors.push('dn: ' + entry.dn + ' is invalid');
+    }
+
+    if (attrs.uuid) {
+        var uuid = attrs.uuid[0];
+        if (!UUID_RE.test(uuid)) {
+            errors.push('uuid: ' + uuid + ' is invalid');
+        }
+
+        if (dn.rdns[0]['role-uuid'] && dn.rdns[0]['role-uuid'] !== uuid) {
+            errors.push('dn: ' + entry.dn + ' is invalid');
+        }
+
+        if (changes && changes.some(function (c) {
+            return (c._modification.type === 'uuid');
+        })) {
+            errors.push('uuid cannot be modified');
+        }
     }
 
     if (errors.length) {

@@ -27,8 +27,8 @@ var DN_FMT = 'uuid=%s, ' + SUFFIX;
 
 // Sub-users:
 var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
-var ROLE_DN_FMT = 'role=%s, uuid=%s, ' + SUFFIX;
-var GRP_DN_FMT = 'group=%s, uuid=%s, ' + SUFFIX;
+var ROLE_DN_FMT = 'role-uuid=%s, uuid=%s, ' + SUFFIX;
+var GRP_DN_FMT = 'group-uuid=%s, uuid=%s, ' + SUFFIX;
 
 var test = helper.test;
 
@@ -297,17 +297,19 @@ test('Add sub-user (duplicated login within account)', function (t) {
 
 
 test('add account role', function (t) {
-    var role = 'a' + uuid().substr(0, 7);
+    var role_uuid = uuid();
+    var role = 'a' + role_uuid.substr(0, 7);
     var entry = {
         role: role,
         policydocument: 'Any string would be OK here',
         uniquemember: SUB_USER_DN,
         account: DUP_ID,
         description: 'This is completely optional',
-        objectclass: 'sdcaccountrole'
+        objectclass: 'sdcaccountrole',
+        uuid: role_uuid
     };
 
-    ROLE_DN = sprintf(ROLE_DN_FMT, role, DUP_ID);
+    ROLE_DN = sprintf(ROLE_DN_FMT, role_uuid, DUP_ID);
 
     CLIENT.add(ROLE_DN, entry, function (err) {
         t.ifError(err);
@@ -340,16 +342,18 @@ test('add member to role', function (t) {
 
 
 test('add account group', function (t) {
-    var group = 'a' + uuid().substr(0, 7);
+    var group_uuid =  uuid();
+    var group = 'a' + group_uuid.substr(0, 7);
     var entry = {
         cn: group,
         uniquemember: SUB_USER_DN,
         account: DUP_ID,
         memberrole: ROLE_DN,
+        uuid: group_uuid,
         objectclass: 'sdcaccountgroup'
     };
 
-    GRP_DN = sprintf(GRP_DN_FMT, group, DUP_ID);
+    GRP_DN = sprintf(GRP_DN_FMT, group_uuid, DUP_ID);
 
     CLIENT.add(GRP_DN, entry, function (err) {
         t.ifError(err);

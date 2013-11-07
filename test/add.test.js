@@ -113,7 +113,7 @@ test('add child already exists', function (t) {
     var entry = {
         login: 'foo',
         email: 'foo@joyent.com',
-        uuid: uuid(),
+        uuid: DUP_ID,
         userpassword: 'secret123',
         objectclass: 'sdcperson'
     };

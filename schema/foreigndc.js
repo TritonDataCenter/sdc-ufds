@@ -28,7 +28,8 @@ function Foreigndc() {
 util.inherits(Foreigndc, Validator);
 
 
-Foreigndc.prototype.validate = function validate(entry, config, callback) {
+Foreigndc.prototype.validate =
+function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
 

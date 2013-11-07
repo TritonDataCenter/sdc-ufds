@@ -26,7 +26,8 @@ function DataCenter() {
 util.inherits(DataCenter, Validator);
 
 
-DataCenter.prototype.validate = function validate(entry, config, callback) {
+DataCenter.prototype.validate =
+function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
 

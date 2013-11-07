@@ -29,7 +29,8 @@ function SDCAccountUser() {
 util.inherits(SDCAccountUser, Validator);
 
 
-SDCAccountUser.prototype.validate = function validate(entry, config, callback) {
+SDCAccountUser.prototype.validate =
+function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
 
@@ -38,8 +39,16 @@ SDCAccountUser.prototype.validate = function validate(entry, config, callback) {
         return callback();
     }
 
-    if (!UUID_RE.test(attrs.account[0])) {
-        errors.push('account: ' + attrs.account[0] + ' is invalid');
+    var account = attrs.account[0];
+    if (!UUID_RE.test(account)) {
+        errors.push('account: ' + account + ' is invalid');
+    }
+
+    var dn = (typeof (entry.dn) === 'string') ?
+        ldap.parseDN(entry.dn) : entry.dn;
+
+    if (dn.rdns[1].uuid && dn.rdns[1].uuid !== account) {
+        errors.push('dn: ' + entry.dn + ' is invalid');
     }
 
     if (errors.length) {

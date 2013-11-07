@@ -25,7 +25,8 @@ function Config() {
 util.inherits(Config, Validator);
 
 
-Config.prototype.validate = function validate(entry, config, callback) {
+Config.prototype.validate =
+function validate(entry, config, changes, callback) {
     var errors = [];
 
     if (errors.length)

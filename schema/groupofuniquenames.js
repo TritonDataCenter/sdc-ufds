@@ -30,7 +30,7 @@ util.inherits(GroupOfUniqueNames, Validator);
 
 
 GroupOfUniqueNames.prototype.validate =
-function validate(entry, config, callback) {
+function validate(entry, config, changes, callback) {
     var members = entry.attributes.uniquemember || [];
 
     members.sort();

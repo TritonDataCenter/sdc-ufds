@@ -48,13 +48,6 @@ function SDCImage() {
 util.inherits(SDCImage, Validator);
 
 
-SDCImage.prototype.validate = function validate(entry, config, callback) {
-    // Leaving validation to IMGAPI.
-    return callback();
-};
-
-
-
 ///--- Exports
 
 module.exports = {

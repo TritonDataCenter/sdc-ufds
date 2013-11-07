@@ -40,7 +40,8 @@ function AmonProbe() {
 util.inherits(AmonProbe, Validator);
 
 
-AmonProbe.prototype.validate = function validate(entry, config, callback) {
+AmonProbe.prototype.validate =
+function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
 
@@ -55,8 +56,30 @@ AmonProbe.prototype.validate = function validate(entry, config, callback) {
                     '\' is invalid (must be a UUID)');
     }
 
-    if (errors.length)
+    if (attrs.uuid) {
+        var uuid = attrs.uuid[0];
+        if (!UUID_RE.test(uuid)) {
+            errors.push('uuid: ' + uuid + ' is invalid');
+        }
+
+        var dn = (typeof (entry.dn) === 'string') ?
+            ldap.parseDN(entry.dn) : entry.dn;
+
+        if (dn.rdns[0].amonprobe && dn.rdns[0].amonprobe !== uuid) {
+            errors.push('dn: ' + entry.dn + ' is invalid');
+        }
+
+        if (changes && changes.some(function (c) {
+            return (c._modification.type === 'uuid');
+        })) {
+            errors.push('uuid cannot be modified');
+        }
+    }
+
+    if (errors.length) {
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
+    }
+
     return callback();
 };
 

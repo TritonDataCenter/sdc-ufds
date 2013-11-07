@@ -65,7 +65,8 @@ function SDCPerson() {
 util.inherits(SDCPerson, Validator);
 
 
-SDCPerson.prototype.validate = function validate(entry, config, callback) {
+SDCPerson.prototype.validate =
+function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
 
@@ -87,6 +88,26 @@ SDCPerson.prototype.validate = function validate(entry, config, callback) {
         login.length > 32 ||
         RESERVED_LOGINS.indexOf(login) !== -1) {
         errors.push('login: ' + login + ' is invalid');
+    }
+
+    if (attrs.uuid) {
+        var uuid = attrs.uuid[0];
+        if (!UUID_RE.test(uuid)) {
+            errors.push('uuid: ' + uuid + ' is invalid');
+        }
+
+        var dn = (typeof (entry.dn) === 'string') ?
+            ldap.parseDN(entry.dn) : entry.dn;
+
+        if (dn.rdns[0].uuid && dn.rdns[0].uuid !== uuid) {
+            errors.push('dn: ' + entry.dn + ' is invalid');
+        }
+
+        if (changes && changes.some(function (c) {
+            return (c._modification.type === 'uuid');
+        })) {
+            errors.push('uuid cannot be modified');
+        }
     }
 
     if (errors.length) {

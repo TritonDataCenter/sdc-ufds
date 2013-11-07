@@ -37,7 +37,7 @@ function SDCAccountGroup() {
 util.inherits(SDCAccountGroup, Validator);
 
 SDCAccountGroup.prototype.validate =
-function validate(entry, config, callback) {
+function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
     var members = attrs.uniquemember || [];

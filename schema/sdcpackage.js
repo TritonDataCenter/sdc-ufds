@@ -77,7 +77,8 @@ function Package() {
 util.inherits(Package, Validator);
 
 
-Package.prototype.validate = function validate(entry, config, callback) {
+Package.prototype.validate =
+function validate(entry, config, changes, callback) {
     var attrs = entry.attributes,
         errors = [];
 

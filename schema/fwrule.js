@@ -66,7 +66,8 @@ function FWRule() {
 
 util.inherits(FWRule, Validator);
 
-FWRule.prototype.validate = function validate(entry, config, callback) {
+FWRule.prototype.validate =
+function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
     var i;

@@ -245,6 +245,21 @@ test('modify immutable attribute', function (t) {
 });
 
 
+test('modify sdcPerson UUID', function (t) {
+    var change = {
+        type: 'replace',
+        modification: {
+            uuid: uuid()
+        }
+    };
+    CLIENT.modify(USER_DN, change, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'ConstraintViolationError');
+        t.done();
+    });
+});
+
+
 test('modify sub-user login', function (t) {
     var UUID = uuid();
     var login = 'a' + ID.substr(0, 7);

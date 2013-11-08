@@ -40,10 +40,10 @@ SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 
 CLEAN_FILES	+= node_modules cscope.files
 
+NODE_PREBUILT_VERSION=v0.8.26
 # The prebuilt sdcnode version we want. See
 # "tools/mk/Makefile.node_prebuilt.targ" for details.
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION=v0.8.25
 	NODE_PREBUILT_TAG=zone
 endif
 

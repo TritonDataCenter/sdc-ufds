@@ -3,9 +3,8 @@
   "version": "7.0.0",
   "dependencies": {
     "bunyan": {
-      "version": "0.21.3",
-      "from": "bunyan@0.21.3",
-      "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.21.3.tgz",
+      "version": "0.22.0",
+      "from": "bunyan@0.22.0",
       "dependencies": {
         "mv": {
           "version": "0.0.5",
@@ -33,8 +32,8 @@
     },
     "ldapjs": {
       "version": "0.6.3",
-      "from": "ldapjs@git://github.com/mcavage/node-ldapjs.git#6c00ba",
-      "resolved": "git://github.com/mcavage/node-ldapjs.git#6c00badd951b0caccc2ef2cbb88aa10e638f690c",
+      "from": "ldapjs@git://github.com/mcavage/node-ldapjs.git#fa1b8c",
+      "resolved": "git://github.com/mcavage/node-ldapjs.git#fa1b8c4af86c71edcdfcfd8e75ea5c13f38326a3",
       "dependencies": {
         "asn1": {
           "version": "0.1.11",
@@ -47,7 +46,6 @@
         "bunyan": {
           "version": "0.21.1",
           "from": "bunyan@0.21.1",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.21.1.tgz",
           "dependencies": {
             "mv": {
               "version": "0.0.5",
@@ -60,40 +58,20 @@
           "from": "dtrace-provider@0.2.8"
         },
         "pooling": {
-          "version": "0.4.4",
-          "from": "pooling@0.4.4",
+          "version": "0.4.5",
+          "from": "pooling@0.4.5",
           "dependencies": {
-            "vasync": {
-              "version": "1.3.3",
-              "from": "vasync@1.3.3",
+            "assert-plus": {
+              "version": "0.1.4",
+              "from": "assert-plus@0.1.4"
+            },
+            "bunyan": {
+              "version": "0.22.0",
+              "from": "bunyan@0.22.0",
               "dependencies": {
-                "jsprim": {
-                  "version": "0.3.0",
-                  "from": "jsprim@0.3.0",
-                  "dependencies": {
-                    "extsprintf": {
-                      "version": "1.0.0",
-                      "from": "extsprintf@1.0.0"
-                    },
-                    "json-schema": {
-                      "version": "0.2.2",
-                      "from": "json-schema@0.2.2"
-                    },
-                    "verror": {
-                      "version": "1.3.3",
-                      "from": "verror@1.3.3"
-                    }
-                  }
-                },
-                "verror": {
-                  "version": "1.1.0",
-                  "from": "verror@1.1.0",
-                  "dependencies": {
-                    "extsprintf": {
-                      "version": "1.0.0",
-                      "from": "extsprintf@1.0.0"
-                    }
-                  }
+                "mv": {
+                  "version": "0.0.5",
+                  "from": "mv@0.0.5"
                 }
               }
             }
@@ -126,7 +104,6 @@
         "bunyan": {
           "version": "0.18.3",
           "from": "bunyan@0.18.3",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.18.3.tgz",
           "dependencies": {
             "mv": {
               "version": "0.0.4",
@@ -136,7 +113,7 @@
         },
         "deep-equal": {
           "version": "0.0.0",
-          "from": "deep-equal@~0.0.0"
+          "from": "deep-equal@0.0.0"
         },
         "formidable": {
           "version": "1.0.11",
@@ -162,7 +139,8 @@
         },
         "lru-cache": {
           "version": "2.2.2",
-          "from": "lru-cache@2.2.2"
+          "from": "lru-cache@2.2.2",
+          "resolved": "https://registry.npmjs.org/lru-cache/-/lru-cache-2.2.2.tgz"
         },
         "mime": {
           "version": "1.2.9",
@@ -176,6 +154,10 @@
           "version": "1.4.0",
           "from": "node-uuid@1.4.0"
         },
+        "once": {
+          "version": "1.1.1",
+          "from": "once@1.1.1"
+        },
         "qs": {
           "version": "0.5.3",
           "from": "qs@0.5.3"
@@ -186,8 +168,7 @@
         },
         "spdy": {
           "version": "1.4.6",
-          "from": "spdy@1.4.6",
-          "resolved": "https://registry.npmjs.org/spdy/-/spdy-1.4.6.tgz"
+          "from": "spdy@1.4.6"
         },
         "verror": {
           "version": "1.3.5",
@@ -231,7 +212,6 @@
         "bunyan": {
           "version": "0.21.4",
           "from": "bunyan@0.21.4",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.21.4.tgz",
           "dependencies": {
             "mv": {
               "version": "0.0.5",
@@ -246,12 +226,10 @@
         "fast": {
           "version": "0.3.2",
           "from": "fast@0.3.2",
-          "resolved": "https://registry.npmjs.org/fast/-/fast-0.3.2.tgz",
           "dependencies": {
             "crc": {
               "version": "0.2.1",
-              "from": "crc@0.2.1",
-              "resolved": "https://registry.npmjs.org/crc/-/crc-0.2.1.tgz"
+              "from": "crc@0.2.1"
             },
             "dtrace-provider": {
               "version": "0.2.8",
@@ -260,7 +238,6 @@
             "microtime": {
               "version": "0.4.0",
               "from": "microtime@0.4.0",
-              "resolved": "https://registry.npmjs.org/microtime/-/microtime-0.4.0.tgz",
               "dependencies": {
                 "bindings": {
                   "version": "1.0.0",
@@ -271,17 +248,14 @@
             "readable-stream": {
               "version": "1.1.9",
               "from": "readable-stream@1.1.9",
-              "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-1.1.9.tgz",
               "dependencies": {
                 "core-util-is": {
                   "version": "1.0.0",
-                  "from": "core-util-is@~1.0.0",
-                  "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.0.tgz"
+                  "from": "core-util-is@~1.0.0"
                 },
                 "debuglog": {
                   "version": "0.0.2",
-                  "from": "debuglog@0.0.2",
-                  "resolved": "https://registry.npmjs.org/debuglog/-/debuglog-0.0.2.tgz"
+                  "from": "debuglog@0.0.2"
                 }
               }
             },
@@ -323,8 +297,7 @@
         },
         "once": {
           "version": "1.2.0",
-          "from": "once@1.2.0",
-          "resolved": "https://registry.npmjs.org/once/-/once-1.2.0.tgz"
+          "from": "once@1.2.0"
         },
         "posix-getopt": {
           "version": "1.0.0",
@@ -348,24 +321,7 @@
     },
     "sigyan": {
       "version": "0.2.0",
-      "from": "sigyan@0.2.0",
-      "dependencies": {
-        "bunyan": {
-          "version": "0.22.0",
-          "from": "bunyan@0.22.0",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.22.0.tgz",
-          "dependencies": {
-            "mv": {
-              "version": "0.0.5",
-              "from": "mv@0.0.5"
-            },
-            "dtrace-provider": {
-              "version": "0.2.8",
-              "from": "dtrace-provider@0.2.8"
-            }
-          }
-        }
-      }
+      "from": "sigyan@0.2.0"
     },
     "bcrypt": {
       "version": "0.7.3",
@@ -378,9 +334,27 @@
       }
     },
     "vasync": {
-      "version": "1.3.2",
-      "from": "vasync@1.3.2",
+      "version": "1.4.0",
+      "from": "vasync@1.4.0",
       "dependencies": {
+        "jsprim": {
+          "version": "0.3.0",
+          "from": "jsprim@0.3.0",
+          "dependencies": {
+            "extsprintf": {
+              "version": "1.0.0",
+              "from": "extsprintf@1.0.0"
+            },
+            "json-schema": {
+              "version": "0.2.2",
+              "from": "json-schema@0.2.2"
+            },
+            "verror": {
+              "version": "1.3.3",
+              "from": "verror@1.3.3"
+            }
+          }
+        },
         "verror": {
           "version": "1.1.0",
           "from": "verror@1.1.0",
@@ -395,7 +369,8 @@
     },
     "async": {
       "version": "0.1.22",
-      "from": "async@0.1.22"
+      "from": "async@0.1.22",
+      "resolved": "https://registry.npmjs.org/async/-/async-0.1.22.tgz"
     },
     "assert-plus": {
       "version": "0.1.2",
@@ -406,8 +381,8 @@
       "from": "backoff@2.3.0"
     },
     "once": {
-      "version": "1.1.1",
-      "from": "once@1.1.1"
+      "version": "1.3.0",
+      "from": "once@1.3.0"
     }
   }
 }

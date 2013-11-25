@@ -13,45 +13,45 @@
 # other projects too, you should add these to the original versions of the
 # included Makefiles (in eng.git) so that other teams can use them too.
 #
-NAME		:= ufds
+NAME    := ufds
 
 #
 # Tools
 #
-NODEUNIT	:= ./node_modules/.bin/nodeunit
+NODEUNIT  := ./node_modules/.bin/nodeunit
 
 #
 # Files
 #
-DOC_FILES	 = index.restdown ufds-replicator.restdown
-JS_FILES	:= $(shell ls *.js) \
+DOC_FILES  = index.restdown ufds-replicator.restdown
+JS_FILES  := $(shell ls *.js) \
                    $(shell find lib capi schema test -name '*.js')
-JSL_CONF_NODE	 = tools/jsl.node.conf
+JSL_CONF_NODE  = tools/jsl.node.conf
 JSL_FILES_NODE   = $(JS_FILES)
-JSSTYLE_FILES	 = $(JS_FILES)
+JSSTYLE_FILES  = $(JS_FILES)
 JSSTYLE_FLAGS    = -f tools/jsstyle.conf
-SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
-			smf/manifests/ufds-capi.xml.in \
-			smf/manifests/ufds-capi-8081.xml.in \
-			smf/manifests/ufds-capi-8082.xml.in \
-			smf/manifests/ufds-capi-8083.xml.in \
-			smf/manifests/ufds-capi-8084.xml.in \
-			smf/manifests/ufds-replicator.xml.in
+SMF_MANIFESTS_IN   = smf/manifests/ufds-master.xml.in \
+      smf/manifests/ufds-capi.xml.in \
+      smf/manifests/ufds-capi-8081.xml.in \
+      smf/manifests/ufds-capi-8082.xml.in \
+      smf/manifests/ufds-capi-8083.xml.in \
+      smf/manifests/ufds-capi-8084.xml.in \
+      smf/manifests/ufds-replicator.xml.in
 
-CLEAN_FILES	+= node_modules cscope.files
+CLEAN_FILES += node_modules cscope.files
 
 NODE_PREBUILT_VERSION=v0.8.26
 # The prebuilt sdcnode version we want. See
 # "tools/mk/Makefile.node_prebuilt.targ" for details.
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_TAG=zone
+  NODE_PREBUILT_TAG=zone
 endif
 
 include ./tools/mk/Makefile.defs
 ifeq ($(shell uname -s),SunOS)
-	include ./tools/mk/Makefile.node_prebuilt.defs
+  include ./tools/mk/Makefile.node_prebuilt.defs
 else
-	include ./tools/mk/Makefile.node.defs
+  include ./tools/mk/Makefile.node.defs
 endif
 include ./tools/mk/Makefile.smf.defs
 
@@ -68,48 +68,52 @@ RELSTAGEDIR                  := /tmp/$(STAMP)
 #
 # Env vars
 #
-PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
+PATH  := $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 
 #
 # Repo-specific targets
 #
 .PHONY: all
 all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS) sdc-scripts
-	$(NPM) install && $(NPM) update
+  $(NPM) install && $(NPM) update
 
 $(NODEUNIT): | $(NPM_EXEC)
-	$(NPM) install && $(NPM) update
+  $(NPM) install && $(NPM) update
 
 .PHONY: add_test
 add_test: $(NODEUNIT)
-	$(NODEUNIT) test/add.test.js --reporter tap
+  $(NODEUNIT) test/add.test.js --reporter tap
 
 .PHONY: bind_test
 bind_test: $(NODEUNIT)
-	$(NODEUNIT) test/bind.test.js --reporter tap
+  $(NODEUNIT) test/bind.test.js --reporter tap
 
 .PHONY: compare_test
 compare_test: $(NODEUNIT)
-	$(NODEUNIT) test/compare.test.js --reporter tap
+  $(NODEUNIT) test/compare.test.js --reporter tap
 
 .PHONY: del_test
 del_test: $(NODEUNIT)
-	$(NODEUNIT) test/del.test.js --reporter tap
+  $(NODEUNIT) test/del.test.js --reporter tap
 
 .PHONY: mod_test
 mod_test: $(NODEUNIT)
-	$(NODEUNIT) test/mod.test.js --reporter tap
+  $(NODEUNIT) test/mod.test.js --reporter tap
 
 .PHONY: search_test
 search_test: $(NODEUNIT)
-	$(NODEUNIT) test/search.test.js --reporter tap
+  $(NODEUNIT) test/search.test.js --reporter tap
 
 .PHONY: pwdpolicy_test
 pwdpolicy_test: $(NODEUNIT)
-	$(NODEUNIT) test/pwdpolicy.test.js --reporter tap
+  $(NODEUNIT) test/pwdpolicy.test.js --reporter tap
+
+.PHONY: account_test
+pwdpolicy_test: $(NODEUNIT)
+  $(NODEUNIT) test/account.test.js --reporter tap
 
 .PHONY: test
-test: add_test bind_test compare_test del_test mod_test search_test pwdpolicy_test
+test: add_test bind_test compare_test del_test mod_test search_test pwdpolicy_test account_test
 
 .PHONY: pkg
 pkg:
@@ -124,10 +128,10 @@ release: all docs
 	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/ufds/etc
 	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/ufds/ssl
 	cp -r   $(ROOT)/build \
-                $(ROOT)/capi \
-                $(ROOT)/capi.js \
-                $(ROOT)/replicator.js \
-                $(ROOT)/data \
+								$(ROOT)/capi \
+								$(ROOT)/capi.js \
+								$(ROOT)/replicator.js \
+								$(ROOT)/data \
 		$(ROOT)/bin \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \
@@ -146,21 +150,22 @@ release: all docs
 	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(RELSTAGEDIR)
 
+
 .PHONY: publish
 publish: release
-	@if [[ -z "$(BITS_DIR)" ]]; then \
-		echo "error: 'BITS_DIR' must be set for 'publish' target"; \
-		exit 1; \
-	fi
-	mkdir -p $(BITS_DIR)/ufds
-	cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/$(NAME)/$(RELEASE_TARBALL)
+  @if [[ -z "$(BITS_DIR)" ]]; then \
+    echo "error: 'BITS_DIR' must be set for 'publish' target"; \
+    exit 1; \
+  fi
+  mkdir -p $(BITS_DIR)/ufds
+  cp $(ROOT)/$(RELEASE_TARBALL) $(BITS_DIR)/$(NAME)/$(RELEASE_TARBALL)
 
 
 include ./tools/mk/Makefile.deps
 ifeq ($(shell uname -s),SunOS)
-	include ./tools/mk/Makefile.node_prebuilt.targ
+  include ./tools/mk/Makefile.node_prebuilt.targ
 else
-	include ./tools/mk/Makefile.node.targ
+  include ./tools/mk/Makefile.node.targ
 endif
 include ./tools/mk/Makefile.smf.targ
 include ./tools/mk/Makefile.targ

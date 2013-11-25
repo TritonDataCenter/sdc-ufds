@@ -38,7 +38,6 @@ function SDCAccountRole() {
 util.inherits(SDCAccountRole, Validator);
 
 SDCAccountRole.prototype.validate = function validate(entry, config, callback) {
-    console.log(util.inspect(entry, false, 8, true));
     var attrs = entry.attributes;
     var errors = [];
     var members = attrs.uniquemember || [];

@@ -204,7 +204,8 @@ test('search base case sensitive search filter ok', function (t) {
 
 test('search base caseIgnoreMatch filter ok', function (t) {
     var dn = sprintf('login=%s_child1, ' + SUFFIX, LOGIN);
-    search(dn, sprintf('(login:caseIgnoreMatch:=%s_child1)', 'A' + ID.substr(0, 7)),
+    search(dn, sprintf('(login:caseIgnoreMatch:=%s_child1)', 'A' +
+            ID.substr(0, 7)),
         function (err, results, count) {
         t.ifError(err);
         t.equal(count, 1);
@@ -243,7 +244,8 @@ test('search sub substr filter ok', function (t) {
 
 
 test('search sub substr caseIgnoreSubstringsMatch filter ok', function (t) {
-    search(SUFFIX, '(login:caseIgnoreSubstringsMatch:=A*c*d*)', 'sub', function (err, results, count) {
+    search(SUFFIX, '(login:caseIgnoreSubstringsMatch:=A*c*d*)', 'sub',
+        function (err, results, count) {
         t.ifError(err);
         t.equal(count, TOTAL_ENTRIES);
         results.forEach(function (r) {

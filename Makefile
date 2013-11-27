@@ -63,7 +63,7 @@ include ./tools/mk/Makefile.smf.defs
 
 ROOT                    := $(shell pwd)
 RELEASE_TARBALL         := $(NAME)-pkg-$(STAMP).tar.bz2
-TMPDIR                  := /tmp/$(STAMP)
+RELSTAGEDIR                  := /tmp/$(STAMP)
 
 #
 # Env vars
@@ -117,12 +117,12 @@ pkg:
 .PHONY: release
 release: all docs
 	@echo "Building $(RELEASE_TARBALL)"
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds
-	@mkdir -p $(TMPDIR)/site
-	@touch $(TMPDIR)/site/.do-not-delete-me
-	@mkdir -p $(TMPDIR)/root
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds/etc
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/ufds/ssl
+	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/ufds
+	@mkdir -p $(RELSTAGEDIR)/site
+	@touch $(RELSTAGEDIR)/site/.do-not-delete-me
+	@mkdir -p $(RELSTAGEDIR)/root
+	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/ufds/etc
+	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/ufds/ssl
 	cp -r   $(ROOT)/build \
                 $(ROOT)/capi \
                 $(ROOT)/capi.js \
@@ -138,13 +138,13 @@ release: all docs
 		$(ROOT)/sapi_manifests \
 		$(ROOT)/smf \
 		$(ROOT)/test \
-		$(TMPDIR)/root/opt/smartdc/ufds/
-	@mkdir -p $(TMPDIR)/root/opt/smartdc/boot
-	cp -R $(ROOT)/deps/sdc-scripts/* $(TMPDIR)/root/opt/smartdc/boot/
-	cp -R $(ROOT)/boot/* $(TMPDIR)/root/opt/smartdc/boot/
-	cp $(ROOT)/etc/replicator.json.in $(TMPDIR)/root/opt/smartdc/ufds/etc
-	(cd $(TMPDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
-	@rm -rf $(TMPDIR)
+		$(RELSTAGEDIR)/root/opt/smartdc/ufds/
+	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/boot
+	cp -R $(ROOT)/deps/sdc-scripts/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
+	cp -R $(ROOT)/boot/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
+	cp $(ROOT)/etc/replicator.json.in $(RELSTAGEDIR)/root/opt/smartdc/ufds/etc
+	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
+	@rm -rf $(RELSTAGEDIR)
 
 .PHONY: publish
 publish: release

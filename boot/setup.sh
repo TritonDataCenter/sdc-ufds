@@ -8,7 +8,7 @@ export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}
 set -o xtrace
 
 role=ufds
-PATH=/opt/smartdc/ufds/build/node/bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
+PATH=/opt/smartdc/ufds/build/node/bin:/opt/smartdc/ufds/node_modules/.bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
 
 # Local manifests
 CONFIG_AGENT_LOCAL_MANIFESTS_DIRS=/opt/smartdc/$role
@@ -29,8 +29,44 @@ echo "Generating SSL Certificate"
     -keyout /opt/smartdc/ufds/ssl/key.pem -out /opt/smartdc/ufds/ssl/cert.pem \
     -days 3650
 
-# Schema upgrades which must run before the different ufds services are up:
-source /opt/smartdc/boot/update.sh
+# This function takes care of SQL schema upgrades which must run before the
+# ufds-master service boots. It's very likely that each one of the upgrades
+# into this function will run only once into the whole setup lifecycle.
+function update_ufds_sql_schema {
+  local moray_host=$(json -f ${METADATA} MORAY_SERVICE)
+  local moray_port=2020
+  local bucket=$(getbucket -h ${moray_host} -p ${moray_port} ufds_o_smartdc)
+  echo "Updating UFDS SQL schema if needed."
+  if [[ $? -ne 0 ]]; then
+    echo "Bucket ufds_o_smartdc does not exist. Assuming this is not an upgrade."
+  else
+    VERSION=$(echo ${bucket} | json options.version)
+    if [ "$VERSION" -le "6" ]; then
+      echo "Version is smaller than or equal than six. Have to upgrade ufds_o_smartdc bucket."
+      while read SQL
+      do
+        CMD=$(sql -h ${moray_host} -p ${moray_port} "${SQL}")
+      done < /opt/smartdc/ufds/data/capi-305.sql
+      echo "ufds_o_smartdc schema upgraded."
+    else
+      echo "Already updated to a version greater than 6, skipping capi-305 schema upgrade."
+    fi
+  fi
+}
+
+# You may want to run this right before we attempt the whole thing upgrade:
+#
+#   psql -U postgres \
+#   --command='CREATE DATABASE moray_backup WITH TEMPLATE moray OWNER moray;'
+#
+# It should be painless to rollback by just renaming stuff:
+#
+#   psql -U postgres \
+#   --command='ALTER DATABASE moray RENAME TO moray_upgrade_failure'
+#   psql -U postgres \
+#   --command='ALTER DATABASE moray_backup RENAME TO moray'
+#
+update_ufds_sql_schema
 
 # Gather metadata needed for setup
 UFDS_ADMIN_IP=$(json -f ${METADATA} ufds_admin_ips)

@@ -29,6 +29,9 @@ echo "Generating SSL Certificate"
     -keyout /opt/smartdc/ufds/ssl/key.pem -out /opt/smartdc/ufds/ssl/cert.pem \
     -days 3650
 
+# Schema upgrades which must run before the different ufds services are up:
+source /opt/smartdc/boot/update.sh
+
 # Gather metadata needed for setup
 UFDS_ADMIN_IP=$(json -f ${METADATA} ufds_admin_ips)
 UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)

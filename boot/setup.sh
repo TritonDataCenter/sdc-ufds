@@ -56,15 +56,15 @@ function update_ufds_sql_schema {
 
 # You may want to run this right before we attempt the whole thing upgrade:
 #
-#   psql -U postgres \
-#   --command='CREATE DATABASE moray_backup WITH TEMPLATE moray OWNER moray;'
+#   pg_dump -U moray -t 'ufds*' moray > moray_ufds_backup.sql
 #
-# It should be painless to rollback by just renaming stuff:
+# It should be painless to rollback by just removing and recreating ufds
+# related tables:
 #
-#   psql -U postgres \
-#   --command='ALTER DATABASE moray RENAME TO moray_upgrade_failure'
-#   psql -U postgres \
-#   --command='ALTER DATABASE moray_backup RENAME TO moray'
+#   psql -U moray moray \
+#     --command='DROP TABLE ufds_o_smartdc; DROP TABLE ufds_cn_changelog; DROP TABLE ufds_o_smartdc_locking_serial; DROP table ufds_cn_changelog_locking_serial; DROP SEQUENCE ufds_cn_changelog_serial; DROP SEQUENCE ufds_o_smartdc_serial;'
+#
+#   psql -U moray moray < moray_ufds_backup.sql
 #
 update_ufds_sql_schema
 

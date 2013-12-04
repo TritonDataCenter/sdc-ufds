@@ -1,6 +1,6 @@
 {
   "name": "ufds",
-  "version": "7.0.0",
+  "version": "7.1.0",
   "dependencies": {
     "bunyan": {
       "version": "0.22.0",
@@ -104,7 +104,6 @@
         "bunyan": {
           "version": "0.18.3",
           "from": "bunyan@0.18.3",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.18.3.tgz",
           "dependencies": {
             "mv": {
               "version": "0.0.4",
@@ -144,8 +143,7 @@
         },
         "mime": {
           "version": "1.2.9",
-          "from": "mime@1.2.9",
-          "resolved": "https://registry.npmjs.org/mime/-/mime-1.2.9.tgz"
+          "from": "mime@1.2.9"
         },
         "negotiator": {
           "version": "0.2.5",
@@ -153,8 +151,7 @@
         },
         "node-uuid": {
           "version": "1.4.0",
-          "from": "node-uuid@1.4.0",
-          "resolved": "https://registry.npmjs.org/node-uuid/-/node-uuid-1.4.0.tgz"
+          "from": "node-uuid@1.4.0"
         },
         "once": {
           "version": "1.1.1",
@@ -162,13 +159,11 @@
         },
         "qs": {
           "version": "0.5.3",
-          "from": "qs@0.5.3",
-          "resolved": "https://registry.npmjs.org/qs/-/qs-0.5.3.tgz"
+          "from": "qs@0.5.3"
         },
         "semver": {
           "version": "1.1.2",
-          "from": "semver@1.1.2",
-          "resolved": "https://registry.npmjs.org/semver/-/semver-1.1.2.tgz"
+          "from": "semver@1.1.2"
         },
         "spdy": {
           "version": "1.4.6",
@@ -217,7 +212,6 @@
         "bunyan": {
           "version": "0.21.4",
           "from": "bunyan@0.21.4",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.21.4.tgz",
           "dependencies": {
             "mv": {
               "version": "0.0.5",
@@ -332,7 +326,6 @@
     "bcrypt": {
       "version": "0.7.3",
       "from": "bcrypt@0.7.3",
-      "resolved": "https://registry.npmjs.org/bcrypt/-/bcrypt-0.7.3.tgz",
       "dependencies": {
         "bindings": {
           "version": "1.0.0",
@@ -376,8 +369,7 @@
     },
     "async": {
       "version": "0.1.22",
-      "from": "async@0.1.22",
-      "resolved": "https://registry.npmjs.org/async/-/async-0.1.22.tgz"
+      "from": "async@0.1.22"
     },
     "assert-plus": {
       "version": "0.1.2",

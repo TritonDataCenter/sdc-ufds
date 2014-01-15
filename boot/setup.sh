@@ -35,6 +35,7 @@ echo "Generating SSL Certificate"
 function update_ufds_sql_schema {
   local moray_host=$(json -f ${METADATA} MORAY_SERVICE)
   local moray_port=2020
+  local psql_host=$(json -f ${METADATA} manatee_admin_ips)
   local bucket=$(getbucket -h ${moray_host} -p ${moray_port} ufds_o_smartdc)
   echo "Updating UFDS SQL schema if needed."
   if [[ $? -ne 0 ]]; then
@@ -45,7 +46,7 @@ function update_ufds_sql_schema {
       echo "Version is smaller than or equal than six. Have to upgrade ufds_o_smartdc bucket."
       while read SQL
       do
-        CMD=$(sql -h ${moray_host} -p ${moray_port} "${SQL}")
+        CMD=$(psql -U moray -h $psql_host -d moray -c "${SQL}")
       done < /opt/smartdc/ufds/data/capi-305.sql
       echo "ufds_o_smartdc schema upgraded."
     else

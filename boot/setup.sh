@@ -70,7 +70,7 @@ function update_ufds_sql_schema {
 update_ufds_sql_schema
 
 # Gather metadata needed for setup
-UFDS_ADMIN_IP=$(json -f ${METADATA} ufds_admin_ips)
+UFDS_ADMIN_IP=127.0.0.1
 UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)
 UFDS_LDAP_ROOT_PW=$(json -f ${METADATA} ufds_ldap_root_pw)
 

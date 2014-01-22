@@ -241,16 +241,6 @@ fi
 
 rm -f $LDIF
 
-# Replicator
-REP_FILE_IN=/opt/smartdc/ufds/etc/replicator.json.in
-REP_FILE=/opt/smartdc/ufds/etc/replicator.json
-
-cp $REP_FILE_IN $REP_FILE
-gsed -i -e "s|UFDS_ADMIN_IP|$UFDS_ADMIN_IP|" $REP_FILE
-gsed -i -e "s|DATACENTER_NAME|$DATACENTER_NAME|" $REP_FILE
-gsed -i -e "s|LOCAL_ROOT_DN|$UFDS_LDAP_ROOT_DN|" $REP_FILE
-gsed -i -e "s|LOCAL_ROOT_PW|$UFDS_LDAP_ROOT_PW|" $REP_FILE
-
 # All done, run boilerplate end-of-setup
 sdc_setup_complete
 

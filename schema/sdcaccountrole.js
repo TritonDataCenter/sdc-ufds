@@ -48,7 +48,8 @@ function validate(entry, config, changes, callback) {
     var errors = [];
     var members = attrs.uniquemember || [];
     var groups = attrs.membergroup || [];
-    var i, j;
+    var policydocs = attrs.policydocument || [];
+    var i, j, k;
 
     members.sort();
     for (i = 0; i < members.length; i++) {
@@ -62,6 +63,14 @@ function validate(entry, config, changes, callback) {
     for (j = 0; j < groups.length; j++) {
         if (groups.indexOf(groups[j], j + 1) !== -1) {
             return callback(new ldap.ConstraintViolationError(groups[j] +
+                                                         ' is not unique'));
+        }
+    }
+
+    policydocs.sort();
+    for (k = 0; k < policydocs.length; k++) {
+        if (policydocs.indexOf(policydocs[k], k + 1) !== -1) {
+            return callback(new ldap.ConstraintViolationError(policydocs[k] +
                                                          ' is not unique'));
         }
     }

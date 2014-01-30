@@ -529,6 +529,23 @@ test('delete role with groups', function (t) {
 });
 
 
+test('mod role (with fake group)', function (t) {
+    var FAKE_DN = util.format(GRP_DN_FMT, libuuid.create(), libuuid.create());
+    var change = {
+        type: 'add',
+        modification: {
+            membergroup: [_1ST_GRP_DN, _2ND_GRP_DN, FAKE_DN]
+        }
+    };
+    CLIENT.modify(_1ST_ROLE_DN, change, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'NoSuchObjectError');
+        t.equal(err.message, FAKE_DN);
+        t.done();
+    });
+});
+
+
 test('delete group with roles', function (t) {
     CLIENT.del(_1ST_GRP_DN, function (err) {
         t.ifError(err);

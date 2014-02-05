@@ -19,7 +19,7 @@
         "restify": "2.3.4",
         "crc": "0.2.0",
         "microtime": "0.3.1",
-        "moray": "git+ssh://git@git.joyent.com:node-moray.git#1c65ad",
+        "moray": "git+ssh://git@git.joyent.com:node-moray.git#72b53a",
         "sigyan": "0.2.0",
         "bcrypt": "0.7.3",
         "vasync": "1.4.0",

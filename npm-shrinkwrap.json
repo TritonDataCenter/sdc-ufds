@@ -122,7 +122,7 @@
         },
         "deep-equal": {
           "version": "0.0.0",
-          "from": "deep-equal@0.0.0",
+          "from": "deep-equal@~0.0.0",
           "resolved": "https://registry.npmjs.org/deep-equal/-/deep-equal-0.0.0.tgz"
         },
         "formidable": {
@@ -219,8 +219,8 @@
     },
     "moray": {
       "version": "1.0.0",
-      "from": "moray@git+ssh://git@git.joyent.com:node-moray.git#1c65ad",
-      "resolved": "git+ssh://git@git.joyent.com:node-moray.git#1c65ad3e7c1833a8335a69cdce49df15614d4abd",
+      "from": "moray@git+ssh://git@git.joyent.com:node-moray.git#72b53a",
+      "resolved": "git+ssh://git@git.joyent.com:node-moray.git#72b53a37892a64a003cb874c391bdd39c45fc2b9",
       "dependencies": {
         "assert-plus": {
           "version": "0.1.5",
@@ -278,8 +278,7 @@
                 },
                 "string_decoder": {
                   "version": "0.10.25",
-                  "from": "string_decoder@~0.10.x",
-                  "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-0.10.25.tgz"
+                  "from": "string_decoder@~0.10.x"
                 },
                 "debuglog": {
                   "version": "0.0.2",
@@ -390,8 +389,7 @@
     },
     "assert-plus": {
       "version": "0.1.2",
-      "from": "assert-plus@0.1.2",
-      "resolved": "https://registry.npmjs.org/assert-plus/-/assert-plus-0.1.2.tgz"
+      "from": "assert-plus@0.1.2"
     },
     "backoff": {
       "version": "2.3.0",

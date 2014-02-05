@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Joyent, Inc. All rights reserved.
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
  *
  * This file defines schema for sdcAccountGroup, objectclass added to all the
  * groups of a given account. These entries are simmilar to GroupOfUniqueNames
@@ -31,7 +31,7 @@ function SDCAccountGroup() {
         },
         optional: {
             uniquemember: 1000000,
-            memberrole: 1000000
+            memberpolicy: 1000000
         }
     });
 }
@@ -42,7 +42,7 @@ function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
     var members = attrs.uniquemember || [];
-    var roles = attrs.memberrole || [];
+    var policies = attrs.memberpolicy || [];
     var i, j;
 
     members.sort();
@@ -53,10 +53,10 @@ function validate(entry, config, changes, callback) {
         }
     }
 
-    roles.sort();
-    for (j = 0; j < roles.length; j++) {
-        if (roles.indexOf(roles[j], j + 1) !== -1) {
-            return callback(new ldap.ConstraintViolationError(roles[j] +
+    policies.sort();
+    for (j = 0; j < policies.length; j++) {
+        if (policies.indexOf(policies[j], j + 1) !== -1) {
+            return callback(new ldap.ConstraintViolationError(policies[j] +
                                                          ' is not unique'));
         }
     }

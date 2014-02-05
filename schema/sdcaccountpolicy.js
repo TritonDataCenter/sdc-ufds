@@ -1,15 +1,9 @@
 /*
- * Copyright (c) 2013, Joyent, Inc. All rights reserved.
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
  *
- * This file defines schema for sdcAccountRole, objectclass added to all the
- * roles of a given account. These entries are simmilar to GroupOfUniqueNames
- * object class.
+ * This file defines schema for sdcAccountPolicy, objectclass added to all the
+ * access policies of a given account.
  *
- * Purpose of this class is to ensure an account role has both, an
- * account attribute and one or more policy documents.
- *
- * Roles can directly have one or more unique members, or can link account
- * groups through "memberGroup" attribute.
  */
 
 var assert = require('assert');
@@ -24,40 +18,30 @@ var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 
 // --- API
 
-function SDCAccountRole() {
+function SDCAccountPolicy() {
     Validator.call(this, {
-        name: 'sdcaccountrole',
+        name: 'sdcaccountpolicy',
         required: {
-            role: 1,
+            name: 1,
             account: 1,
             uuid: 1,
             policydocument: 100000
         },
         optional: {
-            uniquemember: 1000000,
             membergroup: 1000000,
             description: 1
         }
     });
 }
-util.inherits(SDCAccountRole, Validator);
+util.inherits(SDCAccountPolicy, Validator);
 
-SDCAccountRole.prototype.validate =
+SDCAccountPolicy.prototype.validate =
 function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
-    var members = attrs.uniquemember || [];
     var groups = attrs.membergroup || [];
     var policydocs = attrs.policydocument || [];
     var i, j, k;
-
-    members.sort();
-    for (i = 0; i < members.length; i++) {
-        if (members.indexOf(members[i], i + 1) !== -1) {
-            return callback(new ldap.ConstraintViolationError(members[i] +
-                                                         ' is not unique'));
-        }
-    }
 
     groups.sort();
     for (j = 0; j < groups.length; j++) {
@@ -93,7 +77,7 @@ function validate(entry, config, changes, callback) {
             errors.push('uuid: ' + uuid + ' is invalid');
         }
 
-        if (dn.rdns[0]['role-uuid'] && dn.rdns[0]['role-uuid'] !== uuid) {
+        if (dn.rdns[0]['policy-uuid'] && dn.rdns[0]['policy-uuid'] !== uuid) {
             errors.push('dn: ' + entry.dn + ' is invalid');
         }
 
@@ -117,7 +101,7 @@ function validate(entry, config, changes, callback) {
 module.exports = {
 
     createInstance: function createInstance() {
-        return new SDCAccountRole();
+        return new SDCAccountPolicy();
     }
 
 };

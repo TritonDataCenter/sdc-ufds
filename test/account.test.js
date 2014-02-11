@@ -468,7 +468,8 @@ test('mod policy (changetype replace w/o values)', function (t) {
                     };
                     CLIENT.modify(_3RD_POLICY_DN, change, function (err5) {
                         t.ifError(err5);
-                        helper.get(CLIENT, _3RD_POLICY_DN, function (err6, obj6) {
+                        helper.get(CLIENT, _3RD_POLICY_DN,
+                            function (err6, obj6) {
                             t.ifError(err6);
                             t.ok(!obj6.membergroup);
                             helper.get(CLIENT, _1ST_GRP_DN,

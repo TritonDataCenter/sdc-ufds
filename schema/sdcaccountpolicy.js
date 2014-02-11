@@ -41,7 +41,7 @@ function validate(entry, config, changes, callback) {
     var errors = [];
     var groups = attrs.membergroup || [];
     var policydocs = attrs.policydocument || [];
-    var i, j, k;
+    var j, k;
 
     groups.sort();
     for (j = 0; j < groups.length; j++) {

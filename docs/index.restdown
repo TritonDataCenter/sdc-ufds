@@ -23,11 +23,12 @@ The directory tree is laid out as follows:
     o=smartdc
       +-ou=users
       |  +-uuid=:uuid
-      |  | +-key=:fingerpring
+      |  | +-key=:fingerprint
       |  | +-metadata=:appkey
       |  | +-dclimit=:datacenter
       |  | +-amonprobegroup=:uuid
       |  | +-amonprobe=:uuid
+      |  | +-cn=pwdpolicy
       +-ou=groups
       |  +-cn=:name
       +-cn=pwdpolicy
@@ -36,10 +37,9 @@ The directory tree is laid out as follows:
       |  +-cn=replicator
       +-ou=images
       |  +-uuid=:uuid
-      +-ou=packages
-      |  +-uuid=:uuid
-      +-ou=config
       +-ou=fwrules
+      |  +-uuid=:uuid
+      +-ou=packages
       |  +-uuid=:uuid
 
 
@@ -75,6 +75,12 @@ attributes are not hidden
 
 ## Instance Types / Packages (sdcPackage)
 
+<div class="intro">
+Please, note we're in the process to move <code>sdcPackages</code> into their own dedicated
+API. Updated info at the new <a href="https://mo.joyent.com/docs/papi/master/" title="PAPI">Packages API</a>
+documentation.
+</div>
+
 The `sdcPackage` type is one of the `uuid=:uuid, ou=packages, o=smartdc`
 entries, and contains all the attributes for a "package".
 These objects should always be stored by uuid.  Here's an example of
@@ -103,34 +109,37 @@ an instance type:
     overprovision_memory: 1
     objectclass: sdcPackage
 
+
+
 ||**Attribute**||**Required**||**Explanation**||
 ||uuid||Mandatory||UUID for the sdcPackage||
-||owner_uuid||Optional||UUID of the owner of this sdcPackage||
+||owner\_uuid||Optional||UUID of the owner of this sdcPackage||
 ||active||Mandatory||is this provisionable: true or false||
 ||vcpus||Mandatory if type == kvm||number of cpus to show, Integer 1 - 64||
-||cpu_cap||Mandatory||CPU CAP,Integer 20-1000, formula: VCPU * Bursting Ratio * OverProvision Ratio * 100 + (vCPU <= 1 ? 50: 100)||
+||cpu\_cap||Mandatory||CPU CAP,Integer 20-1000, formula: VCPU * Bursting Ratio * OverProvision Ratio * 100 + (vCPU <= 1 ? 50: 100)||
 ||default||Mandatory||is this the default instance type: true or false||
 ||group||Mandatory||group of associated instance types, either: Standard, High CPU, High Memory, High Storage, High IO or the Customer's Name||
 ||description||Mandatory||description of this instance type||
-||max_lwps||Mandatory||max processes, Integer||
-||max_physical_memory||Mandatory||max RAM in MB, Integer||
-||max_swap||Mandatory||max SWAP in MB, Integer||
+||max\_lwps||Mandatory||max processes, Integer||
+||max\_physical_memory||Mandatory||max RAM in MB, Integer||
+||max\_swap||Mandatory||max SWAP in MB, Integer||
 ||name||Mandatory||API name, using this formula: [version]-[familyname]-[RAM GB]-[type]-[flags], version is currently g3, familyname is group, type is either smartos or kvm, flags is to catch cluster computes (cc)||
-||common_name||Mandatory||Name displayed in the Portal||
+||common\_name||Mandatory||Name displayed in the Portal||
 ||quota||Mandatory||disk size in MB||
 ||networks||Optional||List of networks to associate with||
 ||version||Mandatory||semver version number||
 ||parent||Mandatory, if created for customer||API name of the instance type this was cloned from||
 ||traits||Optional||set of traits for provisioning, currently limited to ssd:true and storage:true by current server installation||
-||zfs_io_priority||Mandatory||ZFS IO Priority, Integer 0 - 1000||
-||fss||Mandatory||Typically computed value, formula: OverProvision Ratio == 1 ? CPU_CAP: (Guest DRAM/Host DRAM provisionable) * Host CPUs * 100||
-||cpu_burst_ratio||Optional||Typically computed value, formula: (CPU_CAP / (OverProvision Ratio * Burst Ratio))/FSS||
-||ram_ratio||Optional||Typically computed value, formula: RAM GB/((CPU_CAP/100)*Bursting Ratio * OverProvision Ratio)||
-||overprovision_cpu||Optional||Overprovision CPU, 1=don't overprovision, 2=overprovision||
-||overprovision_memory||Optional||Overprovision Memory, 1=don't overprovision, 2=overprovision||
-||overprovision_storage||Optional||Overprovision Storage, 1=don't overprovision, 2=overprovision||
-||overprovision_network||Optional||Overprovision Network, 1=don't overprovision, 2=overprovision||
-||overprovision_io||Optional||Overprovision IO, 1=don't overprovision, 2=overprovision||
+||zfs\_io\_priority||Mandatory||ZFS IO Priority, Integer 0 - 1000||
+||fss||Mandatory||Typically computed value, formula: OverProvision Ratio == 1 ? CPU\_CAP: (Guest DRAM/Host DRAM provisionable) * Host CPUs * 100||
+||cpu\_burst\_ratio||Optional||Typically computed value, formula: (CPU\_CAP / (OverProvision Ratio * Burst Ratio))/FSS||
+||ram\_ratio||Optional||Typically computed value, formula: RAM GB/((CPU\_CAP/100)*Bursting Ratio * OverProvision Ratio)||
+||overprovision\_cpu||Optional||Overprovision CPU, 1=don't overprovision, 2=overprovision||
+||overprovision\_memory||Optional||Overprovision Memory, 1=don't overprovision, 2=overprovision||
+||overprovision\_storage||Optional||Overprovision Storage, 1=don't overprovision, 2=overprovision||
+||overprovision\_network||Optional||Overprovision Network, 1=don't overprovision, 2=overprovision||
+||overprovision\_io||Optional||Overprovision IO, 1=don't overprovision, 2=overprovision||
+
 
 ## SSH Keys (sdcKey)
 

@@ -430,6 +430,41 @@ test('latestchangenumber', function (t) {
 });
 
 
+// CAPI-354: sizeLimit:
+test('search sizeLimit', function (t) {
+    var opts = {
+        scope: 'sub',
+        filter: '(login=*c*d*)',
+        sizeLimit: 5
+    };
+
+    CLIENT.search(SUFFIX, opts, function (err, res) {
+        t.ifError(err);
+
+        var results = [];
+        var retrieved = 0;
+        res.on('searchEntry', function (entry) {
+            if (USERS[entry.dn.toString()]) {
+                results.push({
+                    dn: entry.dn.toString(),
+                    attributes: entryToObject(entry)
+                });
+                retrieved++;
+            }
+        });
+
+        res.on('error', function (error) {
+            t.ifError(error);
+            t.done();
+        });
+
+        res.on('end', function (result) {
+            t.equal(retrieved, opts.sizeLimit);
+            t.done();
+        });
+    });
+});
+
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {
         t.ifError(err);

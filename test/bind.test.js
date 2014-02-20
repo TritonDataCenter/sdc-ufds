@@ -1,4 +1,4 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 //
 // See helper.js for customization options.
 //
@@ -7,7 +7,8 @@ var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
 }
-var sprintf = require('util').format;
+var util = require('util'),
+    sprintf = util.format;
 
 if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];
@@ -116,6 +117,42 @@ test('authorization denied', function (t) {
     });
 });
 
+
+test('unbound client should not throw exceptions', function (t) {
+    helper.createClient(true, function (err, unboundClient) {
+        t.ifError(err, 'Unbound client error');
+        unboundClient.compare(USER_DN, 'login', DUP_LOGIN,
+            function (er2, match) {
+            t.ok(er2);
+            t.equal(er2.name, 'InsufficientAccessRightsError');
+            var opts = {
+                scope: 'sub',
+                filter: '(objectclass=*)',
+                sizeLimit: 2
+            };
+
+            unboundClient.search('cn=changelog', opts, function (er3, res) {
+                t.ifError(er3);
+                res.on('searchEntry', function (entry) {
+                    return;
+                });
+
+                res.on('error', function (error) {
+                    t.ok(error);
+                    t.equal(error.name, 'InsufficientAccessRightsError');
+                    unboundClient.socket.destroy();
+                    t.done();
+                });
+
+                res.on('end', function (result) {
+                    t.done();
+                });
+            });
+
+        });
+
+    });
+});
 
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2014, Joyent, Inc. All rights reserved.
  *
- * This file defines schema for sdcAccountGroup, objectclass added to all the
+ * This file defines schema for sdcAccountRole, objectclass added to all the
  * groups of a given account. These entries are simmilar to GroupOfUniqueNames
  * object class.
  *
@@ -21,11 +21,11 @@ var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
 
 // --- API
 
-function SDCAccountGroup() {
+function SDCAccountRole() {
     Validator.call(this, {
-        name: 'sdcaccountgroup',
+        name: 'sdcaccountrole',
         required: {
-            cn: 1,
+            name: 1,
             account: 1,
             uuid: 1
         },
@@ -35,9 +35,9 @@ function SDCAccountGroup() {
         }
     });
 }
-util.inherits(SDCAccountGroup, Validator);
+util.inherits(SDCAccountRole, Validator);
 
-SDCAccountGroup.prototype.validate =
+SDCAccountRole.prototype.validate =
 function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
@@ -79,7 +79,7 @@ function validate(entry, config, changes, callback) {
             errors.push('uuid: ' + uuid + ' is invalid');
         }
 
-        if (dn.rdns[0]['group-uuid'] && dn.rdns[0]['group-uuid'] !== uuid) {
+        if (dn.rdns[0]['role-uuid'] && dn.rdns[0]['role-uuid'] !== uuid) {
             errors.push('dn: ' + entry.dn + ' is invalid');
         }
 
@@ -103,7 +103,7 @@ function validate(entry, config, changes, callback) {
 module.exports = {
 
     createInstance: function createInstance() {
-        return new SDCAccountGroup();
+        return new SDCAccountRole();
     }
 
 };

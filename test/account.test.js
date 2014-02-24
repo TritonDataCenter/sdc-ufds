@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2014, Joyent, Inc. All rights reserved.
  *
- * Test cases for everything related account sub-users, groups and roles.
+ * Test cases for everything related account sub-users, roles and policies.
  * See helper.js for customization options.
  */
 
@@ -29,7 +29,7 @@ var DN_FMT = 'uuid=%s, ' + SUFFIX;
 // Sub-users:
 var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
 var POLICY_DN_FMT = 'policy-uuid=%s, uuid=%s, ' + SUFFIX;
-var GRP_DN_FMT = 'group-uuid=%s, uuid=%s, ' + SUFFIX;
+var ROLE_DN_FMT = 'role-uuid=%s, uuid=%s, ' + SUFFIX;
 
 var test = helper.test;
 
@@ -146,7 +146,7 @@ test('add policy', function (t) {
     var policy = 'a' + policy_uuid.substr(0, 7);
     var entry = {
         name: policy,
-        policydocument: 'Any string would be OK here',
+        rule: 'Any string would be OK here',
         account: DUP_ID,
         description: 'This is completely optional',
         objectclass: 'sdcaccountpolicy',
@@ -166,19 +166,19 @@ test('add policy', function (t) {
 });
 
 
-test('add group with policy', function (t) {
-    var group_uuid =  uuid();
-    var group = 'a' + group_uuid.substr(0, 7);
+test('add role with policy', function (t) {
+    var role_uuid =  uuid();
+    var role = 'a' + role_uuid.substr(0, 7);
     var entry = {
-        cn: group,
+        name: role,
         uniquemember: SUB_USER_DN,
         account: DUP_ID,
         memberpolicy: _1ST_POLICY_DN,
-        uuid: group_uuid,
-        objectclass: 'sdcaccountgroup'
+        uuid: role_uuid,
+        objectclass: 'sdcaccountrole'
     };
 
-    _1ST_GRP_DN = sprintf(GRP_DN_FMT, group_uuid, DUP_ID);
+    _1ST_GRP_DN = sprintf(ROLE_DN_FMT, role_uuid, DUP_ID);
 
     CLIENT.add(_1ST_GRP_DN, entry, function (err) {
         t.ifError(err);
@@ -189,7 +189,7 @@ test('add group with policy', function (t) {
             helper.get(CLIENT, _1ST_POLICY_DN, function (err3, obj3) {
                 t.ifError(err3);
                 t.ok(obj3);
-                t.equal(obj3.membergroup, _1ST_GRP_DN);
+                t.equal(obj3.memberrole, _1ST_GRP_DN);
                 t.done();
             });
         });
@@ -197,18 +197,18 @@ test('add group with policy', function (t) {
 });
 
 
-test('add group w/o policy', function (t) {
-    var group_uuid =  uuid();
-    var group = 'a' + group_uuid.substr(0, 7);
+test('add role w/o policy', function (t) {
+    var role_uuid =  uuid();
+    var role = 'a' + role_uuid.substr(0, 7);
     var entry = {
-        cn: group,
+        name: role,
         uniquemember: SUB_USER_DN,
         account: DUP_ID,
-        uuid: group_uuid,
-        objectclass: 'sdcaccountgroup'
+        uuid: role_uuid,
+        objectclass: 'sdcaccountrole'
     };
 
-    _2ND_GRP_DN = sprintf(GRP_DN_FMT, group_uuid, DUP_ID);
+    _2ND_GRP_DN = sprintf(ROLE_DN_FMT, role_uuid, DUP_ID);
 
     CLIENT.add(_2ND_GRP_DN, entry, function (err) {
         t.ifError(err);
@@ -221,7 +221,7 @@ test('add group w/o policy', function (t) {
 });
 
 
-test('add member to group', function (t) {
+test('add member to role', function (t) {
     var change = {
         operation: 'add',
         modification: {
@@ -240,16 +240,16 @@ test('add member to group', function (t) {
 });
 
 
-test('add policy with group', function (t) {
+test('add policy with role', function (t) {
     var policy_uuid = uuid();
     var policy = 'a' + policy_uuid.substr(0, 7);
     var entry = {
         name: policy,
-        policydocument: 'Any string would be OK here',
+        rule: 'Any string would be OK here',
         account: DUP_ID,
         description: 'This is completely optional',
         objectclass: 'sdcaccountpolicy',
-        membergroup: _2ND_GRP_DN,
+        memberrole: _2ND_GRP_DN,
         uuid: policy_uuid
     };
 
@@ -277,7 +277,7 @@ test('prepare modifications', function (t) {
     var policy = 'a' + policy_uuid.substr(0, 7);
     var entry = {
         name: policy,
-        policydocument: 'Any string would be OK here',
+        rule: 'Any string would be OK here',
         account: DUP_ID,
         description: 'This is completely optional',
         objectclass: 'sdcaccountpolicy',
@@ -290,17 +290,17 @@ test('prepare modifications', function (t) {
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj) {
             t.ifError(err2);
             t.ok(obj);
-            var group_uuid =  uuid();
-            var group = 'a' + group_uuid.substr(0, 7);
+            var role_uuid =  uuid();
+            var role = 'a' + role_uuid.substr(0, 7);
             entry = {
-                cn: group,
+                name: role,
                 uniquemember: SUB_USER_DN,
                 account: DUP_ID,
-                uuid: group_uuid,
-                objectclass: 'sdcaccountgroup'
+                uuid: role_uuid,
+                objectclass: 'sdcaccountrole'
             };
 
-            _3RD_GRP_DN = sprintf(GRP_DN_FMT, group_uuid, DUP_ID);
+            _3RD_GRP_DN = sprintf(ROLE_DN_FMT, role_uuid, DUP_ID);
 
             CLIENT.add(_3RD_GRP_DN, entry, function (err3) {
                 t.ifError(err3);
@@ -319,15 +319,15 @@ test('mod policy (changetype add)', function (t) {
     var change = {
         type: 'add',
         modification: {
-            membergroup: [_1ST_GRP_DN, _2ND_GRP_DN]
+            memberrole: [_1ST_GRP_DN, _2ND_GRP_DN]
         }
     };
     CLIENT.modify(_3RD_POLICY_DN, change, function (err) {
         t.ifError(err);
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj2) {
             t.ifError(err2);
-            t.ok(obj2.membergroup.indexOf(_1ST_GRP_DN) !== -1);
-            t.ok(obj2.membergroup.indexOf(_2ND_GRP_DN) !== -1);
+            t.ok(obj2.memberrole.indexOf(_1ST_GRP_DN) !== -1);
+            t.ok(obj2.memberrole.indexOf(_2ND_GRP_DN) !== -1);
             helper.get(CLIENT, _1ST_GRP_DN, function (err3, obj3) {
                 t.ifError(err3);
                 t.ok(obj3.memberpolicy.indexOf(_3RD_POLICY_DN) !== -1);
@@ -346,16 +346,16 @@ test('mod policy (changetype replace keep one, replace other)', function (t) {
     var change = {
         type: 'replace',
         modification: {
-            membergroup: [_1ST_GRP_DN, _3RD_GRP_DN]
+            memberrole: [_1ST_GRP_DN, _3RD_GRP_DN]
         }
     };
     CLIENT.modify(_3RD_POLICY_DN, change, function (err) {
         t.ifError(err);
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj2) {
             t.ifError(err2);
-            t.ok(obj2.membergroup.indexOf(_1ST_GRP_DN) !== -1);
-            t.ok(obj2.membergroup.indexOf(_2ND_GRP_DN) === -1);
-            t.ok(obj2.membergroup.indexOf(_3RD_GRP_DN) !== -1);
+            t.ok(obj2.memberrole.indexOf(_1ST_GRP_DN) !== -1);
+            t.ok(obj2.memberrole.indexOf(_2ND_GRP_DN) === -1);
+            t.ok(obj2.memberrole.indexOf(_3RD_GRP_DN) !== -1);
             helper.get(CLIENT, _1ST_GRP_DN, function (err3, obj3) {
                 t.ifError(err3);
                 t.ok(obj3.memberpolicy.indexOf(_3RD_POLICY_DN) !== -1);
@@ -378,15 +378,15 @@ test('mod policy (changetype delete with values)', function (t) {
     var change = {
         type: 'delete',
         modification: {
-            membergroup: [_3RD_GRP_DN]
+            memberrole: [_3RD_GRP_DN]
         }
     };
     CLIENT.modify(_3RD_POLICY_DN, change, function (err) {
         t.ifError(err);
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj2) {
             t.ifError(err2);
-            t.ok(obj2.membergroup.indexOf(_1ST_GRP_DN) !== -1);
-            t.ok(obj2.membergroup.indexOf(_3RD_GRP_DN) === -1);
+            t.ok(obj2.memberrole.indexOf(_1ST_GRP_DN) !== -1);
+            t.ok(obj2.memberrole.indexOf(_3RD_GRP_DN) === -1);
             helper.get(CLIENT, _1ST_GRP_DN, function (err3, obj3) {
                 t.ifError(err3);
                 t.ok(obj3.memberpolicy.indexOf(_3RD_POLICY_DN) !== -1);
@@ -405,14 +405,14 @@ test('mod policy (changetype delete w/o values)', function (t) {
     var change = {
         type: 'delete',
         modification: {
-            membergroup: []
+            memberrole: []
         }
     };
     CLIENT.modify(_3RD_POLICY_DN, change, function (err) {
         t.ifError(err);
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj2) {
             t.ifError(err2);
-            t.ok(!obj2.membergroup);
+            t.ok(!obj2.memberrole);
             helper.get(CLIENT, _1ST_GRP_DN, function (err3, obj3) {
                 t.ifError(err3);
                 t.ok(obj3.memberpolicy.indexOf(_3RD_POLICY_DN) === -1);
@@ -427,14 +427,14 @@ test('mod policy (changetype delete entry has no values)', function (t) {
     var change = {
         type: 'delete',
         modification: {
-            membergroup: []
+            memberrole: []
         }
     };
     CLIENT.modify(_3RD_POLICY_DN, change, function (err) {
         t.ifError(err);
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj2) {
             t.ifError(err2);
-            t.ok(!obj2.membergroup);
+            t.ok(!obj2.memberrole);
             t.done();
         });
     });
@@ -445,15 +445,15 @@ test('mod policy (changetype replace w/o values)', function (t) {
     var change = {
         type: 'add',
         modification: {
-            membergroup: [_1ST_GRP_DN, _2ND_GRP_DN]
+            memberrole: [_1ST_GRP_DN, _2ND_GRP_DN]
         }
     };
     CLIENT.modify(_3RD_POLICY_DN, change, function (err) {
         t.ifError(err);
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj2) {
             t.ifError(err2);
-            t.ok(obj2.membergroup.indexOf(_1ST_GRP_DN) !== -1);
-            t.ok(obj2.membergroup.indexOf(_2ND_GRP_DN) !== -1);
+            t.ok(obj2.memberrole.indexOf(_1ST_GRP_DN) !== -1);
+            t.ok(obj2.memberrole.indexOf(_2ND_GRP_DN) !== -1);
             helper.get(CLIENT, _1ST_GRP_DN, function (err3, obj3) {
                 t.ifError(err3);
                 t.ok(obj3.memberpolicy.indexOf(_3RD_POLICY_DN) !== -1);
@@ -463,7 +463,7 @@ test('mod policy (changetype replace w/o values)', function (t) {
                     change = {
                         type: 'replace',
                         modification: {
-                            membergroup: []
+                            memberrole: []
                         }
                     };
                     CLIENT.modify(_3RD_POLICY_DN, change, function (err5) {
@@ -471,7 +471,7 @@ test('mod policy (changetype replace w/o values)', function (t) {
                         helper.get(CLIENT, _3RD_POLICY_DN,
                             function (err6, obj6) {
                             t.ifError(err6);
-                            t.ok(!obj6.membergroup);
+                            t.ok(!obj6.memberrole);
                             helper.get(CLIENT, _1ST_GRP_DN,
                                 function (err7, obj7) {
                                 t.ifError(err7);
@@ -494,7 +494,7 @@ test('mod policy (changetype replace w/o values)', function (t) {
 });
 
 
-test('delete policy with groups', function (t) {
+test('delete policy with roles', function (t) {
     CLIENT.del(_2ND_POLICY_DN, function (err) {
         t.ifError(err);
         // Test reverseIndex has been removed
@@ -508,12 +508,12 @@ test('delete policy with groups', function (t) {
 });
 
 
-test('mod policy (with fake group)', function (t) {
-    var FAKE_DN = util.format(GRP_DN_FMT, libuuid.create(), libuuid.create());
+test('mod policy (with fake role)', function (t) {
+    var FAKE_DN = util.format(ROLE_DN_FMT, libuuid.create(), libuuid.create());
     var change = {
         type: 'add',
         modification: {
-            membergroup: [_1ST_GRP_DN, _2ND_GRP_DN, FAKE_DN]
+            memberrole: [_1ST_GRP_DN, _2ND_GRP_DN, FAKE_DN]
         }
     };
     CLIENT.modify(_1ST_POLICY_DN, change, function (err) {
@@ -525,14 +525,14 @@ test('mod policy (with fake group)', function (t) {
 });
 
 
-test('delete group with policies', function (t) {
+test('delete role with policies', function (t) {
     CLIENT.del(_1ST_GRP_DN, function (err) {
         t.ifError(err);
         // Test reverseIndex has been removed
         helper.get(CLIENT, _1ST_POLICY_DN, function (err3, obj3) {
             t.ifError(err3);
             t.ok(obj3);
-            t.ok(obj3.membergroup.indexOf(_2ND_GRP_DN) === -1);
+            t.ok(obj3.memberrole.indexOf(_2ND_GRP_DN) === -1);
             t.done();
         });
     });

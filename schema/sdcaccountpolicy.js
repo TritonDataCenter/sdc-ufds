@@ -25,10 +25,10 @@ function SDCAccountPolicy() {
             name: 1,
             account: 1,
             uuid: 1,
-            policydocument: 100000
+            rule: 100000
         },
         optional: {
-            membergroup: 1000000,
+            memberrole: 1000000,
             description: 1
         }
     });
@@ -39,8 +39,8 @@ SDCAccountPolicy.prototype.validate =
 function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
-    var groups = attrs.membergroup || [];
-    var policydocs = attrs.policydocument || [];
+    var groups = attrs.memberrole || [];
+    var policydocs = attrs.rule || [];
     var j, k;
 
     groups.sort();

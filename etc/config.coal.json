@@ -9,7 +9,7 @@
     "use_bcrypt": false,
     "ufds_is_master": true,
     "moray": {
-        "url": "tcp://moray.coal.joyent.us:2020",
+        "url": "http://moray.coal.joyent.us:2020",
         "connectTimeout": 1000,
         "retry": {
             "retries": 3,
@@ -18,7 +18,7 @@
         "dns": {
             "resolvers": ["10.99.99.11"]
         },
-        "version": 12
+        "version": 13
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -98,7 +98,7 @@
             "company": {"type": "string"},
             "account": { "type": "string" },
             "memberpolicy": { "type": "[string]" },
-            "membergroup": { "type": "[string]" }
+            "memberrole": { "type": "[string]" }
         }
     }
 }

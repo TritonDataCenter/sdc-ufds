@@ -288,12 +288,12 @@ aforementioned `uuid` and `account` attributes, these entries have the following
 properties:
 
 - `name` (mandatory) and `description` (optional) of the entry.
-- One or more `policydocument` values. These are different [Aperture](https://github.com/joyent/node-aperture)
+- One or more `rule` values. These are different [Aperture](https://github.com/joyent/node-aperture)
   sentences. Note that **when more than one sentence is present, the [conditions](https://github.com/joyent/node-aperture#conditions)
   expressed by these sentences will be evaluated using `OR`**.
-- One or more `membergroup` values. These will point to the DNs of the account
-  groups linking to each policy. Please, note this value is **automatically added**
-  when you add a link to a `sdcAccountPolicy` entry from any group.
+- One or more `memberrole` values. These will point to the DNs of the account
+  roles linking to each policy. Please, note this value is **automatically added**
+  when you add a link to a `sdcAccountPolicy` entry from any role.
 
 
       dn: policy-uuid=7c18cb44-a22c-4836-a1f4-9215a56871b7, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
@@ -302,26 +302,26 @@ properties:
       name: policy-name-can-be-modified
       description: This is completely optional
       objectclass: sdcaccountpolicy
-      policydocument: ["Fred can read *.js when dirname = examples and sourceip = 10.0.0.0/8","Bob can read and write timesheet if requesttime::time > 07:30:00 and requesttime::time < 18:30:00 and requesttime::day in (Mon, Tue, Wed, THu, Fri)","John, Jack and Jane can ops_* *","Pedro can delete *"]
-      membergroup: group-uuid=fe461981-0615-40ff-a537-f5edfc511b13, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
+      rule: ["Fred can read *.js when dirname = examples and sourceip = 10.0.0.0/8","Bob can read and write timesheet if requesttime::time > 07:30:00 and requesttime::time < 18:30:00 and requesttime::day in (Mon, Tue, Wed, THu, Fri)","John, Jack and Jane can ops_* *","Pedro can delete *"]
+      memberrole: group-uuid=fe461981-0615-40ff-a537-f5edfc511b13, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
 
-## Groups (sdcAccountGroup)
+## Roles (sdcAccountRole)
 
 These are similar entries to the top level groups given they can also take
 multipe sdcPerson values for the attribute `uniquemember`. The following is
-the complete list of attributes for entries of class `sdcAccountGroup`:
+the complete list of attributes for entries of class `sdcAccountRole`:
 
-- `cn` (mandatory) of the entry.
+- `name` (mandatory) of the entry.
 - `memberpolicy`: the DN for one or more `sdcAccountPolicy` entries linked from
-  the group. (Again, note these values will be automatically updated by UFDS
+  the role. (Again, note these values will be automatically updated by UFDS
   server when, for example, we delete one of the linked `sdcAccountPolicy` entries).
 - `uniquemember`: DNs of the `sdcAccountUser` entries we want to include into
   this group.
 
         dn: group-uuid=fe461981-0615-40ff-a537-f5edfc511b13, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
         account: 4bc1929f-dfc2-4c04-ae6c-0a388ee67f97
-        cn: role-name-can-be-modified
-        objectclass: sdcaccountgroup
+        name: role-name-can-be-modified
+        objectclass: sdcaccountrole
         uniquemember: uuid=155ff4f6-f7c8-427e-bad6-5a7fbaa1bd7d, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
         uniquemember: uuid=d8945574-c2c7-4e08-8fb9-a5f43281cdcb, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
         uuid: fe461981-0615-40ff-a537-f5edfc511b13
@@ -330,17 +330,12 @@ the complete list of attributes for entries of class `sdcAccountGroup`:
 
 ## UFDS and CloudAPI mappings
 
-There are several differences between the way UFDS stores the information and
-the way this information is displayed to customers through CloudAPI:
-
-- The main one is that what we call `sdcAccountGroup` in UFDS is called a
-  `role` in CloudAPI.
-- Then, while UFDS stores the whole DNs as the values of `uniquemember` and
-  `memberpolicy` attributes, the respective `members` and `policies` attributes
-  in CloudAPI take the list of `login` names for the users and the list of
-  `names` for the policies.
-- Finally, the group `cn` is called the role `name` in CloudAPI, and the
-  policy `policydocument` are called `rules`.
+Main difference between the way UFDS stores the information and
+the way this information is displayed to customers through CloudAPI
+is that while UFDS stores the whole DNs as the values of `uniquemember`
+and `memberpolicy` attributes, the respective `members` and `policies`
+attributes in CloudAPI take the list of `login` names for the users and
+the list of `names` for the policies.
 
 # Interacting with UFDS
 

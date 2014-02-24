@@ -459,7 +459,7 @@ them really should be an equality match).
 ## Hidden attributes
 
 UFDS stores a bunch of attributes prefixed with `_`.  For example,
-`_ctime`, `_salt`, etc.  And, by default, UFDS will not return these
+`_mtime`, `_salt`, etc.  And, by default, UFDS will not return these
 on searches (notably this includes `userpassword`).  To make UFDS
 return these, you must (1) be an operator (or the actual admin), and
 (2) you must pass in the "hiddenAttributes" control, which is
@@ -479,12 +479,7 @@ something Joyent invented.  The OID for this control is
       "uuid": "930896af-bf8c-48d4-885c-6573a94b1853",
       "_salt": "51bcac43c05e9148744b151317351fd96d8d953f",
       "_owner": "930896af-bf8c-48d4-885c-6573a94b1853",
-      "_ctime": "2011-10-25T16:45:08Z",
-      "_createdfrom": "undefined:undefined::5",
-      "_createdby": "cn=root",
-      "_mtime": "2011-10-25T16:45:08Z",
-      "_modifiedfrom": "undefined:undefined::5",
-      "_modifiedby": "cn=root"
+      "_mtime": "2011-10-25T16:45:08Z"
     }]
 
 

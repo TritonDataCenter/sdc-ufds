@@ -509,6 +509,21 @@ Here are sample searches using `sdc-ldap` wrapper:
     sdc-ldap search -b cn=changelog "(changetype=*)"
     sdc-ldap search -b cn=changelog "(changenumber>=50)"
 
+The most usual changelog searches are those looking for all the changes made
+over a given entry, known its DN:
+
+    sdc-ldap search -b cn=changelog  targetdn='dclimit=us-west-1, uuid=458d9ce8-cb25-422d-be47-683a85052a86, ou=users, o=smartdc'
+
+You can also using _wildcard_ into the `targetdn` attribute value to search
+all changes with a target DN as base, for example
+
+    sdc-ldap search -b cn=changelog  targetdn='*uuid=458d9ce8-cb25-422d-be47-683a85052a86, ou=users, o=smartdc'
+
+would give you all changes made to every entry related to the account
+identified by the DN `uuid=458d9ce8-cb25-422d-be47-683a85052a86, ou=users, o=smartdc`,
+(limits, ssh keys, sub-users, roles, policies, ...), including the account
+itself.
+
 # Aliasing the OpenLDAP CLI
 
 Do this, or your life will be far far away to be happy:

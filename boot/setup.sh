@@ -145,59 +145,8 @@ function setup_ufds {
 }
 
 
-function setup_ufds_rsyslogd {
-    #rsyslog was already set up by common setup- this will overwrite the
-    # config and restart since we want ufds to log locally.
-
-    echo "Updating /etc/rsyslog.conf"
-    mkdir -p /var/tmp/rsyslog/work
-    chmod 777 /var/tmp/rsyslog/work
-
-    cat > /etc/rsyslog.conf <<"HERE"
-$MaxMessageSize 64k
-
-$ModLoad immark
-$ModLoad imsolaris
-$ModLoad imudp
-
-$template bunyan,"%msg:R,ERE,1,FIELD:(\{.*\})--end%\n"
-
-*.err;kern.notice;auth.notice                   /dev/sysmsg
-*.err;kern.debug;daemon.notice;mail.crit        /var/adm/messages
-
-*.alert;kern.err;daemon.err                     operator
-*.alert                                         root
-
-*.emerg                                         *
-
-mail.debug                                      /var/log/syslog
-
-auth.info                                       /var/log/auth.log
-mail.info                                       /var/log/postfix.log
-
-$WorkDirectory /var/tmp/rsyslog/work
-$ActionQueueType Direct
-$ActionQueueFileName sdcfwd
-$ActionResumeRetryCount -1
-$ActionQueueSaveOnShutdown on
-
-# Support node bunyan logs going to local0
-local0.* /var/log/ufds.log;bunyan
-
-$UDPServerAddress 127.0.0.1
-$UDPServerRun 514
-HERE
-
-
-    svcadm restart system-log
-    [[ $? -eq 0 ]] || fatal "Unable to restart rsyslog"
-}
-
-
-
 setup_ufds
 
-setup_ufds_rsyslogd
 
 echo "Importing CAPI SMF Manifest"
 /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-capi.xml
@@ -217,12 +166,11 @@ echo "Adding log rotation"
 sdc_log_rotation_add amon-agent /var/svc/log/*amon-agent*.log 1g
 sdc_log_rotation_add config-agent /var/svc/log/*config-agent*.log 1g
 sdc_log_rotation_add registrar /var/svc/log/*registrar*.log 1g
-sdc_log_rotation_add ufds-1390 /var/svc/log/*ufds-1390*.log 1g
-sdc_log_rotation_add ufds-1391 /var/svc/log/*ufds-1391*.log 1g
-sdc_log_rotation_add ufds-1392 /var/svc/log/*ufds-1392*.log 1g
-sdc_log_rotation_add ufds-1393 /var/svc/log/*ufds-1393*.log 1g
+sdc_log_rotation_add ufds-master-1390 /var/svc/log/*ufds-1390*.log 1g
+sdc_log_rotation_add ufds-master-1391 /var/svc/log/*ufds-1391*.log 1g
+sdc_log_rotation_add ufds-master-1392 /var/svc/log/*ufds-1392*.log 1g
+sdc_log_rotation_add ufds-master-1393 /var/svc/log/*ufds-1393*.log 1g
 sdc_log_rotation_add ufds-capi /var/svc/log/*ufds-capi*.log 1g
-sdc_log_rotation_add ufds /var/log/ufds.log 1g
 sdc_log_rotation_setup_end
 
 # Add build/node/bin and node_modules/.bin to PATH

@@ -1,6 +1,6 @@
 {
   "name": "ufds",
-  "version": "7.1.0",
+  "version": "7.1.1",
   "dependencies": {
     "bunyan": {
       "version": "0.22.1",
@@ -15,10 +15,6 @@
           "from": "dtrace-provider@0.2.8"
         }
       }
-    },
-    "bunyan-syslog": {
-      "version": "0.2.1",
-      "from": "bunyan-syslog@0.2.1"
     },
     "http-signature": {
       "version": "0.9.9",
@@ -103,13 +99,11 @@
       "dependencies": {
         "backoff": {
           "version": "2.0.0",
-          "from": "backoff@2.0.0",
-          "resolved": "https://registry.npmjs.org/backoff/-/backoff-2.0.0.tgz"
+          "from": "backoff@2.0.0"
         },
         "bunyan": {
           "version": "0.18.3",
           "from": "bunyan@0.18.3",
-          "resolved": "https://registry.npmjs.org/bunyan/-/bunyan-0.18.3.tgz",
           "dependencies": {
             "mv": {
               "version": "0.0.4",
@@ -119,12 +113,11 @@
         },
         "deep-equal": {
           "version": "0.0.0",
-          "from": "deep-equal@~0.0.0"
+          "from": "deep-equal@0.0.0"
         },
         "formidable": {
           "version": "1.0.11",
-          "from": "formidable@1.0.11",
-          "resolved": "https://registry.npmjs.org/formidable/-/formidable-1.0.11.tgz"
+          "from": "formidable@1.0.11"
         },
         "http-signature": {
           "version": "0.9.11",
@@ -146,13 +139,11 @@
         },
         "lru-cache": {
           "version": "2.2.2",
-          "from": "lru-cache@2.2.2",
-          "resolved": "https://registry.npmjs.org/lru-cache/-/lru-cache-2.2.2.tgz"
+          "from": "lru-cache@2.2.2"
         },
         "mime": {
           "version": "1.2.9",
-          "from": "mime@1.2.9",
-          "resolved": "https://registry.npmjs.org/mime/-/mime-1.2.9.tgz"
+          "from": "mime@1.2.9"
         },
         "negotiator": {
           "version": "0.2.5",
@@ -315,7 +306,6 @@
     "bcrypt": {
       "version": "0.7.3",
       "from": "bcrypt@0.7.3",
-      "resolved": "https://registry.npmjs.org/bcrypt/-/bcrypt-0.7.3.tgz",
       "dependencies": {
         "bindings": {
           "version": "1.0.0",

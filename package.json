@@ -1,6 +1,6 @@
 {
     "name": "ufds",
-    "version": "7.1.0",
+    "version": "7.1.1",
     "repository": {
         "type": "git",
         "url": "git@git.joyent.com:ufds.git"
@@ -12,7 +12,6 @@
     },
     "dependencies": {
         "bunyan": "0.22.1",
-        "bunyan-syslog": "0.2.1",
         "http-signature": "0.9.9",
         "ldapjs": "git://github.com/mcavage/node-ldapjs.git#fa1b8c",
         "libuuid": "0.1.2",

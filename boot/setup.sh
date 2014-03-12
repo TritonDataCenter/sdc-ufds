@@ -8,6 +8,7 @@ export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}
 set -o xtrace
 
 role=ufds
+SVC_ROOT="/opt/smartdc/$role"
 PATH=/opt/smartdc/ufds/build/node/bin:/opt/smartdc/ufds/node_modules/.bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
 
 # Local manifests

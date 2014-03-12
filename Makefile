@@ -74,11 +74,25 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS) sdc-scripts
+all: haproxy $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS) sdc-scripts
 	$(NPM) install && $(NPM) update
 
 $(NODEUNIT): | $(NPM_EXEC)
 	$(NPM) install && $(NPM) update
+
+# Build HAProxy when in SunOS
+.PHONY: haproxy
+ifeq ($(shell uname -s),SunOS)
+haproxy:
+	@echo "Building HAproxy"
+	cd deps/haproxy && /opt/local/bin/gmake TARGET=solaris
+else
+haproxy:
+	@echo "HAproxy building only in SunOS"
+endif
+
+
+CLEAN_FILES += deps/haproxy/haproxy
 
 .PHONY: add_test
 add_test: $(NODEUNIT)

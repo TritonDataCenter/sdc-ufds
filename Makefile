@@ -146,6 +146,7 @@ release: all docs
 								$(ROOT)/capi.js \
 								$(ROOT)/replicator.js \
 								$(ROOT)/data \
+		$(ROOT)/deps/haproxy \
 		$(ROOT)/bin \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \

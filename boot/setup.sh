@@ -149,9 +149,6 @@ function setup_ufds_rsyslogd {
     #rsyslog was already set up by common setup- this will overwrite the
     # config and restart since we want ufds to log locally.
 
-    mkdir -p /var/tmp/rsyslog/work
-    chmod 777 /var/tmp/rsyslog/work
-
     echo "Updating /etc/rsyslog.conf"
     mkdir -p /var/tmp/rsyslog/work
     chmod 777 /var/tmp/rsyslog/work
@@ -196,6 +193,8 @@ HERE
     [[ $? -eq 0 ]] || fatal "Unable to restart rsyslog"
 }
 
+
+
 setup_ufds
 
 setup_ufds_rsyslogd
@@ -218,7 +217,10 @@ echo "Adding log rotation"
 sdc_log_rotation_add amon-agent /var/svc/log/*amon-agent*.log 1g
 sdc_log_rotation_add config-agent /var/svc/log/*config-agent*.log 1g
 sdc_log_rotation_add registrar /var/svc/log/*registrar*.log 1g
-sdc_log_rotation_add ufds-master /var/svc/log/*ufds-master*.log 1g
+sdc_log_rotation_add ufds-1390 /var/svc/log/*ufds-1390*.log 1g
+sdc_log_rotation_add ufds-1391 /var/svc/log/*ufds-1391*.log 1g
+sdc_log_rotation_add ufds-1392 /var/svc/log/*ufds-1392*.log 1g
+sdc_log_rotation_add ufds-1393 /var/svc/log/*ufds-1393*.log 1g
 sdc_log_rotation_add ufds-capi /var/svc/log/*ufds-capi*.log 1g
 sdc_log_rotation_add ufds /var/log/ufds.log 1g
 sdc_log_rotation_setup_end

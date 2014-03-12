@@ -20,14 +20,6 @@
 		    type="service">
 	    <service_fmri value="svc:/system/filesystem/local" />
 	</dependency>
-
-        <dependency name="mdata"
-                    grouping="require_all"
-                    restart_on="none"
-                    type="service">
-            <service_fmri value="svc:/smartdc/mdata:execute" />
-        </dependency>
-
 	<exec_method type="method"
 		     name="start"
          exec="/opt/smartdc/ufds/haproxy/haproxy -f /opt/smartdc/ufds/etc/haproxy.cfg -D"

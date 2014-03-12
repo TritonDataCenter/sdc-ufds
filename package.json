@@ -11,7 +11,8 @@
         "node": ">=0.8"
     },
     "dependencies": {
-        "bunyan": "0.22.0",
+        "bunyan": "0.22.1",
+        "bunyan-syslog": "0.2.1",
         "http-signature": "0.9.9",
         "ldapjs": "git://github.com/mcavage/node-ldapjs.git#fa1b8c",
         "libuuid": "0.1.2",

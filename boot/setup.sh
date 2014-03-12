@@ -93,12 +93,118 @@ IS_UPDATE=$(json -f ${METADATA} IS_UPDATE)
 # on every boot.
 LDAPTLS_REQCERT=allow
 
-echo "Importing SMF Manifests"
-/usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-master.xml
+
+function setup_ufds {
+    local ufds_instances=4
+
+    #Build the list of ports.  That'll be used for everything else.
+    local ports
+    for (( i=1; i<=$ufds_instances; i++ )); do
+        ports[$i]=`expr 1389 + $i`
+    done
+
+    #To preserve whitespace in echo commands...
+    IFS='%'
+
+    #haproxy
+    for port in "${ports[@]}"; do
+        hainstances="$hainstances        server ufds-$port 127.0.0.1:$port check inter 10s slowstart 10s error-limit 3 on-error mark-down\n"
+    done
+
+    sed -e "s#@@UFDS_INSTANCES@@#$hainstances#g" \
+        $SVC_ROOT/etc/haproxy.cfg.in > $SVC_ROOT/etc/haproxy.cfg || \
+        fatal "could not process $src to $dest"
+
+    sed -e "s/@@PREFIX@@/\/opt\/smartdc\/ufds/g" \
+        $SVC_ROOT/smf/manifests/haproxy.xml.in > $SVC_ROOT/smf/manifests/haproxy.xml || \
+        fatal "could not process $src to $dest"
+
+    svccfg import $SVC_ROOT/smf/manifests/haproxy.xml || \
+        fatal "unable to import haproxy"
+    svcadm enable "ufds/haproxy" || fatal "unable to start haproxy"
+
+    #ufds instances
+    local ufds_xml_in=$SVC_ROOT/smf/manifests/ufds-master.xml.in
+    for port in "${ports[@]}"; do
+        local ufds_instance="ufds-$port"
+        local ufds_xml_out=$SVC_ROOT/smf/manifests/ufds-$port.xml
+        sed -e "s#@@UFDS_PORT@@#$port#g" \
+            -e "s#@@UFDS_INSTANCE_NAME@@#$ufds_instance#g" \
+            -e "s/@@PREFIX@@/\/opt\/smartdc\/ufds/g" \
+            $ufds_xml_in  > $ufds_xml_out || \
+            fatal "could not process $ufds_xml_in to $ufds_xml_out"
+
+        svccfg import $ufds_xml_out || \
+            fatal "unable to import $ufds_instance: $ufds_xml_out"
+        svcadm enable "$ufds_instance" || \
+            fatal "unable to start $ufds_instance"
+    done
+
+    unset IFS
+}
+
+
+function setup_ufds_rsyslogd {
+    #rsyslog was already set up by common setup- this will overwrite the
+    # config and restart since we want ufds to log locally.
+
+    mkdir -p /var/tmp/rsyslog/work
+    chmod 777 /var/tmp/rsyslog/work
+
+    echo "Updating /etc/rsyslog.conf"
+    mkdir -p /var/tmp/rsyslog/work
+    chmod 777 /var/tmp/rsyslog/work
+
+    cat > /etc/rsyslog.conf <<"HERE"
+$MaxMessageSize 64k
+
+$ModLoad immark
+$ModLoad imsolaris
+$ModLoad imudp
+
+$template bunyan,"%msg:R,ERE,1,FIELD:(\{.*\})--end%\n"
+
+*.err;kern.notice;auth.notice                   /dev/sysmsg
+*.err;kern.debug;daemon.notice;mail.crit        /var/adm/messages
+
+*.alert;kern.err;daemon.err                     operator
+*.alert                                         root
+
+*.emerg                                         *
+
+mail.debug                                      /var/log/syslog
+
+auth.info                                       /var/log/auth.log
+mail.info                                       /var/log/postfix.log
+
+$WorkDirectory /var/tmp/rsyslog/work
+$ActionQueueType Direct
+$ActionQueueFileName sdcfwd
+$ActionResumeRetryCount -1
+$ActionQueueSaveOnShutdown on
+
+# Support node bunyan logs going to local0
+local0.* /var/log/ufds.log;bunyan
+
+$UDPServerAddress 127.0.0.1
+$UDPServerRun 514
+HERE
+
+
+    svcadm restart system-log
+    [[ $? -eq 0 ]] || fatal "Unable to restart rsyslog"
+}
+
+setup_ufds
+
+setup_ufds_rsyslogd
+
+echo "Importing CAPI SMF Manifest"
 /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-capi.xml
 
 IS_MASTER=$(cat /opt/smartdc/ufds/etc/config.json | /usr/bin/json ufds_is_master)
 if [[ "${IS_MASTER}" == "false" ]]; then
+  echo "Importing UFDS Replicator SMF Manifest"
   /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-replicator.xml
 fi
 
@@ -113,6 +219,7 @@ sdc_log_rotation_add config-agent /var/svc/log/*config-agent*.log 1g
 sdc_log_rotation_add registrar /var/svc/log/*registrar*.log 1g
 sdc_log_rotation_add ufds-master /var/svc/log/*ufds-master*.log 1g
 sdc_log_rotation_add ufds-capi /var/svc/log/*ufds-capi*.log 1g
+sdc_log_rotation_add ufds /var/log/ufds.log 1g
 sdc_log_rotation_setup_end
 
 # Add build/node/bin and node_modules/.bin to PATH

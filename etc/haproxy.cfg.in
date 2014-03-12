@@ -1,0 +1,29 @@
+global
+        log 127.0.0.1 local0
+        user nobody
+        group nobody
+        daemon
+        maxconn 65535
+        pidfile /var/run/haproxy.pid
+        stats socket /tmp/haproxy.sock
+
+defaults
+        mode    tcp
+        balance leastconn
+        maxconn 65535
+        option redispatch
+        option abortonclose
+        retries 1
+        timeout queue   0
+        timeout connect 2000
+        timeout client  55000
+        timeout server  120000
+        log global
+        option httplog
+
+frontend ufds
+        bind *:636
+        default_backend servers
+
+backend servers
+@@UFDS_INSTANCES@@

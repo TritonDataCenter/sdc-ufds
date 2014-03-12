@@ -18,7 +18,7 @@
 
         <exec_method type="method"
                      name="start"
-                     exec="/opt/smartdc/ufds/build/node/bin/node main.js -f etc/config.json -d 1 &amp;"
+                     exec="/opt/smartdc/ufds/build/node/bin/node main.js -f etc/config.json -d 1 -p %{ufds/port} &amp;"
                      timeout_seconds="30">
             <method_context working_directory="/opt/smartdc/ufds">
                 <method_credential user="nobody"
@@ -39,7 +39,11 @@
                      timeout_seconds="30" />
 
         <property_group name="application" type="application" />
-        <instance name="default" enabled="true" />
+        <instance name="@@UFDS_INSTANCE_NAME@@" enabled="true">
+          <property_group name="ufds" type="application">
+            <propval name="port" type="astring" value="@@UFDS_PORT@@" />
+          </property_group>
+        </instance>
         <stability value='Unstable' />
 
     <template>

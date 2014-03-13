@@ -770,3 +770,35 @@ values for development purposes, the procedure to follow would be:
     'bf5c7ad26e7a7a7d8459075a19e8930596281410'
 
 
+
+# LogLevels
+
+The logLevel sets the verbosity of debug logging in the SMF log file.  By
+default, UFDS logs at `info` level, which means you'll get start/stop and
+error messages (in addition to request logging).  If you are encountering a
+problem with UFDS, you'll almost certainly want the level to be set to
+`debug` or `trace`.  See [Troubleshooting](#Troubleshooting) below.
+
+# Troubleshooting
+
+If you are seeing errors/bugs with the UFDS sdc-ldap CLI, or with the
+applications talking to the UFDS server, you can turn on debug logging
+for UFDS as explained below.
+
+First, you should check the logs files. You can get a list of all the log
+files related to the UFDS server, CAPI shim, HAproxy and, eventually, the
+UFDS Replicator by running:
+
+    $ `svcs -L *ufds*`
+
+Reviewing those files and looking for any indication of errors should give
+you an idea of what it's going wrong.  Note that UFDS logs some amount
+of request information by default, and logs `WARN` level entries anytime there
+is an error sent to the client (including if the error is user initiated). If
+you cannot determine the problem of the error from the default logs, turn on
+debug logging.
+
+## Debug Logging in SMF
+
+Log messages can be traced using `bunyan -p ufds` as explained into
+[Bunyan DTrace Examples](https://github.com/trentm/node-bunyan#dtrace-examples)

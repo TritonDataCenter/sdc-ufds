@@ -147,6 +147,55 @@ function setup_ufds {
 
 setup_ufds
 
+function setup_haproxy_rsyslogd {
+    #rsyslog was already set up by common setup- this will overwrite the
+    # config and restart since we want haproxy to log locally.
+
+    echo "Updating /etc/rsyslog.conf"
+    mkdir -p /var/tmp/rsyslog/work
+    chmod 777 /var/tmp/rsyslog/work
+
+    cat > /etc/rsyslog.conf <<"HERE"
+$MaxMessageSize 64k
+
+$ModLoad immark
+$ModLoad imsolaris
+$ModLoad imudp
+
+*.err;kern.notice;auth.notice                   /dev/sysmsg
+*.err;kern.debug;daemon.notice;mail.crit        /var/adm/messages
+
+*.alert;kern.err;daemon.err                     operator
+*.alert                                         root
+
+*.emerg                                         *
+
+mail.debug                                      /var/log/syslog
+
+auth.info                                       /var/log/auth.log
+mail.info                                       /var/log/postfix.log
+
+$WorkDirectory /var/tmp/rsyslog/work
+$ActionQueueType Direct
+$ActionQueueFileName sdcfwd
+$ActionResumeRetryCount -1
+$ActionQueueSaveOnShutdown on
+
+# Support node bunyan logs going to local0
+local0.* /var/log/haproxy.log
+
+$UDPServerAddress 127.0.0.1
+$UDPServerRun 514
+HERE
+
+
+    svcadm restart system-log
+    [[ $? -eq 0 ]] || fatal "Unable to restart rsyslog"
+
+    logadm -w /var/log/haproxy.log -C 5 -c -s 100m
+}
+
+setup_haproxy_rsyslogd
 
 echo "Importing CAPI SMF Manifest"
 /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-capi.xml

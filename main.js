@@ -140,6 +140,3 @@ ufds.on('morayError', ufds.morayConnectCalback);
 ufds.init(function () {
     return (true);
 });
-// Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
-var sigyan = require('sigyan');
-sigyan.add([LOG, ufds.moray.log]);

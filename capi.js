@@ -364,8 +364,4 @@ function processConfig() {
     var capi = CAPI(cfg);
 
     capi.connect();
-
-    // Increase/decrease loggers levels using SIGUSR2/SIGUSR1:
-    var sigyan = require('sigyan');
-    sigyan.add([capi.log]);
 }());

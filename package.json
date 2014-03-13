@@ -20,7 +20,6 @@
         "crc": "0.2.0",
         "microtime": "0.3.1",
         "moray": "git+ssh://git@git.joyent.com:node-moray.git#2b45e0",
-        "sigyan": "0.2.0",
         "bcrypt": "0.7.3",
         "vasync": "1.4.0",
         "async": "0.1.22",

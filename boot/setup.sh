@@ -30,46 +30,6 @@ echo "Generating SSL Certificate"
     -keyout /opt/smartdc/ufds/ssl/key.pem -out /opt/smartdc/ufds/ssl/cert.pem \
     -days 3650
 
-# This function takes care of SQL schema upgrades which must run before the
-# ufds-master service boots. It's very likely that each one of the upgrades
-# into this function will run only once into the whole setup lifecycle.
-function update_ufds_sql_schema {
-  local moray_host=$(json -f ${METADATA} MORAY_SERVICE)
-  local moray_port=2020
-  local psql_host=$(json -f ${METADATA} manatee_admin_ips)
-  local bucket=$(getbucket -h ${moray_host} -p ${moray_port} ufds_o_smartdc)
-  echo "Updating UFDS SQL schema if needed."
-  if [[ $? -ne 0 ]]; then
-    echo "Bucket ufds_o_smartdc does not exist. Assuming this is not an upgrade."
-  else
-    VERSION=$(echo ${bucket} | json options.version)
-    if [ "$VERSION" -le "6" ]; then
-      echo "Version is smaller than or equal than six. Have to upgrade ufds_o_smartdc bucket."
-      while read SQL
-      do
-        CMD=$(psql -U moray -h $psql_host -d moray -c "${SQL}")
-      done < /opt/smartdc/ufds/data/capi-305.sql
-      echo "ufds_o_smartdc schema upgraded."
-    else
-      echo "Already updated to a version greater than 6, skipping capi-305 schema upgrade."
-    fi
-  fi
-}
-
-# You may want to run this right before we attempt the whole thing upgrade:
-#
-#   pg_dump -U moray -t 'ufds*' moray > moray_ufds_backup.sql
-#
-# It should be painless to rollback by just removing and recreating ufds
-# related tables:
-#
-#   psql -U moray moray \
-#     --command='DROP TABLE ufds_o_smartdc; DROP TABLE ufds_cn_changelog; DROP TABLE ufds_o_smartdc_locking_serial; DROP table ufds_cn_changelog_locking_serial; DROP SEQUENCE ufds_cn_changelog_serial; DROP SEQUENCE ufds_o_smartdc_serial;'
-#
-#   psql -U moray moray < moray_ufds_backup.sql
-#
-update_ufds_sql_schema
-
 # Gather metadata needed for setup
 UFDS_ADMIN_IP=127.0.0.1
 UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)

@@ -282,44 +282,6 @@ dn: cn=operators, ou=groups, o=smartdc
 objectclass: groupOfUniqueNames" >> $LDIF
 fi
 
-
-echo "Getting package information"
-# packages=$(/usr/sbin/mdata-get packages)
-packages=$(json -f ${METADATA} packages)
-# name:ram:swap:disk:cap:nlwp:iopri:uuid
-for pkg in $packages
-do
-  name=$(echo ${pkg} | cut -d ':' -f 1)
-  uuid=$(echo ${pkg} | cut -d ':' -f 8)
-  # TBD: Decide if default package should be configurable
-  # (can be changed from adminui post setup).
-  if [[ "${name}" == "sdc_128" ]]; then
-    default='true'
-  else
-    default='false'
-  fi
-  # Make sure we always have a new line before our stuff
-  echo "
-dn: uuid=${uuid}, ou=packages, o=smartdc
-uuid: ${uuid}
-active: true
-cpu_cap: $(echo ${pkg} | cut -d ':' -f 5)
-default: $default
-max_lwps: $(echo ${pkg} | cut -d ':' -f 6)
-max_physical_memory: $(echo ${pkg} | cut -d ':' -f 2)
-max_swap: $(echo ${pkg} | cut -d ':' -f 3)
-name: ${name}
-quota: $(echo ${pkg} | cut -d ':' -f 4)
-vcpus: 1
-version: 1.0.0
-zfs_io_priority: $(echo ${pkg} | cut -d ':' -f 7)
-owner_uuid: ${UFDS_ADMIN_UUID}
-objectclass: sdcpackage" >> $LDIF
-  # Cleanup variables before next loop iteration
-  unset name
-  unset uuid
-done
-
 gsed -i -e "s|UFDS_ADMIN_UUID|$UFDS_ADMIN_UUID|" $LDIF
 gsed -i -e "s|UFDS_ADMIN_LOGIN|$UFDS_ADMIN_LOGIN|" $LDIF
 gsed -i -e "s|UFDS_ADMIN_PW|$UFDS_ADMIN_PW|" $LDIF

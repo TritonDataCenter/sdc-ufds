@@ -184,7 +184,7 @@ sdc_log_rotation_setup_end
 
 # Add build/node/bin and node_modules/.bin to PATH
 echo "" >>/root/.profile
-echo "export PATH=\$PATH:/opt/smartdc/$role/build/node/bin:/opt/smartdc/$role/node_modules/.bin" >>/root/.profile
+echo "export PATH=/opt/smartdc/$role/build/node/bin:/opt/smartdc/$role/node_modules/.bin:\$PATH" >>/root/.profile
 
 # Wait up to 50s for UFDS to come up to load bootstrap data.
 echo "Wait for ufds service to come online."

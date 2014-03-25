@@ -1,4 +1,10 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
+/*
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
+ *
+ * This file includes the definition of the handler used by Smartlogin for
+ * instance SSH access, mounted as:
+ *      POST /customers/:uuid/ssh_sessions
+ */
 
 var assert = require('assert');
 var sprintf = require('util').format;
@@ -33,9 +39,11 @@ var fingerprint = httpSignature.sshKeyFingerprint;
 
 function idToFingerprint(id) {
     var fp = '';
-    for (var i = 0; i < id.length; i++) {
-        if (i && i % 2 === 0)
+    var i;
+    for (i = 0; i < id.length; i++) {
+        if (i && i % 2 === 0) {
             fp += ':';
+        }
         fp += id[i];
     }
 
@@ -44,8 +52,9 @@ function idToFingerprint(id) {
 
 
 function fingerprintToId(fp) {
-    if (!fp)
+    if (!fp) {
         return '';
+    }
 
     return fp.replace(/:/g, '');
 }
@@ -76,9 +85,10 @@ function loadKeys(req, callback) {
     };
     req.ldap.search(dn, opts, HIDDEN, function (err, _res) {
         if (err) {
-            if (err instanceof ldap.NoSuchObjectError)
+            if (err instanceof ldap.NoSuchObjectError) {
                 return callback(new restify.ResourceNotFoundError(
                     req.params.uuid));
+            }
 
             return callback(err);
         }
@@ -86,11 +96,13 @@ function loadKeys(req, callback) {
         var entries = [];
         var done = false;
         _res.on('error', function (err2) {
-            if (done)
+            if (done) {
                 return;
+            }
             done = true;
-            if (err2 instanceof ldap.NoSuchObjectError)
+            if (err2 instanceof ldap.NoSuchObjectError) {
                 return callback(new restify.ResourceNotFoundError(req.url));
+            }
 
             return callback(new restify.InternalError(err2.toString()));
         });
@@ -98,8 +110,9 @@ function loadKeys(req, callback) {
             entries.push(translateKey(_entry.toObject(), req.params.uuid));
         });
         _res.on('end', function (result) {
-            if (done)
+            if (done) {
                 return;
+            }
             done = true;
 
             return callback(null, entries);
@@ -110,20 +123,21 @@ function loadKeys(req, callback) {
 
 function loadKey(req, callback) {
     return loadKeys(req, function (err, keys) {
-        if (err)
+        if (err) {
             return callback(err);
+        }
 
-        var key;
-        for (var i = 0; i < keys.length; i++) {
+        var key, i;
+        for (i = 0; i < keys.length; i++) {
             if (keys[i].id === req.params.id) {
                 key = keys[i];
                 break;
             }
         }
 
-        if (!key)
+        if (!key) {
             return callback(new restify.ResourceNotFoundError(req.params.id));
-
+        }
 
         return callback(null, key);
     });
@@ -148,10 +162,12 @@ module.exports = {
             params: req.params
         }, 'CreateKey: entered');
 
-        if (!req.params.name)
+        if (!req.params.name) {
             return next(new restify.MissingParameterError('name is required'));
-        if (!req.params.key)
+        }
+        if (!req.params.key) {
             return next(new restify.MissingParameterError('key is required'));
+        }
 
 
         var fp = fingerprint(req.params.key);
@@ -180,11 +196,13 @@ module.exports = {
             // Need to reload so we can get all the generated params
             req.params.id = fingerprintToId(fp);
             return loadKey(req, function (err2, key) {
-                if (err2)
+                if (err2) {
                     return next(err2);
+                }
 
-                if (req.accepts('application/xml'))
+                if (req.accepts('application/xml')) {
                     key = { key: key };
+                }
 
                 log.debug({
                     key: key,
@@ -205,11 +223,13 @@ module.exports = {
         log.debug({uuid: req.params.uuid}, 'ListKeys: entered');
 
         return loadKeys(req, function (err, keys) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            if (req.accepts('application/xml'))
+            if (req.accepts('application/xml')) {
                 keys = { keys: { key: keys } };
+            }
 
             log.debug({
                 uuid: req.params.uuid,
@@ -232,11 +252,13 @@ module.exports = {
         }, 'GetKey: entered');
 
         return loadKey(req, function (err, key) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
-            if (req.accepts('application/xml'))
+            if (req.accepts('application/xml')) {
                 key = { key: key };
+            }
 
             log.debug({
                 customer_uuid: req.params.uuid,
@@ -262,8 +284,9 @@ module.exports = {
         }, 'PutKey: entered');
 
         return loadKey(req, function (err, key) {
-            if (err)
+            if (err) {
                 return next(err);
+            }
 
             function done() {
                 log.debug({
@@ -275,6 +298,10 @@ module.exports = {
                 return next();
             }
 
+            var dn = sprintf(KEY_DN,
+                             key.fingerprint,
+                             req.customer.dn.toString());
+
             function modName() {
                 var change = new Change({
                     type: 'replace',
@@ -284,17 +311,16 @@ module.exports = {
                 });
 
                 return req.ldap.modify(dn, change, function (err2) {
-                    if (err2)
+                    if (err2) {
                         return next(err2);
+                    }
 
                     return done();
                 });
             }
 
 
-            var dn = sprintf(KEY_DN,
-                             key.fingerprint,
-                             req.customer.dn.toString());
+
             if (req.params.key) {
                 log.debug({
                     customer_uuid: req.params.uuid,
@@ -305,18 +331,21 @@ module.exports = {
                 var _fp = fingerprint(req.params.key);
                 var dn2 = sprintf(KEY_DN, _fp, req.customer.dn.toString());
                 return req.ldap.modifyDN(dn, dn2, function (err2) {
-                    if (err2)
+                    if (err2) {
                         return next(err2);
+                    }
 
-                    if (req.params.name)
+                    if (req.params.name) {
                         return modName();
+                    }
 
                     return done();
                 });
             }
 
-            if (req.params.name)
+            if (req.params.name) {
                 return modName();
+            }
 
             return done();
         });
@@ -333,16 +362,18 @@ module.exports = {
         }, 'DeleteKey: entered');
 
         return loadKey(req, function (err, key) {
-            if (err)
+            if (err) {
                 return next(err);
-
+            }
 
             var dn = sprintf(KEY_DN,
                              key.fingerprint,
                              req.customer.dn.toString());
+
             return req.ldap.del(dn, function (err2) {
-                if (err2)
+                if (err2) {
                     return next(err2);
+                }
 
                 log.debug({
                     customer_uuid: req.params.uuid,
@@ -366,19 +397,22 @@ module.exports = {
         }, 'SmartLogin: entered');
 
         return loadKeys(req, function (err, keys) {
-            if (err)
+            if (err) {
                 return next(new restify.InternalError(err.message));
+            }
 
             var k = false;
-            for (var i = 0; i < keys.length; i++) {
+            var i;
+            for (i = 0; i < keys.length; i++) {
                 if (keys[i].fingerprint === req.params.fingerprint) {
                     k = keys[i];
                     break;
                 }
             }
 
-            if (!k)
+            if (!k) {
                 return next(new restify.InvalidArgumentError('Invalid Key'));
+            }
 
             res.send(201);
             return next();

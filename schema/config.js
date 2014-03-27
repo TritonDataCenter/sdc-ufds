@@ -1,4 +1,11 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+/*
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
+ *
+ * The 'config' objectclass is being used by CloudAPI to load specific
+ * plugins configuration. See CloudAPI admin docs for the details.
+ *
+ * This is never more related to the "once existed config service".
+ */
 
 var assert = require('assert');
 var util = require('util');
@@ -14,11 +21,9 @@ var Validator = require('../lib/schema/validator');
 function Config() {
     Validator.call(this, {
         name: 'config',
-        required: {
-            svc: 1
-        },
         optional: {
-            cfg: 0
+            cfg: 1,
+            svc: 4
         }
     });
 }

@@ -1,4 +1,9 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+/*
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
+ * CloudAPI DataCenters list may optionally include JPC DCs.
+ *
+ * This file is required by that functionality. See PUBAPI-516 for the details.
+ */
 
 var assert = require('assert');
 var util = require('util');

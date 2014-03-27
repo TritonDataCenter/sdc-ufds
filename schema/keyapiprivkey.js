@@ -1,4 +1,9 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+/*
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
+ *
+ * KeyAPI was originally using this file. While it's deprecated now, we still
+ * have some setups using it.
+ */
 
 var util = require('util');
 

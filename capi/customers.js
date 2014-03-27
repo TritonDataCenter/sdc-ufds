@@ -329,8 +329,9 @@ module.exports = {
 
             var _done = false;
             function done() {
-                if (_done)
+                if (_done) {
                     return;
+                }
 
                 _done = true;
                 if (req.accepts('application/xml')) {
@@ -539,8 +540,9 @@ module.exports = {
             default:
                 break;
             }
-            if (!_key || !k || !req.params[k])
+            if (!_key || !k || !req.params[k]) {
                 return;
+            }
 
             if (_key === 'address') {
                 address.push(req.params[k]);

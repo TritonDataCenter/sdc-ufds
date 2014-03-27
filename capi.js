@@ -128,8 +128,9 @@ function createLDAPClient(options) {
                 var timeouts = 0;
                 client.once('error', cleanup);
                 client.on('timeout', function () {
-                    if (++timeouts === 3)
+                    if (++timeouts === 3) {
                         cleanup(new Error('request timeouts'));
+                    }
                 });
             });
         });
@@ -144,7 +145,9 @@ function usage(code, message) {
     Object.keys(shortOpts).forEach(function (k) {
         var longOpt = shortOpts[k][0].replace('--', '');
         var type = opts[longOpt].name || 'string';
-        if (type && type === 'boolean') type = '';
+        if (type && type === 'boolean') {
+            type = '';
+        }
         type = type.toLowerCase();
 
         _opts += ' [--' + longOpt + ' ' + type + ']';

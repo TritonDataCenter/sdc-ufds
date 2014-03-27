@@ -45,8 +45,9 @@ Tag.prototype.validate = function validate(entry, config, changes, callback) {
                     '\' does not have a valid format');
     }
 
-    if (errors.length)
+    if (errors.length) {
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
+    }
 
     return callback();
 };

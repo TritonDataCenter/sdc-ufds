@@ -133,8 +133,9 @@ function validate(entry, config, changes, callback) {
         errors.push(util.format('owner UUID "%s" is invalid', attrs.owner));
     }
 
-    if (errors.length)
+    if (errors.length) {
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
+    }
 
     return callback();
 };

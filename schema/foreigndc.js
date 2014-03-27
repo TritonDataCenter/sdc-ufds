@@ -38,8 +38,9 @@ function validate(entry, config, changes, callback) {
     }
     // Add validation for optional fields?
 
-    if (errors.length)
+    if (errors.length) {
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
+    }
 
     return callback();
 };

@@ -78,8 +78,9 @@ function search(dn, filter, scope, callback) {
         filter: filter
     };
     CLIENT.search(dn, opts, function (err, res) {
-        if (err)
+        if (err) {
             return callback(err);
+        }
 
         var results = [];
         var retrieved = 0;
@@ -117,11 +118,13 @@ function load(callback) {
             objectclass: 'sdcperson'
         };
         CLIENT.add(dn, USERS[dn], function (err) {
-            if (err)
+            if (err) {
                 return callback(err);
+            }
 
-            if (++finished === TOTAL_ENTRIES)
+            if (++finished === TOTAL_ENTRIES) {
                 return callback(null);
+            }
         });
     }
 }

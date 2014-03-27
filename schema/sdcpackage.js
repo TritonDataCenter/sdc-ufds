@@ -1,4 +1,9 @@
-// Copyright 2012 Joyent, Inc.  All rights reserved.
+/*
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
+ *
+ * THIS OBJECTCLASS HAS BEEN DEPRECATED. SDC 7 PACKAGES HAVE BEEN MOVED INTO
+ * THEIR OWN API "PAPI".
+ */
 
 var util = require('util');
 var ldap = require('ldapjs');
@@ -15,14 +20,17 @@ function validUUID(uuid) {
 
 
 function validNumber(attr, min, max) {
-    if (!min) min = 0;
+    if (!min) {
+        min = 0;
+    }
 
     var number = parseInt(attr, 10);
 
-    if (max)
+    if (max) {
         return (number >= min && number <= max);
-    else
+    } else {
         return (number >= min);
+    }
 }
 
 var MIN_RAM = 64;

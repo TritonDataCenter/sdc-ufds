@@ -30,8 +30,12 @@ var ResourceNotFoundError = restify.ResourceNotFoundError;
 ///--- Helpers
 
 function _randomId(min, max) {
-    if (!min) min = 0;
-    if (!max) max = Math.pow(2, 32) - 1;
+    if (!min) {
+        min = 0;
+    }
+    if (!max) {
+        max = Math.pow(2, 32) - 1;
+    }
 
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -39,8 +43,9 @@ function _randomId(min, max) {
 
 function _merge(obj1, obj2) {
     Object.keys(obj2).forEach(function (k) {
-        if (!obj1.hasOwnProperty(k))
+        if (!obj1.hasOwnProperty(k)) {
             obj1[k] = obj2[k];
+        }
     });
 
     return obj1;
@@ -91,16 +96,19 @@ function _translate(entry) {
             entry.address = [entry.address];
         }
 
-        for (var i = 0; i < entry.address.length; i++) {
+        var i;
+        for (i = 0; i < entry.address.length; i++) {
             customer['street_' + (i + 1)] = entry.address[i];
         }
     }
 
-    if (!customer.street_1)
+    if (!customer.street_1) {
         customer.street_1 = null;
+    }
 
-    if (!customer.street_2)
+    if (!customer.street_2) {
         customer.street_2 = null;
+    }
 
     if (entry.memberof) {
         if (Array.isArray(entry.memberof)) {
@@ -156,8 +164,9 @@ module.exports = {
             translate = true;
         }
 
-        if (!base)
+        if (!base) {
             base = 'o=smartdc';
+        }
 
         var log = ld.log;
         var opts = {
@@ -224,8 +233,9 @@ module.exports = {
                     err: err
                 }, 'loadCustomers: error in search (mid stream)');
 
-                if (done)
+                if (done) {
                     return;
+                }
 
                 done = true;
                 callback(err2);
@@ -239,8 +249,9 @@ module.exports = {
 
                 result.removeAllListeners('searchEntry');
                 result.removeAllListeners('error');
-                if (done)
+                if (done) {
                     return;
+                }
 
                 done = true;
                 callback(null, entries);
@@ -249,8 +260,9 @@ module.exports = {
     },
 
     loadCustomer: function loadCustomer(req, res, next) {
-        if (!req.params.uuid)
+        if (!req.params.uuid) {
             return next();
+        }
 
         var log = req.log;
         var sent = false;

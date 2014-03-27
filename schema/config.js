@@ -29,8 +29,9 @@ Config.prototype.validate =
 function validate(entry, config, changes, callback) {
     var errors = [];
 
-    if (errors.length)
+    if (errors.length) {
         return callback(new ldap.ConstraintViolationError(errors.join('\n')));
+    }
 
     return callback();
 };

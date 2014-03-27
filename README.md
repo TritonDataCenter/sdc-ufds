@@ -3,7 +3,7 @@
 Repository: <git@git.joyent.com:ufds.git>
 Browsing: <https://mo.joyent.com/ufds>
 Who: Mark Cavage, Pedro Palazón Candel
-Docs: oioi, you rather check the code for now.
+Docs: <https://mo.joyent.com/docs/ufds/master/>.
 Tickets/bugs: <https://devhub.joyent.com/jira/browse/PUBAPI>
 
 # Overview
@@ -26,8 +26,7 @@ This assumes several things:
 
 - You've got a moray instance running exactly how it's specified on the
   config file `etc/config.coal.json`.
-- Your node version is greater than 0.6 (package says 0.7, but it's working OK
-  with 0.6.x so far).
+- Your node version is greater than 0.8.
 - You want to see debug output. If you don't, remove the `-d 2`, but it's
   strongly recommended while hacking.
 - You do have bunyan module installed globally. Given the `make all` command

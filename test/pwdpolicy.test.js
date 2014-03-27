@@ -44,6 +44,10 @@ var pwdPolicy = {
     pwdmaxage: 7776000
 };
 
+var HIDDEN = new ldap.Control({
+    type: '1.3.6.1.4.1.38678.1',
+    criticality: true
+});
 
 function getUser(login, callback) {
     var opts = {
@@ -54,7 +58,7 @@ function getUser(login, callback) {
 
     var entries;
 
-    return CLIENT.search(SUFFIX, opts, function (err, res) {
+    return CLIENT.search(SUFFIX, opts, [HIDDEN], function (err, res) {
         if (err) {
             return callback(err);
         }

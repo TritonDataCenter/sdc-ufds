@@ -18,10 +18,6 @@ company: DATACENTER_COMPANY_NAME
 address: DATACENTER_LOCATION
 objectclass: datacenter
 
-dn: ou=servers, datacenter=DATACENTER_NAME, o=smartdc
-ou: servers
-objectclass: organizationalUnit
-
 dn: ou=images, o=smartdc
 ou: images
 objectclass: organizationalUnit

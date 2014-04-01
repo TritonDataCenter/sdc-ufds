@@ -337,10 +337,10 @@ function processConfig() {
     }
 
     if (!_config.ufds) {
-        _config.ufds = 'ldaps://127.0.0.1';
-        if (_config.port) {
-            _config.ufds += ':' + parsed.port;
-        }
+        _config.ufds = 'ldaps://127.0.0.1:1391';
+        // if (_config.port) {
+        //     _config.ufds += ':' + parsed.port;
+        // }
     }
 
     if (parsed.debug) {

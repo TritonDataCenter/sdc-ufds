@@ -67,19 +67,7 @@ function Package() {
             vcpus: 1,
             traits: 1,
             min_platform: 1
-        },
-        immutable: [
-            'uuid',
-            'name',
-            'version',
-            'quota',
-            'max_swap',
-            'max_physical_memory',
-            'cpu_cap',
-            'max_lwp',
-            'zfs_io_priority',
-            'vcpus'
-        ]
+        }
     });
 }
 util.inherits(Package, Validator);

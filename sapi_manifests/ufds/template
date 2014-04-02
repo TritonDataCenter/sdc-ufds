@@ -14,7 +14,7 @@
             "retries": 3,
             "minTimeout": 1000
         },
-        "version": 13
+        "version": 14
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -94,7 +94,8 @@
             "company": { "type": "string" },
             "account": { "type": "string" },
             "memberpolicy": { "type": "[string]" },
-            "memberrole": { "type": "[string]" }
+            "memberrole": { "type": "[string]" },
+            "rule": { "type": "[string]" }
         }
     }
 }

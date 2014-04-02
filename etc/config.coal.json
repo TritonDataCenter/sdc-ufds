@@ -2,10 +2,10 @@
     "// Note": "This is a convenience config file. sapi_manifests/ufds/template is the authority.",
     "host": "127.0.0.1",
     "port": 1389,
-    "ufds": "ldap://127.0.0.1:1389",
+    "ufds": "ldaps://10.99.99.18",
     "rootDN": "cn=root",
     "rootPassword": "secret",
-    "logLevel": "info",
+    "logLevel": "debug",
     "use_bcrypt": false,
     "ufds_is_master": true,
     "moray": {
@@ -18,7 +18,7 @@
         "dns": {
             "resolvers": ["10.99.99.11"]
         },
-        "version": 13
+        "version": 14
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -98,7 +98,8 @@
             "company": {"type": "string"},
             "account": { "type": "string" },
             "memberpolicy": { "type": "[string]" },
-            "memberrole": { "type": "[string]" }
+            "memberrole": { "type": "[string]" },
+            "rule": { "type": "[string]" }
         }
     }
 }

@@ -18,14 +18,6 @@ company: DATACENTER_COMPANY_NAME
 address: DATACENTER_LOCATION
 objectclass: datacenter
 
-dn: ou=images, o=smartdc
-ou: images
-objectclass: organizationalUnit
-
-dn: ou=packages, o=smartdc
-ou: packages
-objectclass: organizationalUnit
-
 dn: ou=config, o=smartdc
 ou: config
 objectclass: organizationalUnit

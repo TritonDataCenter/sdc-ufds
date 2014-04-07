@@ -16,7 +16,7 @@ defaults
         retries 1
         timeout queue   0
         timeout connect 2000
-        timeout client  55000
+        timeout client  120000
         timeout server  120000
         log global
         option httplog

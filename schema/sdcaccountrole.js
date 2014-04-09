@@ -31,7 +31,8 @@ function SDCAccountRole() {
         },
         optional: {
             uniquemember: 1000000,
-            memberpolicy: 1000000
+            memberpolicy: 1000000,
+            uniquememberdefault: 1000000
         }
     });
 }
@@ -43,13 +44,27 @@ function validate(entry, config, changes, callback) {
     var errors = [];
     var members = attrs.uniquemember || [];
     var policies = attrs.memberpolicy || [];
-    var i, j;
+    var defaultMembers = attrs.uniquememberdefault || [];
+    var i, j, k;
 
     members.sort();
     for (i = 0; i < members.length; i++) {
         if (members.indexOf(members[i], i + 1) !== -1) {
             return callback(new ldap.ConstraintViolationError(members[i] +
                                                          ' is not unique'));
+        }
+    }
+
+    defaultMembers.sort();
+    for (k = 0; k < defaultMembers.length; k++) {
+        if (defaultMembers.indexOf(defaultMembers[k], k + 1) !== -1) {
+            return callback(new ldap.ConstraintViolationError(
+                        defaultMembers[k] + ' is not unique'));
+        }
+
+        if (members.indexOf(defaultMembers[k]) === -1) {
+            return callback(new ldap.ConstraintViolationError(
+                        defaultMembers[k] + ' is not valid'));
         }
     }
 

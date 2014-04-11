@@ -200,68 +200,34 @@ module.exports = {
             base: base,
             filter: opts.filter
         }, 'loadCustomers: starting search');
-        ld.search(base, opts, hidden, function (err, result) {
+
+        ld.search(base, opts, function (err, entries) {
             if (err) {
                 log.debug({
                     base: base,
                     filter: opts.filter,
                     err: err
-                }, 'loadCustomers: error in search (starting)');
+                }, 'loadCustomers: error in search');
                 callback(err);
                 return;
             }
 
-            var entries = [];
-            var done = false;
-            result.on('searchEntry', function (entry) {
-                log.debug({
-                    entry: entry.object
-                }, 'loadCustomers: entry received');
-
-                entries.push((translate ?
-                              _translate(entry.object) :
-                              entry.object));
+            entries.map(function (entry) {
+                return (translate ? _translate(entry) : entry);
             });
 
-            result.on('error', function (err2) {
-                result.removeAllListeners('searchEntry');
-                result.removeAllListeners('end');
-
-                log.debug({
-                    base: base,
-                    filter: opts.filter,
-                    err: err
-                }, 'loadCustomers: error in search (mid stream)');
-
-                if (done) {
-                    return;
-                }
-
-                done = true;
-                callback(err2);
-            });
-
-            result.once('end', function () {
-                log.debug({
-                    base: base,
-                    filter: opts.filter
-                }, 'loadCustomers: search done');
-
-                result.removeAllListeners('searchEntry');
-                result.removeAllListeners('error');
-                if (done) {
-                    return;
-                }
-
-                done = true;
-                callback(null, entries);
-            });
+            return callback(null, entries);
         });
     },
 
     loadCustomer: function loadCustomer(req, res, next) {
+        assert.ok(req.ufds);
         if (!req.params.uuid) {
-            return next();
+            if (req.params.login) {
+                req.params.uuid = req.params.login;
+            } else {
+                return next();
+            }
         }
 
         var log = req.log;
@@ -273,49 +239,26 @@ module.exports = {
                 next(new restify.InternalError(err.message));
             }
         }
-        var opts = {
-            scope: 'sub',
-            filter: '(uuid=' + req.params.uuid + ')'
-        };
 
-        log.debug({
-            filter: opts.filter
-        }, 'LoadCustomer(%s) entered', req.params.uuid);
-        req.ldap.search('o=smartdc', opts, hidden, function (e, result) {
-            if (e) {
-                log.debug({
-                    err: e,
-                    filter: opts.filter
-                }, 'loadCustomer: error starting search');
-                returnError(e);
-                return;
+        log.debug('LoadCustomer(%s) entered', req.params.uuid);
+        req.ufds.getUser(req.params.uuid, function (err, user) {
+            if (err) {
+                return returnError(err);
             }
-
-            result.once('searchEntry', function (entry) {
-                log.debug({
-                    entry: entry.object,
-                    filter: opts.filter
-                }, 'LoadCustomer(%s): entry found', req.params.uuid);
-                req.customer = entry;
-            });
-
-            result.once('error', returnError);
-            result.once('end', function () {
-                if (req.customer) {
-                    log.debug('LoadCustomer(%s) -> %j',
+            req.customer = user;
+            log.debug('LoadCustomer(%s) -> %j',
                               req.params.uuid,
-                              req.customer.object);
+                              user);
+            if (!sent) {
+                sent = true;
+                if (!req.customer) {
+                    next(new ResourceNotFoundError(req.params.uuid));
+                } else {
+                    next();
                 }
-
-                if (!sent) {
-                    sent = true;
-                    if (!req.customer) {
-                        next(new ResourceNotFoundError(req.params.uuid));
-                    } else {
-                        next();
-                    }
-                }
-            });
+            } else {
+                next();
+            }
         });
     },
 

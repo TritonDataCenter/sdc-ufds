@@ -30,7 +30,7 @@ function loadLimits(req, callback) {
         scope: 'one'
     };
     var base = req.customer.dn.toString();
-    return req.ldap.search(base, opts, function (err, res) {
+    return req.ufds.client.search(base, opts, function (err, res) {
         var done = false;
         if (err) {
             done = true;
@@ -88,7 +88,7 @@ module.exports = {
 
     list: function list(req, res, next) {
         assert.ok(req.customer);
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -114,7 +114,7 @@ module.exports = {
 
     put: function put(req, res, next) {
         assert.ok(req.customer);
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -144,7 +144,7 @@ module.exports = {
                     type: 'replace',
                     modification: mod
                 });
-                return req.ldap.modify(dn, change, function (err2) {
+                return req.ufds.client.modify(dn, change, function (err2) {
                     if (err2) {
                         return next(err2);
                     }
@@ -163,7 +163,7 @@ module.exports = {
                 objectclass: 'capilimit'
             };
             entry[req.params.dataset] = req.body;
-            return req.ldap.add(dn, entry, function (err2) {
+            return req.ufds.client.add(dn, entry, function (err2) {
                 if (err2) {
                     return next(err2);
                 }
@@ -182,7 +182,7 @@ module.exports = {
 
     del: function del(req, res, next) {
         assert.ok(req.customer);
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -216,7 +216,7 @@ module.exports = {
                 type: 'delete',
                 modification: mod
             });
-            return req.ldap.modify(dn, change, function (err2) {
+            return req.ufds.client.modify(dn, change, function (err2) {
                 if (err2) {
                     return next(err2);
                 }

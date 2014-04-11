@@ -35,7 +35,7 @@ function loadMetadata(req, notFoundOk, callback) {
         filter: '(objectclass=capimetadata)',
         scope: 'base'
     };
-    req.ldap.search(base, opts, function (err, _res) {
+    req.ufds.client.search(base, opts, function (err, _res) {
         var done = false;
         if (err) {
             done = true;
@@ -85,7 +85,7 @@ module.exports = {
 
     list: function list(req, res, next) {
         assert.ok(req.customer);
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -120,7 +120,7 @@ module.exports = {
     },
 
     put: function put(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var dn = sprintf(MD_DN, req.params.appkey, req.customer.dn.toString());
         var key = req.params.key.toLowerCase();
@@ -151,7 +151,7 @@ module.exports = {
                     objectclass: ['capimetadata']
                 };
                 entry[key] = [value];
-                return req.ldap.add(dn, entry, function (err2) {
+                return req.ufds.client.add(dn, entry, function (err2) {
                     if (err2) {
                         return next(err2);
                     }
@@ -178,7 +178,7 @@ module.exports = {
                 key: key
             }, 'PutMetadataKey: updating');
 
-            return req.ldap.modify(dn, change, function (err2) {
+            return req.ufds.client.modify(dn, change, function (err2) {
                 if (err2) {
                     return next(err2);
                 }
@@ -195,7 +195,7 @@ module.exports = {
     },
 
     get: function get(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var key = req.params.key.toLowerCase();
         var log = req.log;
@@ -241,7 +241,7 @@ module.exports = {
 
     del: function del(req, res, next) {
         assert.ok(req.customer);
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var key = req.params.key.toLowerCase();
         var log = req.log;
@@ -275,7 +275,7 @@ module.exports = {
             }, 'DeleteMetadataKey: deleting');
 
             log.debug('DeletMetadataKey %s: deleting %s', dn, key);
-            return req.ldap.modify(dn, change, function (err2) {
+            return req.ufds.client.modify(dn, change, function (err2) {
                 if (err2) {
                     return next(err2);
                 }

@@ -1,7 +1,6 @@
 {
     "// Note": "This is a convenience config file. sapi_manifests/ufds/template is the authority.",
-    "host": "127.0.0.1",
-    "port": 1389,
+
     "ufds": "ldaps://10.99.99.18",
     "rootDN": "cn=root",
     "rootPassword": "secret",

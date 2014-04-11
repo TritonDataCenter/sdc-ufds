@@ -7,7 +7,8 @@
  */
 
 var assert = require('assert');
-var sprintf = require('util').format;
+var util = require('util');
+var sprintf = util.format;
 
 var httpSignature = require('http-signature');
 var ldap = require('ldapjs');
@@ -17,11 +18,8 @@ function uuid() {
     return (libuuid.create());
 }
 
-var util = require('./util');
 
-
-
-///--- Globals
+// --- Globals
 
 var KEY_DN = 'fingerprint=%s, %s';
 
@@ -78,68 +76,34 @@ function translateKey(key, _uuid) {
 
 
 function loadKeys(req, callback) {
-    var dn = req.customer.dn.toString();
-    var opts = {
-        scope: 'one',
-        filter: '(objectclass=sdckey)'
-    };
-    req.ldap.search(dn, opts, HIDDEN, function (err, _res) {
-        if (err) {
-            if (err instanceof ldap.NoSuchObjectError) {
-                return callback(new restify.ResourceNotFoundError(
-                    req.params.uuid));
-            }
+    assert.ok(req.ufds);
+    assert.ok(req.params.uuid);
 
+    req.ufds.listKeys(req.params.uuid, function (err, keys) {
+        if (err) {
             return callback(err);
         }
 
-        var entries = [];
-        var done = false;
-        _res.on('error', function (err2) {
-            if (done) {
-                return;
-            }
-            done = true;
-            if (err2 instanceof ldap.NoSuchObjectError) {
-                return callback(new restify.ResourceNotFoundError(req.url));
-            }
+        keys = keys.map(function (key) {
+            return translateKey(key, req.params.uuid);
+        });
 
-            return callback(new restify.InternalError(err2.toString()));
-        });
-        _res.on('searchEntry', function (_entry) {
-            entries.push(translateKey(_entry.toObject(), req.params.uuid));
-        });
-        _res.on('end', function (result) {
-            if (done) {
-                return;
-            }
-            done = true;
-
-            return callback(null, entries);
-        });
+        return callback(null, keys);
     });
 }
 
 
 function loadKey(req, callback) {
-    return loadKeys(req, function (err, keys) {
+    assert.ok(req.ufds);
+    assert.ok(req.params.uuid);
+    assert.ok(req.params.id);
+
+    req.ufds.getKey(req.params.uuid,
+            idToFingerprint(req.params.id), function (err, key) {
         if (err) {
             return callback(err);
         }
-
-        var key, i;
-        for (i = 0; i < keys.length; i++) {
-            if (keys[i].id === req.params.id) {
-                key = keys[i];
-                break;
-            }
-        }
-
-        if (!key) {
-            return callback(new restify.ResourceNotFoundError(req.params.id));
-        }
-
-        return callback(null, key);
+        return callback(null, translateKey(key, req.params.uuid));
     });
 }
 
@@ -153,7 +117,7 @@ module.exports = {
     // curl -is --data-urlencode key@/tmp/id_rsa.pub -d name=foo \
     // http://localhost:8080/customers/:uuid/keys
     post: function post(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -169,55 +133,36 @@ module.exports = {
             return next(new restify.MissingParameterError('key is required'));
         }
 
-
-        var fp = fingerprint(req.params.key);
-        var dn = sprintf(KEY_DN, fp, req.customer.dn.toString());
         var entry = {
-            name: [req.params.name],
-            openssh: [req.params.key],
-            fingerprint: [fp],
-            objectclass: ['sdckey']
+            name: req.params.name,
+            openssh: req.params.key
         };
-        return req.ldap.add(dn, entry, function (err) {
+
+        return req.ufds.addKey(req.params.uuid, entry, function (err, key) {
             if (err) {
-                if (err instanceof ldap.EntryAlreadyExistsError) {
-                    return next(new restify.InvalidArgumentError(
-                        req.params.name + ' already exists'));
-                } else if (err instanceof ldap.ConstraintViolationError) {
-                    return next(new restify.InvalidArgumentError(
-                        'ssh key is in use'));
-                } else if (err instanceof ldap.NoSuchObjectError) {
-                    return next(new restify.ResourceNotFoundError(
-                        req.params.uuid));
-                }
-                return next(new restify.InternalError(err.message));
+                return next(err);
             }
 
-            // Need to reload so we can get all the generated params
-            req.params.id = fingerprintToId(fp);
-            return loadKey(req, function (err2, key) {
-                if (err2) {
-                    return next(err2);
-                }
+            key = translateKey(key, req.params.uuid);
 
-                if (req.accepts('application/xml')) {
-                    key = { key: key };
-                }
+            if (req.accepts('application/xml')) {
+                key = { key: key };
+            }
 
-                log.debug({
-                    key: key,
-                    uuid: req.params.uuid
-                }, 'CreateKey: done');
-                res.send(201, key);
-                return next();
-            });
+            log.debug({
+                key: key,
+                uuid: req.params.uuid
+            }, 'CreateKey: done');
+            res.send(201, key);
+            return next();
+
+
         });
     },
 
 
     list: function list(req, res, next) {
-        assert.ok(req.ldap);
-
+        assert.ok(req.ufds);
         var log = req.log;
 
         log.debug({uuid: req.params.uuid}, 'ListKeys: entered');
@@ -242,7 +187,7 @@ module.exports = {
 
 
     get: function get(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -273,7 +218,7 @@ module.exports = {
 
 
     put: function put(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -310,7 +255,7 @@ module.exports = {
                     }
                 });
 
-                return req.ldap.modify(dn, change, function (err2) {
+                return req.ufds.client.modify(dn, change, function (err2) {
                     if (err2) {
                         return next(err2);
                     }
@@ -330,7 +275,7 @@ module.exports = {
 
                 var _fp = fingerprint(req.params.key);
                 var dn2 = sprintf(KEY_DN, _fp, req.customer.dn.toString());
-                return req.ldap.modifyDN(dn, dn2, function (err2) {
+                return req.ufds.client.modifyDN(dn, dn2, function (err2) {
                     if (err2) {
                         return next(err2);
                     }
@@ -353,7 +298,7 @@ module.exports = {
 
 
     del: function del(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
         log.debug({
@@ -361,34 +306,25 @@ module.exports = {
             key_id: req.params.id
         }, 'DeleteKey: entered');
 
-        return loadKey(req, function (err, key) {
+        req.ufds.deleteKey(req.params.uuid,
+                idToFingerprint(req.params.id), function (err) {
             if (err) {
                 return next(err);
             }
 
-            var dn = sprintf(KEY_DN,
-                             key.fingerprint,
-                             req.customer.dn.toString());
+            log.debug({
+                customer_uuid: req.params.uuid,
+                key_id: req.params.id
+            }, 'DeleteKey: ok');
 
-            return req.ldap.del(dn, function (err2) {
-                if (err2) {
-                    return next(err2);
-                }
-
-                log.debug({
-                    customer_uuid: req.params.uuid,
-                    key_id: req.params.id
-                }, 'DeleteKey: ok');
-
-                res.send(200);
-                return next();
-            });
+            res.send(200);
+            return next();
         });
     },
 
     smartlogin: function smartlogin(req, res, next) {
         assert.ok(req.customer);
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
         log.debug({

@@ -45,7 +45,7 @@ var METADATA_STR_VAL_PLAIN = 'notQueryStringParseable';
 ///--- Tests
 
 test('setup', function (t) {
-    helper.createCAPICLient(function (client) {
+    helper.createCAPIClient(function (client) {
         t.ok(client);
         CAPI = client;
         t.done();
@@ -63,6 +63,7 @@ test('list customers', function (t) {
     });
 });
 
+
 // REVIEW: This should always return obj.errors
 test('create customer (missing login)', function (t) {
     CAPI.post('/customers', {
@@ -74,7 +75,7 @@ test('create customer (missing login)', function (t) {
         t.equal(res.statusCode, 409);
         t.ok(obj.errors);
         if (obj.errors) {
-            t.ok(/login/.test(obj.errors[0]));
+            t.ok(/login/.test(obj.errors[0]), 'obj errors ok');
         }
         t.done();
     });
@@ -147,8 +148,8 @@ test('create customer (duplicated login)', function (t) {
         t.ok(err);
         t.equal(res.statusCode, 409);
         t.ok(obj.errors);
-        t.ok(/login/.test(obj.errors[0]));
-        t.ok(/already exists/.test(obj.errors[0]));
+        t.ok(/login/i.test(obj.errors[0]));
+        t.ok(/already taken/.test(obj.errors[0]));
         t.done();
     });
 });
@@ -168,11 +169,10 @@ test('get customer', function (t) {
 test('customer forgot_password', function (t) {
     var p = '/customers/' + CUSTOMER.uuid + '/forgot_password';
     CAPI.put(p, {}, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.equal(CUSTOMER.login, obj.login);
-        t.ok(obj.forgot_password_code);
-        t.ok(obj.forgot_password_code !== CUSTOMER.forgot_password_code);
+        t.ifError(err, 'forgot password error');
+        t.ok(obj, 'forgot password response');
+        t.equal(CUSTOMER.login, obj.login, 'forgot pwd login');
+        t.ok(obj.forgot_password_code, 'forgot pwd code');
         t.done();
     });
 });
@@ -207,9 +207,9 @@ test('update customer', function (t) {
 var SALT;
 test('get salt', function (t) {
     CAPI.get('/login/' + CUSTOMER.login, function (err, req, res, obj) {
-        t.ifError(err);
-        t.ok(obj);
-        t.ok(obj.salt);
+        t.ifError(err, 'get salt error');
+        t.ok(obj, 'get salt response');
+        t.ok(obj.salt, 'get salt salt');
         SALT = obj.salt;
         t.done();
     });
@@ -244,6 +244,17 @@ test('forgot password', function (t) {
         t.ok(obj.length);
         t.equal(obj[0].uuid, CUSTOMER.uuid);
         t.ok(obj[0].forgot_password_code);
+        t.done();
+    });
+});
+
+
+test('forgot password unknown email', function (t) {
+    CAPI.post('/forgot_password', {
+        email: 'whatever@foo.net'
+    }, function (err, req, res, obj) {
+        t.ok(err);
+        t.equal(res.statusCode, 404);
         t.done();
     });
 });
@@ -519,7 +530,6 @@ test('delete limit', function (t) {
 test('limit cleanup', function (t) {
     var limitDn = util.format('dclimit=coal, %s',
         'uuid=' + CUSTOMER.uuid + ', ou=users, ' + SUFFIX);
-
     helper.createClient(function (err, client) {
         t.ifError(err);
         t.ok(client);

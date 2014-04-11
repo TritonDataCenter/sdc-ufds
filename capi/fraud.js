@@ -58,37 +58,42 @@ function createBlackList(ld, email, callback) {
 
 module.exports = {
     loadBlackList: function loadBlackList(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
         var sent = false;
-        function returnError(err) {
-            if (err instanceof ldap.NoSuchObjectError) {
-                return createBlackList(req.ldap, function (err2) {
-                    if (err2) {
-                        if (!sent) {
-                            log.debug(err, 'create Blacklist error');
-                            sent = true;
-                            next(new restify.InternalError(err2.message));
-                        }
-                    } else {
-                        log.debug(err, 'Blacklist created');
-                        req.blacklist = { email: []};
-                        if (!sent) {
-                            sent = true;
-                            next();
-                        }
+        function createNewBlacklist() {
+            return createBlackList(req.ufds, function (err2) {
+                if (err2) {
+                    if (!sent) {
+                        log.debug(err2, 'create Blacklist error');
+                        sent = true;
+                        next(new restify.InternalError(err2.message));
                     }
-                });
-            } else if (!sent) {
+                } else {
+                    log.debug('Blacklist created');
+                    req.blacklist = { email: []};
+                    if (!sent) {
+                        sent = true;
+                        next();
+                    }
+                }
+            });
+
+        }
+
+        function returnError(err) {
+            if (!sent) {
                 log.debug(err, 'loadBlackList: returning error');
                 sent = true;
                 next(new restify.InternalError(err.message));
             }
         }
-
-        req.ldap.search(BLACKLIST_DN, '(objectclass=emailblacklist)',
-                function (e, result) {
+        var opts = {
+            scope: 'one',
+            filter: '(objectclass=emailblacklist)'
+        };
+        req.ufds.search(BLACKLIST_DN, opts, function (e, blacklist) {
             if (e) {
                 log.debug({
                     err: e
@@ -97,32 +102,28 @@ module.exports = {
                 return;
             }
 
-            result.once('searchEntry', function (entry) {
+            if (!blacklist.length) {
+                return createNewBlacklist();
+            }
+
+            log.debug({
+                blacklist: blacklist
+            }, 'BlackList Loaded');
+
+            req.blacklist = blacklist[0];
+
+            // Just in case we have a single email
+            if (!Array.isArray(req.blacklist.email)) {
+                req.blacklist.email = [req.blacklist.email];
                 log.debug({
-                    entry: entry.object
-                }, 'BlackList Loaded');
-                req.blacklist = entry.object;
-                // Just in case we have a single email
-                if (!Array.isArray(req.blacklist.email)) {
-                    req.blacklist.email = [req.blacklist.email];
-                    log.debug({
-                        entry: req.blacklist
-                    }, 'BlackList Modified');
-                }
+                    entry: req.blacklist
+                }, 'BlackList Modified');
+            }
 
-            });
-
-            result.once('error', returnError);
-            result.once('end', function () {
-                if (req.blacklist) {
-                    log.debug(req.blacklist, 'BlackList load done');
-                }
-
-                if (!sent) {
-                    sent = true;
-                    next();
-                }
-            });
+            if (!sent) {
+                sent = true;
+                next();
+            }
         });
     },
 
@@ -159,7 +160,7 @@ module.exports = {
             }
         }));
 
-        return req.ldap.modify(dn, changes, function (err) {
+        return req.ufds.client.modify(dn, changes, function (err) {
             if (err) {
                 return next(res.sendError([err.toString()]));
             }
@@ -179,7 +180,7 @@ module.exports = {
 
     search: function search(req, res, next) {
 
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
         assert.ok(req.blacklist);
         var log = req.log;
 

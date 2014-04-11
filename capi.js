@@ -1,4 +1,11 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
+/*
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
+ *
+ * UFDS CAPI main file.
+ *
+ * CAPI is the backwards compatible HTTP proxy for the UFDS LDAP server.
+ * It's used by SmartLogin for SSH'ing smart machines.
+ */
 
 var assert = require('assert');
 var fs = require('fs');
@@ -7,7 +14,7 @@ var path = require('path');
 var sprintf = require('util').format;
 
 var Logger = require('bunyan');
-var ldap = require('ldapjs');
+var SDC = require('sdc-clients');
 var nopt = require('nopt');
 var restify = require('restify');
 var libuuid = require('libuuid');
@@ -54,7 +61,7 @@ function toXml(elm) {
 
 ///--- Globals
 
-var LDAP_CLIENT;
+var UFDS_CLIENT;
 
 var opts = {
     'certificate': String,
@@ -79,64 +86,28 @@ var shortOpts = {
 
 
 
-///--- Helpers
+// --- Helpers
 
-function createLDAPClient(options) {
-    var cfg = options.config;
-    var log = options.log;
+function createUfdsClient(options, callback) {
+    var ufds = new SDC.UFDS(options);
 
-    function connect(t) {
-        var client = ldap.createClient({
-            log: log,
-            url: cfg.ufds,
-            timeout: (cfg.clientTimeout || 2000)
+    ufds.once('connect', function () {
+        ufds.removeAllListeners('error');
+        ufds.on('error', function (err) {
+            options.log.error(err, 'UFDS disconnected');
         });
-        var _t = Math.min(t * 2, 60000);
-
-        client.once('error', function (err) {
-            client.removeAllListeners('connect');
-            log.error(err, 'LDAP Client connect error');
-            setTimeout(connect.bind(null, _t), _t);
+        ufds.on('connect', function () {
+            options.log.info('UFDS reconnected');
         });
+        callback(null, ufds);
+    });
 
-        client.once('connect', function () {
-            client.removeAllListeners('error');
-            log.debug('LDAP Client Connected');
-
-            client.bind(cfg.rootDN, cfg.rootPassword, function (err) {
-                if (err) {
-                    log.error(err, 'Unable to bind to UFDS');
-                    setTimeout(connect.bind(null, _t), _t);
-                    return;
-                }
-
-                log.debug('Bound to UFDS');
-                LDAP_CLIENT = client;
-
-
-                function cleanup(ldap_err) {
-                    log.error(ldap_err, 'LDAP Client error');
-
-                    client.removeAllListeners('error');
-                    client.removeAllListeners('timeout');
-
-                    LDAP_CLIENT = null;
-                    connect(500);
-                    client.unbind(function () {});
-                }
-
-                var timeouts = 0;
-                client.once('error', cleanup);
-                client.on('timeout', function () {
-                    if (++timeouts === 3) {
-                        cleanup(new Error('request timeouts'));
-                    }
-                });
-            });
-        });
-    }
-
-    connect(500);
+    ufds.once('error', function (err) {
+        // You are screwed. It's likely that the bind credentials were bad.
+        // Treat this as fatal and move on:
+        options.log.error({err: err}, 'UFDS connection error');
+        callback(err);
+    });
 }
 
 
@@ -214,10 +185,10 @@ function CAPI(config) {
             return (false);
         };
 
-        if (!LDAP_CLIENT) {
+        if (!UFDS_CLIENT) {
             next(new restify.InternalError('Upstream server down'));
         } else {
-            req.ldap = LDAP_CLIENT;
+            req.ufds = UFDS_CLIENT;
             next();
         }
     });
@@ -235,8 +206,7 @@ function CAPI(config) {
     server.put('/customers/:uuid', utils.loadCustomer,
                customers.update, utils.loadCustomer,
                function respond(req, res, next) {
-                    var customer = utils.translateCustomer(
-                        req.customer.toObject());
+                    var customer = utils.translateCustomer(req.customer);
                     res.send(200, customer);
                     next();
                });
@@ -248,8 +218,7 @@ function CAPI(config) {
     server.put('/customers/:uuid/forgot_password',
                 utils.loadCustomer, customers.forgot_password,
                 utils.loadCustomer, function respondForgotPwd(req, res, next) {
-                    var customer = utils.translateCustomer(
-                        req.customer.toObject());
+                    var customer = utils.translateCustomer(req.customer);
                     res.send(200, customer);
                     next();
                });
@@ -258,11 +227,11 @@ function CAPI(config) {
     server.del('/customers/:uuid', utils.loadCustomer, customers.del);
 
     // GetSalt
-    server.get('/login/:login', login.getSalt);
-    server.head('/login/:login', login.getSalt);
+    server.get('/login/:uuid', utils.loadCustomer, login.getSalt);
+    server.head('/login/:uuid', utils.loadCustomer, login.getSalt);
 
     // Login
-    server.post('/login', login.login);
+    server.post('/login', utils.loadCustomer, login.login);
 
     // ForgotPassword
     server.post('/forgot_password', login.forgotPassword);
@@ -300,12 +269,31 @@ function CAPI(config) {
     ///-- Start up
 
     function connect() {
-        createLDAPClient({
-            config: config,
+        createUfdsClient({
+            url: config.ufds,
+            bindDN: config.rootDN,
+            bindPassword: config.rootPassword,
+            cache: {
+                size: 5000,
+                expiry: 30
+            },
+            maxConnections: 1,
+            retry: {
+                initialDelay: 1000
+            },
+            clientTimeout: 120000,
+            hidden: true,
             log: log
-        });
-        server.listen(config.port, function () {
-            log.info('CAPI listening on port %d', config.port);
+        }, function (err, ufds) {
+            if (err) {
+                log.error({err: err}, 'CAPI UFDS connect error');
+                process.exit(1);
+            }
+            UFDS_CLIENT = ufds;
+
+            server.listen(config.port, function () {
+                log.info('CAPI listening on port %d', config.port);
+            });
         });
     }
 
@@ -321,7 +309,7 @@ function processConfig() {
 
     var _config;
     var parsed = nopt(opts, shortOpts, process.argv, 2);
-    var file = parsed.file || __dirname + '/etc/ufds.config.json';
+    var file = parsed.file || __dirname + '/etc/config.json';
 
     if (parsed.help) {
         usage(0);

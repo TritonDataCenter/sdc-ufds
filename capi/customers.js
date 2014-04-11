@@ -1,4 +1,4 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var mod_util = require('util');
@@ -34,6 +34,7 @@ var Change = ldap.Change;
 module.exports = {
 
     operators: function operators(req, res, next) {
+        assert.ok(req.ufds);
         var log = req.log;
         log.debug('Preload Operators: entered');
         var opts = {
@@ -41,33 +42,23 @@ module.exports = {
             filter: '(objectclass=groupofuniquenames)'
         };
 
-        return req.ldap.search(OPERATORS_DN, opts, function (err, gRes) {
+        return req.ufds.search(OPERATORS_DN, opts, function (err, entries) {
             if (err) {
                 return next(err);
             }
 
-            gRes.on('searchEntry', function (entry) {
-                if (entry && entry.attributes) {
-                    entry.attributes.forEach(function (a) {
-                        if (a.type === 'uniquemember') {
-                            req.operator_dns = a.vals;
-                        }
-                    });
+            if (entries && entries.length && entries[0].uniquemember) {
+                if (!Array.isArray(entries[0].uniquemember)) {
+                    entries[0].uniquemember = [entries[0].uniquemember];
                 }
-            });
-            gRes.once('error', function (er) {
-                gRes.removeAllListeners('end');
-                return next(er);
-            });
-            gRes.once('end', function () {
-                log.debug('Preload Operators: done');
-                return next();
-            });
+                req.operator_dns = entries[0].uniquemember;
+            }
+            return next();
         });
     },
 
     list: function list(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
         var reverse = false;
@@ -148,7 +139,7 @@ module.exports = {
         log.debug({filter: filter}, 'ListCustomers: LDAP filter');
         var base = 'ou=users, o=smartdc';
 
-        return util.loadCustomers(req.ldap, filter, function (err, customers) {
+        return util.loadCustomers(req.ufds, filter, function (err, customers) {
             if (err) {
                 return next(err);
             }
@@ -184,7 +175,7 @@ module.exports = {
             // CAPI-254: Once we're done, flag operators properly:
             customers.forEach(function (c) {
                 var c_dn = sprintf('uuid=%s, ou=users, o=smartdc', c.uuid);
-                if (req.operator_dns.indexOf(c_dn) !== -1) {
+                if (req.operator_dns && req.operator_dns.indexOf(c_dn) !== -1) {
                     c.role = 2;
                     c.role_type = 2;
                 }
@@ -203,6 +194,7 @@ module.exports = {
 
 
     create: function create(req, res, next) {
+        assert.ok(req.ufds);
         var log = req.log;
 
         log.debug({params: req.params}, 'CreateCustomer: entered');
@@ -245,16 +237,10 @@ module.exports = {
             return;
         }
 
-        // We need to set the password "6.5 style" here (UFDS will then set
-        // _imported property to true):
-        var saltedPassword = salt.saltPasswordSHA1(req.params.password);
         var customer = {
-            uuid: uuid(),
             login: req.params.login,
             email: req.params.email_address,
-            userpassword: saltedPassword.password,
-            _salt: saltedPassword.salt,
-            objectclass: ['sdcperson']
+            userpassword: req.params.password
         };
 
         customer.approved_for_provisioning =
@@ -308,12 +294,8 @@ module.exports = {
             customer.phone = req.params.phone_number;
         }
 
-        customer.forgot_password_code =
-                util.forgotPasswordCode(customer.uuid[0]);
-
-        var dn = sprintf('uuid=%s, ou=users, o=smartdc', customer.uuid);
-        log.debug({dn: dn, customer: customer}, 'CreateCustomer: saving');
-        return req.ldap.add(dn, customer, function (err) {
+        log.debug({customer: customer}, 'CreateCustomer: saving');
+        return req.ufds.addUser(customer, function (err, user) {
             if (err) {
                 if (err instanceof ldap.EntryAlreadyExistsError) {
                     return next(res.sendError(['Username is already taken']));
@@ -324,47 +306,55 @@ module.exports = {
                 }
             }
 
-            customer.dn = dn;
-            customer = util.translateCustomer(customer);
-
-            var _done = false;
-            function done() {
-                if (_done) {
-                    return;
+            return req.ufds.updateUser(user, {
+                forgot_password_code: util.forgotPasswordCode(user.uuid)
+            }, function (er) {
+                if (er) {
+                    return next(res.sendError([er.toString()]));
                 }
 
-                _done = true;
-                if (req.accepts('application/xml')) {
-                    customer = { customer : customer };
+                customer = util.translateCustomer(user);
+
+                var _done = false;
+                function done() {
+                    if (_done) {
+                        return;
+                    }
+
+                    _done = true;
+                    if (req.accepts('application/xml')) {
+                        customer = { customer : customer };
+                    }
+
+                    res.send(201, customer);
+                    next();
                 }
 
-                res.send(201, customer);
-                next();
-            }
-
-            if (req.params.role !== '2') {
-                return done();
-            }
-
-            var change = {
-                operation: 'add',
-                modification: {
-                    uniquemember: dn.toString()
+                if (req.params.role !== '2') {
+                    return done();
                 }
-            };
-            return req.ldap.modify(OPERATORS_DN, change, function (err2) {
-                if (err2) {
-                    req.ldap.del(dn, function () {});
-                    log.error('Unable to add %s to operators group.',
-                              dn.toString());
-                    return next(res.sendError([err2.toString()]));
-                }
-                // Need to explicitly override role here, since we already
-                // translated customer before.
-                customer.role = 2;
-                customer.role_type = 2;
 
-                return done();
+                var change = {
+                    operation: 'add',
+                    modification: {
+                        uniquemember: user.dn
+                    }
+                };
+                return req.ufds.client.modify(OPERATORS_DN, change,
+                        function (err2) {
+                    if (err2) {
+                        req.ldap.del(user.dn, function () {});
+                        log.error('Unable to add %s to operators group.',
+                                  user.dn);
+                        return next(res.sendError([err2.toString()]));
+                    }
+                    // Need to explicitly override role here, since we already
+                    // translated customer before.
+                    customer.role = 2;
+                    customer.role_type = 2;
+
+                    return done();
+                });
             });
 
         });
@@ -391,7 +381,7 @@ module.exports = {
 
         log.debug({filter: filter}, 'GetCustomer: filter');
 
-        util.loadCustomers(req.ldap, filter, function (err, customers) {
+        util.loadCustomers(req.ufds, filter, function (err, customers) {
             if (err) {
                 return next(err);
             }
@@ -424,7 +414,7 @@ module.exports = {
                     '(&(objectclass=groupofuniquenames)(uniquemember=%s))',
                     dn)
             };
-            return req.ldap.search(GROUPS, opts, function (gErr, gRes) {
+            return req.ufds.client.search(GROUPS, opts, function (gErr, gRes) {
                 if (gErr) {
                     return next(gErr);
                 }
@@ -590,7 +580,7 @@ module.exports = {
         }
 
         var _dn = req.customer.dn.toString();
-        return req.ldap.modify(_dn, changes, function (err) {
+        return req.ufds.client.modify(_dn, changes, function (err) {
             if (err) {
                 if (err instanceof ldap.ConstraintViolationError) {
                     return next(res.sendError([err.message]));
@@ -607,12 +597,12 @@ module.exports = {
 
     forgot_password: function forgot_password(req, res, next) {
         assert.ok(req.customer);
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
         var changes = [];
 
-        log.debug({params: req.params}, 'fucking_forgot_password: entered');
+        log.debug({params: req.params}, 'forgot_password: entered');
         // If a request has been made to forgot_password, modify it:
         if (/\/forgot_password/.test(req.url)) {
             changes.push(new Change({
@@ -623,8 +613,9 @@ module.exports = {
                 }
             }));
         }
+
         var _dn = req.customer.dn.toString();
-        return req.ldap.modify(_dn, changes, function (err) {
+        return req.ufds.client.modify(_dn, changes, function (err) {
             if (err) {
                 if (err instanceof ldap.ConstraintViolationError) {
                     return next(res.sendError([err.message]));
@@ -633,20 +624,20 @@ module.exports = {
                 }
             }
 
-            log.debug({id: req.params.uuid}, 'fucking_forgot_password: ok');
+            log.debug({id: req.params.uuid}, 'forgot_password: ok');
             return next();
         });
     },
 
     del: function del(req, res, next) {
         assert.ok(req.customer);
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
         log.debug({uuid: req.params.uuid}, 'DeleteCustomer: entered');
 
-        return req.ldap.del(req.customer.dn.toString(), function (err) {
+        return req.ufds.deleteUser(req.params.uuid, function (err) {
             if (err) {
                 return next(err);
             }
@@ -658,7 +649,7 @@ module.exports = {
                     uniquemember: req.customer.dn.toString()
                 }
             };
-            return req.ldap.modify(OPERATORS_DN, change, function () {
+            return req.ufds.client.modify(OPERATORS_DN, change, function () {
                 // Ignore error, as it may not have existed in the group.
                 res.send(200);
                 return next();

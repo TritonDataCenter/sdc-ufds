@@ -1,4 +1,4 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 
 var assert = require('assert');
 var sprintf = require('util').format;
@@ -10,44 +10,31 @@ var util = require('./util');
 
 
 
-///--- Globals
-
-var GET_FILTER = '(&(objectclass=sdcperson)(login=%s))';
-var LOGIN_FILTER = '(&(objectclass=sdcperson)(login=%s))';
-var EMAIL_FILTER = '(&(objectclass=sdcperson)(email=%s))';
+// --- Globals
 
 var BadRequestError = restify.BadRequestError;
-var ResourceNotFoundError = restify.ResourceNotFoundError;
 
-
-///--- API
+// --- API
 
 module.exports = {
 
     getSalt: function getSalt(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
-        log.debug({login: req.params.login}, 'GetSalt: entered');
-        var filter = sprintf(GET_FILTER, req.params.login);
-        util.loadCustomers(req.ldap, filter, false, function (err, customers) {
-            if (err) {
-                return next(err);
-            }
+        log.debug({login: req.params.uuid}, 'GetSalt: entered');
 
-            if (!customers.length) {
-                return next(new ResourceNotFoundError(req.params.login));
-            }
+        assert.ok(req.customer);
 
-            res.send(200, { salt: customers[0]._salt });
-            return next();
-        });
+        res.send(200, { salt: req.customer._salt });
+
+        return next();
     },
 
 
     login: function login(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -60,40 +47,30 @@ module.exports = {
             return next(new BadRequestError('digest is required'));
         }
 
-        var filter = sprintf(LOGIN_FILTER, req.params.login);
+        assert.ok(req.customer);
 
-        function callback(err, customers) {
-            if (err) {
-                return next(err);
+        var result = null;
+        if (req.customer.userpassword === req.params.digest) {
+            result = util.translateCustomer(req.customer);
+            if (req.accepts('application/xml')) {
+                result = { customer: result };
             }
-
-            if (!customers.length) {
-                return next(new ResourceNotFoundError(req.params.login));
-            }
-
-            var result = null;
-            if (customers[0].userpassword === req.params.digest) {
-                result = util.translateCustomer(customers[0]);
-                if (req.accepts('application/xml')) {
-                    result = { customer: result };
-                }
-            }
-
-            log.debug({
-                login: req.params.login,
-                result: result || {}
-            }, 'Login: done');
-
-            res.send(200, result);
-            return next();
-
         }
 
-        return util.loadCustomers(req.ldap, filter, false, callback);
+        log.debug({
+            login: req.params.login,
+            result: result || {}
+        }, 'Login: done');
+
+        res.send(200, result);
+        return next();
+
+
+
     },
 
     forgotPassword: function forgotPassword(req, res, next) {
-        assert.ok(req.ldap);
+        assert.ok(req.ufds);
 
         var log = req.log;
 
@@ -103,17 +80,13 @@ module.exports = {
             return next(new BadRequestError('email is required'));
         }
 
-        var filter = sprintf(EMAIL_FILTER, req.params.email);
-
-        function callback(err, customers) {
+        req.ufds.getUserByEmail(req.params.email, function (err, user) {
+            console.dir(err);
+            console.dir(user);
             if (err) {
                 return next(err);
             }
-
-            if (!customers.length) {
-                return next(new ResourceNotFoundError(req.params.email));
-            }
-
+            var customers = [util.translateCustomer(user)];
             if (req.accepts('application/xml')) {
                 customers = { customers: customers };
             }
@@ -124,9 +97,7 @@ module.exports = {
             }, 'ForgotPassword: done');
             res.send(200, customers);
             return next();
-        }
-
-        return util.loadCustomers(req.ldap, filter, callback);
+        });
     }
 
 };

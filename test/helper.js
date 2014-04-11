@@ -127,7 +127,7 @@ module.exports = {
         });
     },
 
-    createCAPICLient: function createCAPICLient(cb) {
+    createCAPIClient: function createCAPIClient(cb) {
         assert.equal(typeof (cb), 'function');
 
         var host = (!CONFIG.host) ? '127.0.0.1' : CONFIG.host;

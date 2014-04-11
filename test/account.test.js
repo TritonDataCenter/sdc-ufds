@@ -30,6 +30,7 @@ var DN_FMT = 'uuid=%s, ' + SUFFIX;
 var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
 var POLICY_DN_FMT = 'policy-uuid=%s, uuid=%s, ' + SUFFIX;
 var ROLE_DN_FMT = 'role-uuid=%s, uuid=%s, ' + SUFFIX;
+var RESOURCE_DN_FMT = 'resource-uuid=%s, uuid=%s, ' + SUFFIX;
 
 var test = helper.test;
 
@@ -193,6 +194,39 @@ test('add role with policy', function (t) {
                 t.done();
             });
         });
+    });
+});
+
+var _RESOURCE_DN;
+
+test('add resource', function (t) {
+    var res_uuid =  uuid();
+    var res = '/abcd/' + res_uuid.substr(0, 7);
+    var entry = {
+        path: res,
+        memberrole: SUB_USER_DN,
+        account: DUP_ID,
+        uuid: res_uuid,
+        objectclass: 'sdcaccountresource'
+    };
+
+    _RESOURCE_DN = sprintf(RESOURCE_DN_FMT, res_uuid, DUP_ID);
+
+    CLIENT.add(_RESOURCE_DN, entry, function (err) {
+        t.ifError(err);
+        helper.get(CLIENT, _RESOURCE_DN, function (err2, obj) {
+            t.ifError(err2);
+            t.ok(obj);
+            t.done();
+        });
+    });
+});
+
+
+test('delete resource', function (t) {
+    CLIENT.del(_RESOURCE_DN, function (err) {
+        t.ifError(err);
+        t.done();
     });
 });
 

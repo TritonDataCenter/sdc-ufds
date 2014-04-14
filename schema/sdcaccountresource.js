@@ -25,7 +25,7 @@ function SDCAccountResource() {
     Validator.call(this, {
         name: 'sdcaccountresource',
         required: {
-            path: 1,
+            name: 1,
             account: 1,
             uuid: 1
         },

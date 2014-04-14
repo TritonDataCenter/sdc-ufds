@@ -204,7 +204,7 @@ test('add resource', function (t) {
     var res = '/abcd/' + res_uuid.substr(0, 7);
     var entry = {
         path: res,
-        memberrole: SUB_USER_DN,
+        memberrole: _1ST_GRP_DN,
         account: DUP_ID,
         uuid: res_uuid,
         objectclass: 'sdcaccountresource'

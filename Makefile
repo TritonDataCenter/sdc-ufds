@@ -74,11 +74,17 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: haproxy $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS) sdc-scripts
+all: update-npm haproxy $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS) sdc-scripts
 	$(NPM) install && $(NPM) update
 
 $(NODEUNIT): | $(NPM_EXEC)
 	$(NPM) install && $(NPM) update
+
+#
+# Hack before upgrading node-prebuilt version.  See: CAPI-398
+#
+update-npm: | $(NPM_EXEC)
+	$(NPM) install -g npm@1.4.7
 
 # Build HAProxy when in SunOS
 .PHONY: haproxy

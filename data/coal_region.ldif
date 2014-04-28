@@ -1,0 +1,47 @@
+# A sample ldif file showing what regional entries should look like.
+dn: region=coal, o=smartdc
+o: smartdc
+region: coal
+manta: coal.manta.joyent.com
+mantaInternal: manta.coal.joyent.us
+objectclass: region
+
+dn:  datacenter=coal, region=coal, o=smartdc
+o: smartdc
+region: coal
+datacenter: coal
+cloudapi: coal.api.joyentcloud.com
+objectclass: datacenter
+
+dn: network=admin, datacenter=coal, region=coal, o=smartdc
+o: smartdc
+region: coal
+datacenter: coal
+network: admin
+uuid: eee08923-c54e-4ed4-ba15-c8b6ad63e033
+vlanid: 0
+subnet: 10.99.99.0/24
+netmask: 255.255.255.0
+provisionstartip: 10.99.99.39
+provisionendip: 10.99.99.253
+nictag: admin
+defaultgateway: 10.99.99.1
+objectclass: network
+
+dn: uuid=d0f4e38a-2cb3-4ec9-bd0b-2f6327bac073, datacenter=coal, region=coal, o=smartdc
+o: smartdc
+region: coal
+datacenter: coal
+uuid: d0f4e38a-2cb3-4ec9-bd0b-2f6327bac073
+adminipaddress: 10.99.99.18
+role: sdc-ufds
+objectclass: vm
+
+dn: uuid=b81be264-70f9-4a4a-bccb-d0bdf01af9b9, datacenter=coal, region=coal, o=smartdc
+o: smartdc
+region: coal
+datacenter: coal
+uuid: b81be264-70f9-4a4a-bccb-d0bdf01af9b9
+adminipaddress: 10.99.99.11
+role: sdc-binder
+objectclass: vm

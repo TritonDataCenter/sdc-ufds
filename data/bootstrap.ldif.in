@@ -12,11 +12,21 @@ dn: ou=groups, o=smartdc
 objectclass: organizationalUnit
 ou: groups
 
+# Tree for *only* the replicator entry.  See: CAPI-394/CAPI-400
+
 dn: datacenter=DATACENTER_NAME, o=smartdc
+o: smartdc
+region: REGION_NAME
 datacenter: DATACENTER_NAME
 company: DATACENTER_COMPANY_NAME
 address: DATACENTER_LOCATION
 objectclass: datacenter
+
+dn: cn=replicator, datacenter=DATACENTER_NAME, o=smartdc
+cn: replicator
+objectclass: sdcreplicator
+
+# End replicator tree
 
 dn: ou=config, o=smartdc
 ou: config
@@ -30,10 +40,6 @@ dn: ou=keyapiprivkeys, o=smartdc
 ou: keyapiprivkeys
 objectclass: organizationalUnit
 
-dn: cn=replicator, datacenter=DATACENTER_NAME, o=smartdc
-cn: replicator
-objectclass: sdcreplicator
-
 dn: cn=pwdpolicy, o=smartdc
 objectclass: pwdPolicy
 pwdattribute: userpassword
@@ -46,3 +52,24 @@ pwdmaxage: 253404889200000
 
 dn: cn=readers, ou=groups, o=smartdc
 objectclass: groupOfUniqueNames
+
+dn: uuid=UFDS_ADMIN_UUID, ou=users, o=smartdc
+login: UFDS_ADMIN_LOGIN
+uuid: UFDS_ADMIN_UUID
+userpassword: UFDS_ADMIN_PW
+email: UFDS_ADMIN_EMAIL
+cn: Admin User
+sn: User
+givenname: Admin
+registered_developer: true
+objectclass: sdcPerson
+
+dn: cn=operators, ou=groups, o=smartdc
+uniquemember: uuid=UFDS_ADMIN_UUID, ou=users, o=smartdc
+objectclass: groupOfUniqueNames
+
+dn: fingerprint=UFDS_ADMIN_KEY_FINGERPRINT, uuid=UFDS_ADMIN_UUID, ou=users, o=smartdc
+name: id_rsa
+fingerprint: UFDS_ADMIN_KEY_FINGERPRINT
+openssh: UFDS_ADMIN_KEY_OPENSSH
+objectclass: sdckey

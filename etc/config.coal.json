@@ -17,7 +17,7 @@
         "dns": {
             "resolvers": ["10.99.99.11"]
         },
-        "version": 14
+        "version": 15
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -98,7 +98,8 @@
             "account": { "type": "string" },
             "memberpolicy": { "type": "[string]" },
             "memberrole": { "type": "[string]" },
-            "rule": { "type": "[string]" }
+            "rule": { "type": "[string]" },
+            "role": { "type": "string" }
         }
     }
 }

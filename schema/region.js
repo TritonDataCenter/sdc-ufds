@@ -11,25 +11,23 @@ var Validator = require('../lib/schema/validator');
 
 ///--- API
 
-function DataCenter() {
+function Region() {
     Validator.call(this, {
-        name: 'datacenter',
+        name: 'region',
         required: {
             o: 1,
-            region: 1,
-            datacenter: 1
+            region: 1
         },
         optional: {
-            cloudapi: 1,
-            company: 1,
-            address: 1
+            manta: 1,
+            mantaInternal: 1
         }
     });
 }
-util.inherits(DataCenter, Validator);
+util.inherits(Region, Validator);
 
 
-DataCenter.prototype.validate =
+Region.prototype.validate =
 function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
@@ -39,9 +37,6 @@ function validate(entry, config, changes, callback) {
     }
     if (attrs.region[0].length > 255) {
         errors.push('region name: ' + attrs.region[0] + ' is invalid');
-    }
-    if (attrs.datacenter[0].length > 255) {
-        errors.push('datacenter name: ' + attrs.datacenter[0] + ' is invalid');
     }
 
     // Add validation for optional fields?
@@ -59,7 +54,7 @@ function validate(entry, config, changes, callback) {
 module.exports = {
 
     createInstance: function createInstance() {
-        return new DataCenter();
+        return new Region();
     }
 
 };

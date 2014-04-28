@@ -40,6 +40,7 @@ UFDS_ADMIN_LOGIN=$(json -f ${METADATA} ufds_admin_login)
 UFDS_ADMIN_PW=$(json -f ${METADATA} ufds_admin_pw)
 UFDS_ADMIN_EMAIL=$(json -f ${METADATA} ufds_admin_email)
 
+REGION_NAME=$(json -f ${METADATA} region_name)
 DATACENTER_NAME=$(json -f ${METADATA} datacenter_name)
 DATACENTER_COMPANY_NAME=$(json -f ${METADATA} datacenter_company_name)
 DATACENTER_LOCATION=$(json -f ${METADATA} datacenter_location)
@@ -47,7 +48,8 @@ DATACENTER_LOCATION=$(json -f ${METADATA} datacenter_location)
 UFDS_ADMIN_KEY_FINGERPRINT=$(json -f ${METADATA} ufds_admin_key_fingerprint)
 UFDS_ADMIN_KEY_OPENSSH=$(json -f ${METADATA} ufds_admin_key_openssh)
 
-IS_UPDATE=$(json -f ${METADATA} IS_UPDATE)
+IS_MASTER=$(cat /opt/smartdc/ufds/etc/config.json | /usr/bin/json ufds_is_master)
+
 
 # NOTE: this was moved here from configure where it used to live and be called
 # from configure.  There doesn't seem to be a good reason to import the manifest
@@ -160,12 +162,6 @@ setup_haproxy_rsyslogd
 echo "Importing CAPI SMF Manifest"
 /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-capi.xml
 
-IS_MASTER=$(cat /opt/smartdc/ufds/etc/config.json | /usr/bin/json ufds_is_master)
-if [[ "${IS_MASTER}" == "false" ]]; then
-  echo "Importing UFDS Replicator SMF Manifest"
-  /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-replicator.xml
-fi
-
 # We are intentionally giving UFDS service some room to create the required
 # moray buckets before it gets called to add bootstrap data.
 # XXX: do we still need to do this?
@@ -214,38 +210,11 @@ LDIF=/tmp/.bootstrap.ldif
 # Update config file
 cp $LDIF_IN $LDIF
 
-if [[ -z "${IS_UPDATE}" ]]; then
-    echo "
-dn: uuid=UFDS_ADMIN_UUID, ou=users, o=smartdc
-login: UFDS_ADMIN_LOGIN
-uuid: UFDS_ADMIN_UUID
-userpassword: UFDS_ADMIN_PW
-email: UFDS_ADMIN_EMAIL
-cn: Admin User
-sn: User
-givenname: Admin
-registered_developer: true
-objectclass: sdcPerson
-
-dn: cn=operators, ou=groups, o=smartdc
-uniquemember: uuid=UFDS_ADMIN_UUID, ou=users, o=smartdc
-objectclass: groupOfUniqueNames
-
-dn: fingerprint=UFDS_ADMIN_KEY_FINGERPRINT, uuid=UFDS_ADMIN_UUID, ou=users, o=smartdc
-name: id_rsa
-fingerprint: UFDS_ADMIN_KEY_FINGERPRINT
-openssh: UFDS_ADMIN_KEY_OPENSSH
-objectclass: sdckey" >> $LDIF
-else
-    echo "
-dn: cn=operators, ou=groups, o=smartdc
-objectclass: groupOfUniqueNames" >> $LDIF
-fi
-
 gsed -i -e "s|UFDS_ADMIN_UUID|$UFDS_ADMIN_UUID|" $LDIF
 gsed -i -e "s|UFDS_ADMIN_LOGIN|$UFDS_ADMIN_LOGIN|" $LDIF
 gsed -i -e "s|UFDS_ADMIN_PW|$UFDS_ADMIN_PW|" $LDIF
 gsed -i -e "s|UFDS_ADMIN_EMAIL|$UFDS_ADMIN_EMAIL|" $LDIF
+gsed -i -e "s|REGION_NAME|$REGION_NAME|" $LDIF
 gsed -i -e "s|DATACENTER_NAME|$DATACENTER_NAME|" $LDIF
 gsed -i -e "s|DATACENTER_COMPANY_NAME|$DATACENTER_COMPANY_NAME|" $LDIF
 gsed -i -e "s|DATACENTER_LOCATION|$DATACENTER_LOCATION|" $LDIF
@@ -269,6 +238,14 @@ if [[ $rc -ne 0 ]] && [[ $rc -ne 68 ]]; then
 fi
 
 rm -f $LDIF
+
+
+# Only now start the replicator.  We don't start it until now because it stores
+# the checkpoint in the local ufds under a tree that was added above.
+if [[ "${IS_MASTER}" == "false" ]]; then
+  echo "Importing UFDS Replicator SMF Manifest"
+  /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-replicator.xml
+fi
 
 # All done, run boilerplate end-of-setup
 sdc_setup_complete

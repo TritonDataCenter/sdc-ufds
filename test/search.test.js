@@ -437,7 +437,7 @@ test('latestchangenumber', function (t) {
 test('search sizeLimit', function (t) {
     var opts = {
         scope: 'sub',
-        filter: '(login=*c*d*)',
+        filter: '(login=*chi*d*)',
         sizeLimit: 5
     };
 

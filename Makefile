@@ -161,7 +161,6 @@ release: all docs
 	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/boot
 	cp -R $(ROOT)/deps/sdc-scripts/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
 	cp -R $(ROOT)/boot/* $(RELSTAGEDIR)/root/opt/smartdc/boot/
-	cp $(ROOT)/etc/replicator.json.in $(RELSTAGEDIR)/root/opt/smartdc/ufds/etc
 	cp $(ROOT)/etc/haproxy.cfg.in $(RELSTAGEDIR)/root/opt/smartdc/ufds/etc
 	(cd $(RELSTAGEDIR) && $(TAR) -jcf $(ROOT)/$(RELEASE_TARBALL) root site)
 	@rm -rf $(RELSTAGEDIR)

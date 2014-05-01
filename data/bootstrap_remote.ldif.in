@@ -1,0 +1,31 @@
+version: 1
+
+dn: region=REGION_NAME, o=smartdc
+o: smartdc
+region: REGION_NAME
+objectclass: region
+
+dn: datacenter=DATACENTER_NAME, region=REGION_NAME, o=smartdc
+o: smartdc
+region: REGION_NAME
+datacenter: DATACENTER_NAME
+company: DATACENTER_COMPANY_NAME
+address: DATACENTER_LOCATION
+objectclass: datacenter
+
+dn: network=admin, datacenter=DATACENTER_NAME, region=REGION_NAME, o=smartdc
+o: smartdc
+region: REGION_NAME
+datacenter: DATACENTER_NAME
+network: admin
+networkaddr: ADMIN_NETWORK
+netmask: ADMIN_NETMASK
+objectclass: network
+
+dn: ip=BINDER_ADMIN_IPS, network=admin, datacenter=DATACENTER_NAME, region=REGION_NAME, o=smartdc
+o: smartdc
+region: REGION_NAME
+datacenter: DATACENTER_NAME
+network: admin
+ip: BINDER_ADMIN_IPS
+objectclass: resolver

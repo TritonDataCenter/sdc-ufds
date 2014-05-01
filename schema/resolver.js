@@ -9,12 +9,6 @@ var Validator = require('../lib/schema/validator');
 
 
 
-///--- Globals
-
-var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
-
-
-
 ///--- Helpers
 
 function ip(s) {
@@ -32,23 +26,22 @@ function ip(s) {
 
 ///--- API
 
-function VM() {
+function Resolver() {
     Validator.call(this, {
-        name: 'vm',
+        name: 'resolver',
         required: {
             o: 1,
             region: 1,
             datacenter: 1,
-            uuid: 1,
-            adminipaddress: 1,
-            role: 1
+            network: 1,
+            ip: 1
         }
     });
 }
-util.inherits(VM, Validator);
+util.inherits(Resolver, Validator);
 
 
-VM.prototype.validate =
+Resolver.prototype.validate =
 function validate(entry, config, changes, callback) {
     var attrs = entry.attributes;
     var errors = [];
@@ -62,15 +55,11 @@ function validate(entry, config, changes, callback) {
     if (attrs.datacenter[0].length > 255) {
         errors.push('datacenter name: ' + attrs.datacenter[0] + ' is invalid');
     }
-    if (!UUID_RE.test(attrs.uuid[0])) {
-        errors.push('uuid: ' + attrs.uuid[0] + ' is invalid');
+    if (attrs.network[0].length > 255) {
+        errors.push('network: ' + attrs.network[0] + ' is invalid');
     }
-    if (!ip(attrs.adminipaddress[0])) {
-        errors.push('admin ip address: ' + attrs.adminipaddress[0] +
-                    ' is invalid');
-    }
-    if (attrs.role[0].length > 255) {
-        errors.push('o: ' + attrs.role[0] + ' is invalid');
+    if (!ip(attrs.ip[0])) {
+        errors.push('ip address: ' + attrs.ip[0] + ' is invalid');
     }
 
     if (errors.length) {
@@ -86,7 +75,7 @@ function validate(entry, config, changes, callback) {
 module.exports = {
 
     createInstance: function createInstance() {
-        return new VM();
+        return new Resolver();
     }
 
 };

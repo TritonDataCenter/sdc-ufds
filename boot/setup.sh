@@ -34,20 +34,6 @@ echo "Generating SSL Certificate"
 UFDS_ADMIN_IP=127.0.0.1
 UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)
 UFDS_LDAP_ROOT_PW=$(json -f ${METADATA} ufds_ldap_root_pw)
-
-UFDS_ADMIN_UUID=$(json -f ${METADATA} ufds_admin_uuid)
-UFDS_ADMIN_LOGIN=$(json -f ${METADATA} ufds_admin_login)
-UFDS_ADMIN_PW=$(json -f ${METADATA} ufds_admin_pw)
-UFDS_ADMIN_EMAIL=$(json -f ${METADATA} ufds_admin_email)
-
-REGION_NAME=$(json -f ${METADATA} region_name)
-DATACENTER_NAME=$(json -f ${METADATA} datacenter_name)
-DATACENTER_COMPANY_NAME=$(json -f ${METADATA} datacenter_company_name)
-DATACENTER_LOCATION=$(json -f ${METADATA} datacenter_location)
-
-UFDS_ADMIN_KEY_FINGERPRINT=$(json -f ${METADATA} ufds_admin_key_fingerprint)
-UFDS_ADMIN_KEY_OPENSSH=$(json -f ${METADATA} ufds_admin_key_openssh)
-
 IS_MASTER=$(cat /opt/smartdc/ufds/etc/config.json | /usr/bin/json ufds_is_master)
 
 
@@ -202,46 +188,16 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
-echo "Loading bootstrap data"
-LDIF_IN=/opt/smartdc/$role/data/bootstrap.ldif.in
-LDIF=/tmp/.bootstrap.ldif
-
-
-# Update config file
-cp $LDIF_IN $LDIF
-
-gsed -i -e "s|UFDS_ADMIN_UUID|$UFDS_ADMIN_UUID|" $LDIF
-gsed -i -e "s|UFDS_ADMIN_LOGIN|$UFDS_ADMIN_LOGIN|" $LDIF
-gsed -i -e "s|UFDS_ADMIN_PW|$UFDS_ADMIN_PW|" $LDIF
-gsed -i -e "s|UFDS_ADMIN_EMAIL|$UFDS_ADMIN_EMAIL|" $LDIF
-gsed -i -e "s|REGION_NAME|$REGION_NAME|" $LDIF
-gsed -i -e "s|DATACENTER_NAME|$DATACENTER_NAME|" $LDIF
-gsed -i -e "s|DATACENTER_COMPANY_NAME|$DATACENTER_COMPANY_NAME|" $LDIF
-gsed -i -e "s|DATACENTER_LOCATION|$DATACENTER_LOCATION|" $LDIF
-gsed -i -e "s|UFDS_ADMIN_KEY_FINGERPRINT|$UFDS_ADMIN_KEY_FINGERPRINT|" $LDIF
-gsed -i -e "s|UFDS_ADMIN_KEY_OPENSSH|$UFDS_ADMIN_KEY_OPENSSH|" $LDIF
-
-LDAPTLS_REQCERT=allow ldapadd -H ldaps://${UFDS_ADMIN_IP} -x \
-    -D ${UFDS_LDAP_ROOT_DN} -w ${UFDS_LDAP_ROOT_PW} \
-    -f $LDIF
-
-# 68 is entry already exists; if we're setting up a redundant UFDS, the entries
-# will already exist. This is a little bit hacky, and a better way would be to
-# pass in metadata to this script such that we can skip this altogether if
-# provision > 1, but this works for now.
-rc=$?
-if [[ $rc -ne 0 ]] && [[ $rc -ne 68 ]]; then
-    echo "Failed to load bootstrap data, exiting"
-    echo "Marking ufds SMF service as in maintenance"
-    svcadm mark maintenance svc:/smartdc/application/ufds-master:default
+echo "Reconciling/bootstrapping data"
+/opt/smartdc/$role/bin/ufds-reconcile-data
+if [[ $? -ne 0 ]]; then
+    echo "Unable to reconcile/bootstrap ufds data."
     exit 1
 fi
 
-rm -f $LDIF
-
-
 # Only now start the replicator.  We don't start it until now because it stores
-# the checkpoint in the local ufds under a tree that was added above.
+# the checkpoint in the local ufds under a tree that was added during reconcile/
+# bootstrap
 if [[ "${IS_MASTER}" == "false" ]]; then
   echo "Importing UFDS Replicator SMF Manifest"
   /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-replicator.xml

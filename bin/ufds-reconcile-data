@@ -1,0 +1,268 @@
+#!/usr/bin/bash
+# vi: expandtab sw=4 ts=4
+#
+# Bootstrap ufds data and/or migrate data from the local UFDS to a remote UFDS.
+# This script can be run at any time, safely and idempotently.
+#
+# If the script indicates that it won't sync, but you (the operator) know that
+# it must be done, you can force a reconciliation with:
+# FORCE_RECONCILE=1 ...
+#
+# TODO: We probably need to hard-code a version in here (or do something
+#       similar) so that new entries to the bootstrapped data will automatically
+#       be picked up.
+#
+
+if [[ -n "$TRACE" ]]; then
+    export PS4='${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+    set -o xtrace
+fi
+
+if [[ -z "$FORCE_RECONCILE" ]]; then
+    FORCE_RECONCILE=0
+fi
+
+
+
+#---- globals, config
+
+source /opt/smartdc/boot/lib/util.sh
+PATH=/opt/smartdc/ufds/build/node/bin:/opt/smartdc/ufds/node_modules/.bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
+role=ufds
+SVC_ROOT="/opt/smartdc/$role"
+BOOTSTRAP_LDIF_IN="${SVC_ROOT}/data/bootstrap.ldif.in"
+BOOTSTRAP_REMOTE_LDIF_IN="${SVC_ROOT}/data/bootstrap_remote.ldif.in"
+LDIF_PREFIX="/var/tmp/"
+X=0
+
+
+
+#---- functions
+
+function fatal {
+    echo "$(basename $0): error: $1"
+    exit 1
+}
+
+
+function setup_vars {
+    #From util.sh
+    download_metadata
+
+    UFDS_ADMIN_IP=127.0.0.1
+    UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)
+    UFDS_LDAP_ROOT_PW=$(json -f ${METADATA} ufds_ldap_root_pw)
+
+    UFDS_ADMIN_UUID=$(json -f ${METADATA} ufds_admin_uuid)
+    UFDS_ADMIN_LOGIN=$(json -f ${METADATA} ufds_admin_login)
+    UFDS_ADMIN_PW=$(json -f ${METADATA} ufds_admin_pw)
+    UFDS_ADMIN_EMAIL=$(json -f ${METADATA} ufds_admin_email)
+
+    REGION_NAME=$(json -f ${METADATA} region_name)
+    DATACENTER_NAME=$(json -f ${METADATA} datacenter_name)
+    DATACENTER_COMPANY_NAME=$(json -f ${METADATA} datacenter_company_name)
+    DATACENTER_LOCATION=$(json -f ${METADATA} datacenter_location)
+
+    UFDS_ADMIN_KEY_FINGERPRINT=$(json -f ${METADATA} ufds_admin_key_fingerprint)
+    UFDS_ADMIN_KEY_OPENSSH=$(json -f ${METADATA} ufds_admin_key_openssh)
+
+    ADMIN_NETWORK=$(json -f ${METADATA} admin_network)
+    ADMIN_NETMASK=$(json -f ${METADATA} admin_netmask)
+    BINDER_ADMIN_IPS=$(json -f ${METADATA} binder_admin_ips)
+
+    IS_MASTER=$(json -f ${METADATA} ufds_is_master)
+    if [[ "${IS_MASTER}" == "false" ]]; then
+        UFDS_REMOTE_IP=$(json -f ${METADATA} ufds_remote_ip)
+    fi
+}
+
+
+function ldap {
+    local ip=$1; shift
+    local cmd=$1; shift
+    LDAP_RESULT=$(LDAPTLS_REQCERT=allow ${cmd} -H ldaps://${ip} -x \
+        -D ${UFDS_LDAP_ROOT_DN} \
+        -w ${UFDS_LDAP_ROOT_PW} "$@")
+    LDAP_RESULT_CODE=$?
+}
+
+
+function verify_a_ufds {
+    local ip=$1
+    ldap ${ip} ldapwhoami
+    if [[ ${LDAP_RESULT_CODE} != 0 ]]; then
+        fatal "ufds ${ip} unavailable"
+    fi
+}
+
+
+function verify_ufds {
+    echo "Verifying local ufds at ${UFDS_ADMIN_IP}"
+    verify_a_ufds ${UFDS_ADMIN_IP}
+    if [[ "${IS_MASTER}" == "false" ]]; then
+        echo "Verifying remote ufds at ${UFDS_REMOTE_IP}"
+        verify_a_ufds ${UFDS_REMOTE_IP}
+    fi
+}
+
+
+# Data needs to be reconciled for one of these reasons:
+#  * Expected data is missing from the local ufds.  This indicates that ufds
+#    hasn't been bootstrapped.
+#  * Expected data missing in the remote ufds indicates that this is the first
+#    time this is running since this ufds was made a slave.  Some data should
+#    be migrated from local to remote.
+function needs_reconcile {
+    if [[ "$FORCE_RECONCILE" == "1" ]]; then
+        echo "Reconcile forced..."
+        return
+    fi
+
+    # Expected data is missing from local or remote, depending on master.
+    local ip=${UFDS_ADMIN_IP}
+    ldap ${ip} ldapsearch -s base -b "o=smartdc" 'objectclass=organization'
+    if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
+        echo "Expected data not found in local ufds.  Need to load data..."
+        return
+    fi
+
+    # Check for datacenter information
+    if [[ "${IS_MASTER}" == "false" ]]; then
+        ip=${UFDS_REMOTE_IP}
+    fi
+    ldap ${ip} ldapsearch -s base \
+        -b "datacenter=${DATACENTER_NAME}, region=${REGION_NAME}, o=smartdc" \
+        'objectclass=datacenter'
+    if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
+        echo "Expected data not found in ufds.  Need to load data..."
+        return
+    fi
+
+    # If we've reached here, we should be OK.  Operator can always override.
+    echo "Smoke-tested for the need to reconcile.  Everything should already"
+    echo "be in order.  If not, re-run with FORCE_RECONCILE=1."
+    exit 0
+}
+
+
+function replace_in_ldif {
+    local file=$1
+    if [[ ! -f ${file} ]]; then
+        fatal "Tried to replace in ${file}, but it doesn't exist."
+    fi
+
+    local filename=$(basename ${file})
+    LDIF="${LDIF_PREFIX}.${filename}.${X}"
+    let "X += 1"
+    cp ${file} ${LDIF}
+    gsed -i -e "s|UFDS_ADMIN_UUID|$UFDS_ADMIN_UUID|" $LDIF
+    gsed -i -e "s|UFDS_ADMIN_LOGIN|$UFDS_ADMIN_LOGIN|" $LDIF
+    gsed -i -e "s|UFDS_ADMIN_PW|$UFDS_ADMIN_PW|" $LDIF
+    gsed -i -e "s|UFDS_ADMIN_EMAIL|$UFDS_ADMIN_EMAIL|" $LDIF
+    gsed -i -e "s|REGION_NAME|$REGION_NAME|" $LDIF
+    gsed -i -e "s|DATACENTER_NAME|$DATACENTER_NAME|" $LDIF
+    gsed -i -e "s|DATACENTER_COMPANY_NAME|$DATACENTER_COMPANY_NAME|" $LDIF
+    gsed -i -e "s|DATACENTER_LOCATION|$DATACENTER_LOCATION|" $LDIF
+    gsed -i -e "s|UFDS_ADMIN_KEY_FINGERPRINT|$UFDS_ADMIN_KEY_FINGERPRINT|" $LDIF
+    gsed -i -e "s|UFDS_ADMIN_KEY_OPENSSH|$UFDS_ADMIN_KEY_OPENSSH|" $LDIF
+    gsed -i -e "s|ADMIN_NETWORK|$ADMIN_NETWORK|" $LDIF
+    gsed -i -e "s|ADMIN_NETMASK|$ADMIN_NETMASK|" $LDIF
+    gsed -i -e "s|BINDER_ADMIN_IPS|$BINDER_ADMIN_IPS|" $LDIF
+}
+
+
+function load_ldif {
+    local ldif=$1
+    local ip=$2
+    if [[ ! -f ${ldif} ]]; then
+        fatal "LDIF file ${ldif} doesn't exist"
+    fi
+    if [[ -z ${ip} ]]; then
+        fatal "No ip address passed to load_ldif"
+    fi
+
+    ldap ${ip} ldapadd -c -f ${ldif}
+
+    local rc=$?
+    # 68 is "already exists"
+    if [[ $rc -ne 0 ]] && [[ $rc -ne 68 ]]; then
+        fatal "Failed to load ${ldif} at ip ${ip}, exiting"
+    fi
+}
+
+
+function migrate_ldap_data {
+    local dn=$1
+    local lo=$2
+    local re=$3
+    local tmpFile="${LDIF_PREFIX}.local_ldap_backup.tmp"
+
+    # Backup the tree to an ldif
+    LDAPTLS_REQCERT=allow ldapsearch -H ldaps://${lo} -x \
+        -D ${UFDS_LDAP_ROOT_DN} \
+        -w ${UFDS_LDAP_ROOT_PW} \
+        -o ldif-wrap=no \
+        -b "${dn}" >${tmpFile}
+
+    # Purge all the entries in local
+    $(dirname "${BASH_SOURCE[0]}")/ufds-find-dns "${dn}" | \
+        while read l; do
+            ldap ${lo} ldapdelete "${l}"
+        done
+
+    # Add all entries to remote
+    load_ldif ${tmpFile} ${re}
+
+    rm ${tmpFile}
+}
+
+
+function bootstrap_local {
+    replace_in_ldif ${BOOTSTRAP_LDIF_IN}
+    # Since this will not error when data already exists, we simply add.  It
+    # has the added benefit that new entries will be added too (on force)
+    load_ldif ${LDIF} ${UFDS_ADMIN_IP}
+    rm ${LDIF}
+}
+
+
+# TODO: This *may* not end up being sufficent.  If there is something that
+# "accidentally" adds a local entry under the "remote" tree, this should
+# be the the thing that detects that and migrates the data.  The only way that
+# could work is by dumping the tree and checking each entry individually.
+function bootstrap_remote {
+    replace_in_ldif ${BOOTSTRAP_REMOTE_LDIF_IN}
+    local ip=${UFDS_ADMIN_IP}
+    local remote=${UFDS_REMOTE_IP}
+
+    if [[ "${IS_MASTER}" == "false" ]]; then
+        # First we need to make sure that data is only in the local ufds if it
+        # is already in the remote ufds.  Otherwise, we need to remove from the
+        # local ufds before adding to the remote ufds.
+
+        # Use the first dn as a sanity check
+        local dn=$(grep '^dn: ' ${LDIF} | head -1 | cut -c 5-)
+        ldap ${ip} ldapsearch -s base -b "${dn}" "objectclass=*"
+        local in_local=${LDAP_RESULT_CODE}
+        ldap ${remote} ldapsearch -s base -b "${dn}" "objectclass=*"
+        local in_remote=${LDAP_RESULT_CODE}
+
+        if [[ ${in_local} == 0 && ${in_remote} == 32 ]]; then
+            migrate_ldap_data "${dn}" ${ip} ${remote}
+        fi
+        # We let this load again just in case there are new/more entries
+        ip=${remote}
+    fi
+    load_ldif ${LDIF} ${ip}
+    rm ${LDIF}
+}
+
+
+#---- mainline
+
+setup_vars
+verify_ufds
+needs_reconcile
+bootstrap_local
+bootstrap_remote
+echo "Done with reconciliation."

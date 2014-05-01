@@ -1,0 +1,60 @@
+#!/usr/bin/bash
+# vi: expandtab sw=4 ts=4
+#
+# Finds dns and prints them in reverse order.  Suitable for deleting trees.
+#
+
+if [[ -n "$TRACE" ]]; then
+    export PS4='${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+    set -o xtrace
+fi
+set -o pipefail
+
+
+
+#---- globals, config
+
+PATH=/opt/smartdc/ufds/build/node/bin:/opt/smartdc/ufds/node_modules/.bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
+
+
+
+#---- functions
+
+function fatal {
+    echo "$(basename $0): error: $1"
+    exit 1
+}
+
+
+function setup_vars {
+    # I didn't want to change util.sh to remove the echo.  Sadly, that means
+    # a copy/paste.
+    export METADATA=/var/tmp/metadata.json
+    local sapi_url=$(mdata-get sapi-url)
+
+    curl -s ${sapi_url}/configs/$(zonename) | json metadata > ${METADATA}
+    if [[ $? -ne 0 ]]; then
+        fatal "failed to download metadata from SAPI"
+    fi
+
+    UFDS_ADMIN_IP=127.0.0.1
+    UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)
+    UFDS_LDAP_ROOT_PW=$(json -f ${METADATA} ufds_ldap_root_pw)
+}
+
+
+
+#---- mainline
+
+DN=$1
+if [[ -z ${DN} ]]; then
+    fatal 'usage: ${0} <start dn>'
+fi
+setup_vars
+LDAPTLS_REQCERT=allow ldapsearch -H ldaps://${UFDS_ADMIN_IP} -x \
+        -D ${UFDS_LDAP_ROOT_DN} \
+        -w ${UFDS_LDAP_ROOT_PW} \
+        -o ldif-wrap=no -b "${DN}" | grep '^dn: ' | cut -c 4- | \
+    awk '{for (i=NF; i>0; i--) printf("%s ",$i);print ""}' | \
+    sort -r | \
+    awk '{for (i=NF; i>0; i--) printf("%s ",$i);print ""}'

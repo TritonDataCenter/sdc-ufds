@@ -6,7 +6,7 @@ manta: coal.manta.joyent.com
 mantaInternal: manta.coal.joyent.us
 objectclass: region
 
-dn:  datacenter=coal, region=coal, o=smartdc
+dn: datacenter=coal, region=coal, o=smartdc
 o: smartdc
 region: coal
 datacenter: coal
@@ -18,30 +18,14 @@ o: smartdc
 region: coal
 datacenter: coal
 network: admin
-uuid: eee08923-c54e-4ed4-ba15-c8b6ad63e033
-vlanid: 0
-subnet: 10.99.99.0/24
+networkaddr: 10.99.99.0
 netmask: 255.255.255.0
-provisionstartip: 10.99.99.39
-provisionendip: 10.99.99.253
-nictag: admin
-defaultgateway: 10.99.99.1
 objectclass: network
 
-dn: uuid=d0f4e38a-2cb3-4ec9-bd0b-2f6327bac073, datacenter=coal, region=coal, o=smartdc
+dn: ip=10.99.99.11, network=admin, datacenter=coal, region=coal, o=smartdc
 o: smartdc
 region: coal
 datacenter: coal
-uuid: d0f4e38a-2cb3-4ec9-bd0b-2f6327bac073
-adminipaddress: 10.99.99.18
-role: sdc-ufds
-objectclass: vm
-
-dn: uuid=b81be264-70f9-4a4a-bccb-d0bdf01af9b9, datacenter=coal, region=coal, o=smartdc
-o: smartdc
-region: coal
-datacenter: coal
-uuid: b81be264-70f9-4a4a-bccb-d0bdf01af9b9
-adminipaddress: 10.99.99.11
-role: sdc-binder
-objectclass: vm
+network: admin
+ip: 10.99.99.11
+objectclass: resolver

@@ -9,12 +9,6 @@ var Validator = require('../lib/schema/validator');
 
 
 
-///--- Globals
-
-var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
-
-
-
 ///--- Helpers
 
 function ip(s) {
@@ -29,13 +23,6 @@ function ip(s) {
 }
 
 
-function subnet(s) {
-    var parts = s.split(/\//);
-    return (parts.length === 2 && ip(parts[0]) &&
-            /^\d+$/.test(parts[1]) &&
-            !isNaN(parseInt(parts[1], 10)));
-}
-
 
 ///--- API
 
@@ -47,14 +34,8 @@ function Network() {
             region: 1,
             datacenter: 1,
             network: 1,
-            uuid: 1,
-            vlanid: 1,
-            subnet: 1,
-            netmask: 1,
-            provisionstartip: 1,
-            provisionendip: 1,
-            nictag: 10,
-            defaultgateway: 1
+            networkaddr: 1,
+            netmask: 1
         }
     });
 }
@@ -78,36 +59,11 @@ function validate(entry, config, changes, callback) {
     if (attrs.network[0].length > 255) {
         errors.push('network name: ' + attrs.network[0] + ' is invalid');
     }
-    var uuid = attrs.uuid;
-    if (!UUID_RE.test(uuid)) {
-        errors.push('uuid: ' + uuid + ' is invalid');
-    }
-    if (isNaN(parseInt(attrs.vlanid[0], 10)) ||
-        !(/^\d+$/.test(attrs.vlanid[0]))) {
-        errors.push('vlan id: ' + attrs.vlanid[0] + ' is invalid');
-    }
-    if (!subnet(attrs.subnet[0])) {
-        errors.push('subnet: ' + attrs.subnet[0] + ' is invalid');
+    if (!ip(attrs.networkaddr[0])) {
+        errors.push('networkaddr: ' + attrs.networkaddr[0] + ' is invalid');
     }
     if (!ip(attrs.netmask[0])) {
         errors.push('netmask: ' + attrs.netmask[0] + ' is invalid');
-    }
-    if (!ip(attrs.provisionstartip[0])) {
-        errors.push('provision start ip: ' + attrs.provisionstartip[0] +
-                    ' is invalid');
-    }
-    if (!ip(attrs.provisionendip[0])) {
-        errors.push('provision end ip: ' + attrs.provisionendip[0] +
-                    ' is invalid');
-    }
-    for (var i = 0; i < attrs.nictag.length; ++i) {
-        if (attrs.nictag[i].length > 255) {
-            errors.push('nictag ' +  attrs.nictag[i] + ' is invalid');
-        }
-    }
-    if (!ip(attrs.defaultgateway[0])) {
-        errors.push('default gateway: ' + attrs.defaultgateway[0] +
-                    ' is invalid');
     }
 
     // Add validation for optional fields?

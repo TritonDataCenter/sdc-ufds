@@ -1,0 +1,83 @@
+#!/usr/bin/bash
+# vi: expandtab sw=4 ts=4
+#
+# Nukes all *local* ufds data.  Only run this if you're really, really sure it's
+# what you want to do.
+#
+
+if [[ -n "$TRACE" ]]; then
+    export PS4='${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+    set -o xtrace
+fi
+set -o pipefail
+
+
+
+#---- globals, config
+
+source /opt/smartdc/boot/lib/util.sh
+PATH=/opt/smartdc/ufds/build/node/bin:/opt/smartdc/ufds/node_modules/.bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
+
+
+
+#---- functions
+
+function fatal {
+    echo "$(basename $0): error: $1"
+    exit 1
+}
+
+
+function setup_vars {
+    #From util.sh
+    download_metadata
+
+    UFDS_ADMIN_IP=127.0.0.1
+    UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)
+    UFDS_LDAP_ROOT_PW=$(json -f ${METADATA} ufds_ldap_root_pw)
+}
+
+
+function ldap {
+    local ip=$1; shift
+    local cmd=$1; shift
+    LDAP_RESULT=$(LDAPTLS_REQCERT=allow ${cmd} -H ldaps://${ip} -x \
+        -D ${UFDS_LDAP_ROOT_DN} \
+        -w ${UFDS_LDAP_ROOT_PW} "$@")
+    LDAP_RESULT_CODE=$?
+}
+
+
+function verify_ufds {
+    local ip=$1
+    ldap ${ip} ldapwhoami
+    if [[ ${LDAP_RESULT_CODE} != 0 ]]; then
+        fatal "ufds ${ip} unavailable"
+    fi
+}
+
+
+function get_approval {
+    echo 'This will delete your UFDS data *forever*.'
+    echo -n 'Are you sure you want to do that [N/y]? '
+    read answer
+    if [[ ${answer} != 'y' ]]; then
+        echo 'Phew.  Aborting...'
+        exit 1
+    fi
+}
+
+
+#---- mainline
+
+get_approval
+setup_vars
+verify_ufds ${UFDS_ADMIN_IP}
+echo 'Deleting data now (please be patient)...'
+# Hrm... this didn't work...
+# ldap ${UFDS_ADMIN_IP} ldapdelete -r 'o=smartdc'
+$(dirname "${BASH_SOURCE[0]}")/ufds-find-dns 'o=smartdc' | \
+    while read l; do
+        ldap ${UFDS_ADMIN_IP} ldapdelete "${l}"
+    done
+echo 'Done!'

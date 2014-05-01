@@ -74,6 +74,12 @@ function setup_vars {
     if [[ "${IS_MASTER}" == "false" ]]; then
         UFDS_REMOTE_IP=$(json -f ${METADATA} ufds_remote_ip)
     fi
+
+    if [[ -z "$REGION_NAME" ]]; then
+        echo "Metadata region_name is blank.  region_name is necessary for safe"
+        echo "data reconciliation."
+        fatal "${METADATA} region_name is blank."
+    fi
 }
 
 

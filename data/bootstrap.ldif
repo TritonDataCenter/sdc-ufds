@@ -1,9 +1,5 @@
 version: 1
 
-dn: o=smartdc
-objectclass: organization
-o: smartdc
-
 dn: ou=users, o=smartdc
 objectclass: organizationalUnit
 ou: users

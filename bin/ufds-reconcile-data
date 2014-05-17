@@ -70,9 +70,16 @@ function setup_vars {
     ADMIN_NETMASK=$(json -f ${METADATA} admin_netmask)
     BINDER_ADMIN_IPS=$(json -f ${METADATA} binder_admin_ips)
 
+    VERSION=$(json -f /opt/smartdc/ufds/etc/config.json moray.version)
+
     IS_MASTER=$(json -f ${METADATA} ufds_is_master)
     if [[ "${IS_MASTER}" == "false" ]]; then
         UFDS_REMOTE_IP=$(json -f ${METADATA} ufds_remote_ip)
+    fi
+
+    if [[ -z "$VERSION" ]]; then
+        echo "UFDS config didn't contain a moray version."
+        fatal "Moray version not found"
     fi
 
     if [[ -z "$REGION_NAME" ]]; then
@@ -112,6 +119,64 @@ function verify_ufds {
 }
 
 
+# Create the root of the tree
+function reconcile_root {
+    ldap ${UFDS_ADMIN_IP} ldapsearch -LLL -s base -b "o=smartdc" \
+        'objectclass=organization'
+    if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
+        echo "Version doesn't exist.  Need to load...."
+        local update_file=/var/tmp/ufds-reconcile-version.$$
+        cat <<EOF > $update_file
+dn: o=smartdc
+objectclass: organization
+o: smartdc
+EOF
+        load_ldif $update_file $UFDS_ADMIN_IP
+        rm $update_file
+    fi
+}
+
+
+# We always need to reconcile the version when we are the master.
+function reconcile_version {
+    # Slaves only get the version from the master
+    if [[ "${IS_MASTER}" == "false" ]]; then
+        return
+    fi
+
+    # Check for version
+    ldap ${UFDS_ADMIN_IP} ldapsearch -LLL -s base -b "cn=version, o=smartdc" \
+        'objectclass=version'
+
+    local update_file=/var/tmp/ufds-reconcile-version.$$
+    if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
+        echo "Version doesn't exist.  Need to load...."
+        cat <<EOF > $update_file
+dn: cn=version, o=smartdc
+cn: version
+o: smartdc
+objectclass: version
+version: $VERSION
+EOF
+        load_ldif $update_file $UFDS_ADMIN_IP
+        rm $update_file
+    else
+        CUR_VERSION=$(echo "${LDAP_RESULT}" | grep '^version: ' | \
+            sed 's/version: //g')
+        if [[ "$VERSION" -gt "$CUR_VERSION" ]]; then
+            echo "Updating ufds version..."
+            cat <<EOF > $update_file
+dn: cn=version, o=smartdc
+changetype: modify
+replace: version
+version: $VERSION
+EOF
+            load_ldif $update_file $UFDS_ADMIN_IP
+            rm $update_file
+        fi
+    fi
+}
+
 # Data needs to be reconciled for one of these reasons:
 #  * Expected data is missing from the local ufds.  This indicates that ufds
 #    hasn't been bootstrapped.
@@ -126,9 +191,10 @@ function needs_reconcile {
 
     # Expected data is missing from local or remote, depending on master.
     local ip=${UFDS_ADMIN_IP}
-    ldap ${ip} ldapsearch -s base -b "o=smartdc" 'objectclass=organization'
+    ldap ${ip} ldapsearch -s base -b "ou=users, o=smartdc" \
+        'objectclass=organizationalUnit'
     if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
-        echo "Expected data not found in local ufds.  Need to load data..."
+        echo "ou=users not found in local ufds.  Need to load data..."
         return
     fi
 
@@ -140,7 +206,7 @@ function needs_reconcile {
         -b "datacenter=${DATACENTER_NAME}, region=${REGION_NAME}, o=smartdc" \
         'objectclass=datacenter'
     if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
-        echo "Expected data not found in ufds.  Need to load data..."
+        echo "Datacenter information not found in ufds.  Need to load data..."
         return
     fi
 
@@ -224,6 +290,7 @@ function migrate_ldap_data {
 
 
 function bootstrap_local {
+    echo "Reconciling local data"
     replace_in_ldif ${BOOTSTRAP_LDIF_IN}
     # Since this will not error when data already exists, we simply add.  It
     # has the added benefit that new entries will be added too (on force)
@@ -237,6 +304,7 @@ function bootstrap_local {
 # be the the thing that detects that and migrates the data.  The only way that
 # could work is by dumping the tree and checking each entry individually.
 function bootstrap_remote {
+    echo "Reconciling (possible) remote data"
     replace_in_ldif ${BOOTSTRAP_REMOTE_LDIF_IN}
     local ip=${UFDS_ADMIN_IP}
     local remote=${UFDS_REMOTE_IP}
@@ -268,6 +336,8 @@ function bootstrap_remote {
 
 setup_vars
 verify_ufds
+reconcile_root
+reconcile_version
 needs_reconcile
 bootstrap_local
 bootstrap_remote

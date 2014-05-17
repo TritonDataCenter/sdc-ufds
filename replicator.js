@@ -20,12 +20,14 @@ var LOG = bunyan.createLogger({
 
 var OPTS = {
     'file': String,
+    'ufdsFile': String,
     'help': Boolean
 };
 
 
 var SHORT_OPTS = {
     'f': ['--file'],
+    'u': ['--ufdsFile'],
     'h': ['--help']
 };
 
@@ -61,7 +63,8 @@ function errorAndExit(err, message) {
 function processConfig() {
     var _config,
         parsed = nopt(OPTS, SHORT_OPTS, process.argv, 2),
-        file = parsed.file || path.join(__dirname, 'etc/replicator.json');
+        file = parsed.file || path.join(__dirname, 'etc/replicator.json'),
+        ufdsFile = parsed.ufdsFile || path.join(__dirname, 'etc/config.json');
 
     if (parsed.help) {
         usage(0);
@@ -74,6 +77,22 @@ function processConfig() {
 
     } catch (e) {
         console.error('Unable to parse configuration file: ' + e.message);
+        process.exit(1);
+    }
+
+    try {
+        var ufdsConfigObj = JSON.parse(fs.readFileSync(ufdsFile, 'utf8'));
+        if (ufdsConfigObj.moray.version === undefined) {
+            console.error('Unable to find local ufds version.');
+            process.exit(1);
+        }
+        var localVersion = parseInt(ufdsConfigObj.moray.version, 10);
+        LOG.info({
+            version: localVersion
+        }, 'found local ufds version');
+        _config.localUfdsVersion = localVersion;
+    } catch (e) {
+        console.error('Unable to parse ufds configuration file: ' + e.message);
         process.exit(1);
     }
 

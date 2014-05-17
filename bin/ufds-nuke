@@ -80,4 +80,5 @@ $(dirname "${BASH_SOURCE[0]}")/ufds-find-dns 'o=smartdc' | \
     while read l; do
         ldap ${UFDS_ADMIN_IP} ldapdelete "${l}"
     done
+ldap ${UFDS_ADMIN_IP} ldapdelete "o=smartdc"
 echo 'Done!'

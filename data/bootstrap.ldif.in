@@ -1,8 +1,6 @@
 version: 1
 
-dn: o=smartdc
-objectclass: organization
-o: smartdc
+# The ldap root and the schema version are created by ufds-reconcile-data
 
 dn: ou=users, o=smartdc
 objectclass: organizationalUnit

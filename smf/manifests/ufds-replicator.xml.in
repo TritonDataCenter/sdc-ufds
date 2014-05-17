@@ -25,7 +25,7 @@
 
         <exec_method type="method"
                      name="start"
-                     exec="/opt/smartdc/ufds/build/node/bin/node replicator.js -f etc/replicator.json &amp;"
+                     exec="/opt/smartdc/ufds/build/node/bin/node replicator.js -f etc/replicator.json -u etc/config.json &amp;"
                      timeout_seconds="30">
             <method_context working_directory="/opt/smartdc/ufds">
                 <method_credential user="nobody"

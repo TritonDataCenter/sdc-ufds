@@ -14,7 +14,7 @@
             "/o=smartdc??sub?(objectclass=emailblacklist)",
             "/ou=groups, o=smartdc??sub?(objectclass=groupofuniquenames)",
             "/o=smartdc??sub?(objectclass=keyapiprivkey)",
-            "/o=smartdc??sub?(|(objectclass=region)(objectclass=datacenter)(objectclass=network)(objectclass=resolver))"
+            "/region={{region_name}}, o=smartdc??sub?(|(objectclass=region)(objectclass=datacenter)(objectclass=network)(objectclass=resolver))"
         ],
         "maxConnections": 1,
         "bindDN": "{{{ufds_ldap_root_dn}}}",

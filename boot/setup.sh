@@ -184,7 +184,10 @@ LDAPTLS_REQCERT=allow ldapwhoami -H ldaps://${UFDS_ADMIN_IP} -x \
 if [[ $? -ne 0 ]]; then
     echo "Timeout waiting for ufds to come up."
     echo "Marking ufds SMF service as in maintenance."
-    svcadm mark maintenance svc:/smartdc/application/ufds-master:default
+    svcadm mark maintenance svc:/smartdc/application/ufds-master:ufds-1390
+    svcadm mark maintenance svc:/smartdc/application/ufds-master:ufds-1391
+    svcadm mark maintenance svc:/smartdc/application/ufds-master:ufds-1392
+    svcadm mark maintenance svc:/smartdc/application/ufds-master:ufds-1393
     exit 1
 fi
 

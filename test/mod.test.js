@@ -32,23 +32,6 @@ var USER = {
     uuid: ID
 };
 
-// Different than the real DN, which uses 'ou=packages':
-var PACKAGE_DN = 'ou=pkg, ' + SUFFIX;
-var PACKAGE = {
-    name: 'regular_128',
-    version: '1.0.0',
-    max_physical_memory: 128,
-    quota: 5120,
-    max_swap: 256,
-    cpu_cap: 350,
-    max_lwps: 2000,
-    zfs_io_priority: 1,
-    'default': true,
-    active: false,
-    vcpus: 1,
-    uuid: uuid(),
-    objectclass: 'sdcpackage'
-};
 
 ///--- Helpers
 
@@ -124,15 +107,7 @@ test('add fixtures', function (t) {
 
         CLIENT.add(USER_DN, USER, function (err2) {
             t.ifError(err2);
-
-            CLIENT.add(PACKAGE_DN, PACKAGE, function (err3) {
-                if (err3) {
-                    if (err3.name !== 'EntryAlreadyExistsError') {
-                        t.ifError(err3);
-                    }
-                }
-                t.done();
-            });
+            t.done();
         });
     });
 });
@@ -210,36 +185,6 @@ test('modify non-existent entry', function (t) {
     CLIENT.modify('cn=child1,' + SUFFIX, change, function (err) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
-        t.done();
-    });
-});
-
-
-test('modify mutable attribute of entry with immutable attributes',
-        function (t) {
-    var change = {
-        type: 'replace',
-        modification: {
-            active: true
-        }
-    };
-    CLIENT.modify(PACKAGE_DN, change, function (err) {
-        t.ifError(err);
-        t.done();
-    });
-});
-
-
-test('modify immutable attribute', function (t) {
-    var change = {
-        type: 'replace',
-        modification: {
-            name: 'regular'
-        }
-    };
-    CLIENT.modify(PACKAGE_DN, change, function (err) {
-        t.ok(err);
-        t.equal(err.name, 'ObjectclassModsProhibitedError');
         t.done();
     });
 });

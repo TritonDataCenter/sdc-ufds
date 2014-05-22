@@ -295,17 +295,16 @@ properties:
   roles linking to each policy. Please, note this value is **automatically added**
   when you add a link to a `sdcAccountPolicy` entry from any role.
 
+        dn: policy-uuid=7c18cb44-a22c-4836-a1f4-9215a56871b7, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
+        uuid: 7c18cb44-a22c-4836-a1f4-9215a56871b7
+        account: 4bc1929f-dfc2-4c04-ae6c-0a388ee67f97
+        name: policy-name-can-be-modified
+        description: This is completely optional
+        objectclass: sdcaccountpolicy
+        rule: ["Fred can read *.js when dirname = examples and sourceip = 10.0.0.0/8","Bob can read and write timesheet if requesttime::time > 07:30:00 and requesttime::time < 18:30:00 and requesttime::day in (Mon, Tue, Wed, THu, Fri)","John, Jack and Jane can ops_* *","Pedro can delete *"]
+        memberrole: group-uuid=fe461981-0615-40ff-a537-f5edfc511b13, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
 
-      dn: policy-uuid=7c18cb44-a22c-4836-a1f4-9215a56871b7, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
-      uuid: 7c18cb44-a22c-4836-a1f4-9215a56871b7
-      account: 4bc1929f-dfc2-4c04-ae6c-0a388ee67f97
-      name: policy-name-can-be-modified
-      description: This is completely optional
-      objectclass: sdcaccountpolicy
-      rule: ["Fred can read *.js when dirname = examples and sourceip = 10.0.0.0/8","Bob can read and write timesheet if requesttime::time > 07:30:00 and requesttime::time < 18:30:00 and requesttime::day in (Mon, Tue, Wed, THu, Fri)","John, Jack and Jane can ops_* *","Pedro can delete *"]
-      memberrole: group-uuid=fe461981-0615-40ff-a537-f5edfc511b13, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
-
-## Roles (sdcAccountRole)
+## Roles (sdcAccountRole)
 
 These are similar entries to the top level groups given they can also take
 multipe sdcPerson values for the attribute `uniquemember`. The following is

@@ -42,7 +42,7 @@ var DUP_DN = sprintf(DN_FMT, DUP_ID);
 var SUB_USER_DN, ANOTHER_SUB_USER_DN;
 var _1ST_POLICY_DN, _2ND_POLICY_DN, _3RD_POLICY_DN;
 var _1ST_GRP_DN, _2ND_GRP_DN, _3RD_GRP_DN;
-
+var POLICY_NAME, GROUP_NAME;
 // --- Tests
 
 test('setup', function (t) {
@@ -145,9 +145,10 @@ test('add sub-user (duplicated login within account)', function (t) {
 test('add policy', function (t) {
     var policy_uuid = uuid();
     var policy = 'a' + policy_uuid.substr(0, 7);
+    POLICY_NAME = policy;
     var entry = {
         name: policy,
-        rule: 'Any string would be OK here',
+        rule: 'CAN dostuff',
         account: DUP_ID,
         description: 'This is completely optional',
         objectclass: 'sdcaccountpolicy',
@@ -167,9 +168,50 @@ test('add policy', function (t) {
 });
 
 
+test('add policy with wrong rule', function (t) {
+    var policy_uuid = uuid();
+    var entry = {
+        name: 'a' + policy_uuid.substr(0, 7),
+        rule: 'Any string would be OK here',
+        account: DUP_ID,
+        description: 'This is completely optional',
+        objectclass: 'sdcaccountpolicy',
+        uuid: policy_uuid
+    };
+
+    CLIENT.add(sprintf(POLICY_DN_FMT, policy_uuid, DUP_ID),
+        entry, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'ConstraintViolationError');
+        t.done();
+    });
+});
+
+
+test('add policy with dupe name', function (t) {
+    var policy_uuid = uuid();
+    var entry = {
+        name: POLICY_NAME,
+        rule: 'CAN dostuff',
+        account: DUP_ID,
+        description: 'This is completely optional',
+        objectclass: 'sdcaccountpolicy',
+        uuid: policy_uuid
+    };
+
+    CLIENT.add(sprintf(POLICY_DN_FMT, policy_uuid, DUP_ID),
+        entry, function (err) {
+        t.equal(err.name, 'ConstraintViolationError');
+        t.ok(err);
+        t.done();
+    });
+});
+
+
 test('add role with policy', function (t) {
     var role_uuid =  uuid();
     var role = 'a' + role_uuid.substr(0, 7);
+    GROUP_NAME = role;
     var entry = {
         name: role,
         uniquemember: SUB_USER_DN,
@@ -196,6 +238,27 @@ test('add role with policy', function (t) {
         });
     });
 });
+
+
+test('add role with dupe name', function (t) {
+    var role_uuid = uuid();
+    var entry = {
+        name: GROUP_NAME,
+        uniquemember: SUB_USER_DN,
+        account: DUP_ID,
+        memberpolicy: _1ST_POLICY_DN,
+        uuid: role_uuid,
+        objectclass: 'sdcaccountrole'
+    };
+
+
+    CLIENT.add(sprintf(ROLE_DN_FMT, role_uuid, DUP_ID), entry, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'ConstraintViolationError');
+        t.done();
+    });
+});
+
 
 var _RESOURCE_DN;
 
@@ -255,6 +318,22 @@ test('add role w/o policy', function (t) {
 });
 
 
+test('Update role to duplicated name', function (t) {
+    var change = {
+        operation: 'replace',
+        modification: {
+            name: GROUP_NAME
+        }
+    };
+
+    CLIENT.modify(_2ND_GRP_DN, change, function (err) {
+        t.ok(err);
+        t.equal(err.name, 'ConstraintViolationError');
+        t.done();
+    });
+});
+
+
 test('add member to role', function (t) {
     var change = {
         operation: 'add',
@@ -279,7 +358,7 @@ test('add policy with role', function (t) {
     var policy = 'a' + policy_uuid.substr(0, 7);
     var entry = {
         name: policy,
-        rule: 'Any string would be OK here',
+        rule: 'CAN dothings AND dostuff',
         account: DUP_ID,
         description: 'This is completely optional',
         objectclass: 'sdcaccountpolicy',
@@ -311,7 +390,7 @@ test('prepare modifications', function (t) {
     var policy = 'a' + policy_uuid.substr(0, 7);
     var entry = {
         name: policy,
-        rule: 'Any string would be OK here',
+        rule: 'CAN doalotofthings',
         account: DUP_ID,
         description: 'This is completely optional',
         objectclass: 'sdcaccountpolicy',

@@ -10,10 +10,17 @@ var assert = require('assert');
 var util = require('util');
 
 var ldap = require('ldapjs');
-
+var aperture = require('aperture');
 var Validator = require('../lib/schema/validator');
 
 var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
+
+// TODO: Move this to a config file?
+var typeTable = {
+    ip: 'ip',
+    sourceip: 'ip',
+    'user-agent': 'string'
+};
 
 
 // --- API
@@ -57,6 +64,24 @@ function validate(entry, config, changes, callback) {
             return callback(new ldap.ConstraintViolationError(policydocs[k] +
                                                          ' is not unique'));
         }
+    }
+
+    var parser = aperture.createParser({
+        types: aperture.types,
+        typeTable: typeTable
+    });
+
+    var errs = [];
+    policydocs.forEach(function (r) {
+        try {
+            parser.parse(r);
+        } catch (e) {
+            errs.push(e.message);
+        }
+    });
+
+    if (errs.length) {
+        errors.push('Rules error: ' + errs.join(', '));
     }
 
     var account = attrs.account[0];

@@ -664,6 +664,69 @@
       "version": "1.3.0",
       "from": "once@1.3.0",
       "resolved": "https://registry.npmjs.org/once/-/once-1.3.0.tgz"
+    },
+    "aperture": {
+      "version": "0.0.2",
+      "from": "aperture@git+ssh://git@github.com:joyent/node-aperture.git#e59aa4",
+      "resolved": "git+ssh://git@github.com:joyent/node-aperture.git#e59aa4685cab1c62eb409bb4f30c8000d518ac4a",
+      "dependencies": {
+        "assert-plus": {
+          "version": "0.1.5",
+          "from": "assert-plus@git://github.com/mcavage/node-assert-plus.git#master",
+          "resolved": "git://github.com/mcavage/node-assert-plus.git#ab106aabb0facda9553f28dc81350b9dbec4ac31"
+        },
+        "ipaddr.js": {
+          "version": "0.1.1",
+          "from": "ipaddr.js@0.1.1",
+          "resolved": "https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-0.1.1.tgz",
+          "dependencies": {
+            "coffee-script": {
+              "version": "1.7.1",
+              "from": "coffee-script@>= 1.1.1",
+              "dependencies": {
+                "mkdirp": {
+                  "version": "0.3.5",
+                  "from": "mkdirp@~0.3.5"
+                }
+              }
+            }
+          }
+        },
+        "moment": {
+          "version": "2.3.1",
+          "from": "moment@2.3.1",
+          "resolved": "https://registry.npmjs.org/moment/-/moment-2.3.1.tgz"
+        },
+        "jsprim": {
+          "version": "0.5.1",
+          "from": "jsprim@0.5.1",
+          "resolved": "https://registry.npmjs.org/jsprim/-/jsprim-0.5.1.tgz",
+          "dependencies": {
+            "extsprintf": {
+              "version": "1.0.2",
+              "from": "extsprintf@1.0.2",
+              "resolved": "https://registry.npmjs.org/extsprintf/-/extsprintf-1.0.2.tgz"
+            },
+            "json-schema": {
+              "version": "0.2.2",
+              "from": "json-schema@0.2.2",
+              "resolved": "https://registry.npmjs.org/json-schema/-/json-schema-0.2.2.tgz"
+            }
+          }
+        },
+        "verror": {
+          "version": "1.3.6",
+          "from": "verror@1.3.6",
+          "resolved": "https://registry.npmjs.org/verror/-/verror-1.3.6.tgz",
+          "dependencies": {
+            "extsprintf": {
+              "version": "1.0.2",
+              "from": "extsprintf@1.0.2",
+              "resolved": "https://registry.npmjs.org/extsprintf/-/extsprintf-1.0.2.tgz"
+            }
+          }
+        }
+      }
     }
   }
 }

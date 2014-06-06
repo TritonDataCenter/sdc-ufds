@@ -732,6 +732,6 @@
       "version": "1.0.0",
       "from": "aperture-config@git+ssh://git@git.joyent.com:aperture-config.git#master",
       "resolved": "git+ssh://git@git.joyent.com:aperture-config.git#492ef2cb1376c47242deae34c581c08371827d05"
-    },
+    }
   }
 }

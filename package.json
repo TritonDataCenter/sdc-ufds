@@ -27,7 +27,8 @@
         "assert-plus": "0.1.2",
         "backoff": "2.3.0",
         "once": "1.3.0",
-        "aperture": "git+ssh://git@github.com:joyent/node-aperture.git#e59aa4"
+        "aperture": "git+ssh://git@github.com:joyent/node-aperture.git#e59aa4",
+        "aperture-config": "git+ssh://git@git.joyent.com:aperture-config.git#master"
     },
     "devDependencies": {
         "nodeunit": "0.7.4",

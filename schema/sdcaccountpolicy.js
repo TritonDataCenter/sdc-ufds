@@ -11,16 +11,11 @@ var util = require('util');
 
 var ldap = require('ldapjs');
 var aperture = require('aperture');
+var apertureConfig = require('aperture-config').config,
+    typeTable = apertureConfig.typeTable;
 var Validator = require('../lib/schema/validator');
 
 var UUID_RE = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
-
-// TODO: Move this to a config file?
-var typeTable = {
-    ip: 'ip',
-    sourceip: 'ip',
-    'user-agent': 'string'
-};
 
 
 // --- API

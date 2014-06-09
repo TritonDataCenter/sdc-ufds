@@ -21,6 +21,7 @@ var helper = require('./helper.js');
 var test = helper.test;
 
 var CLIENT;
+var SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var ID = uuid();
 var USER_DN = 'cn=child, ' + SUFFIX;
@@ -84,11 +85,16 @@ function get(callback) {
 ///--- Tests
 
 test('setup', function (t) {
-    helper.createClient(function (err, client) {
+    helper.createServer(function (err, server) {
         t.ifError(err);
-        t.ok(client);
-        CLIENT = client;
-        t.done();
+        t.ok(server);
+        SERVER = server;
+        helper.createClient(function (err2, client) {
+            t.ifError(err2);
+            t.ok(client);
+            CLIENT = client;
+            t.done();
+        });
     });
 });
 
@@ -250,9 +256,9 @@ test('modify sub-user login', function (t) {
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {
         t.ifError(err);
-        CLIENT.del(USER_DN, function (er1) {
-            t.ifError(er1);
-            CLIENT.unbind(function (err3) {
+        CLIENT.unbind(function (err2) {
+            t.ifError(err2);
+            helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
                 t.done();
             });

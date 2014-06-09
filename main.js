@@ -10,6 +10,9 @@ var os = require('os');
 var Logger = require('bunyan');
 var nopt = require('nopt');
 
+
+var ufds = require('./lib/ufds');
+
 // TODO: groups
 
 // --- Globals
@@ -78,22 +81,7 @@ function processConfig() {
 
     LOG.info({file: file}, 'Processing configuration file');
 
-    try {
-
-        _config = JSON.parse(fs.readFileSync(file, 'utf8'));
-
-        if (_config.certificate && _config.key && !_config.port) {
-            _config.port = 636;
-        }
-
-        if (!_config.port) {
-            _config.port = 389;
-        }
-
-    } catch (e) {
-        console.error('Unable to parse configuration file: ' + e.message);
-        process.exit(1);
-    }
+    _config = ufds.processConfigFile(file);
 
     if (parsed.port) {
         _config.port = parsed.port;
@@ -135,8 +123,8 @@ var config = processConfig();
 
 // CAPI-169: Clustering intentionally disabled due to race condition on
 // ldif bootstrap.
-var ufds = require('./lib/ufds').createServer(config);
-ufds.on('morayError', ufds.morayConnectCalback);
-ufds.init(function () {
+var server = ufds.createServer(config);
+server.on('morayError', server.morayConnectCalback);
+server.init(function () {
     return (true);
 });

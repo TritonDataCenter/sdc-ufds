@@ -22,6 +22,7 @@ var ldap = require('ldapjs');
 var test = helper.test;
 
 var CLIENT;
+var SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var TOTAL_ENTRIES = 10;
 var USERS = {};
@@ -134,11 +135,16 @@ function load(callback) {
 ///--- Tests
 
 test('setup', function (t) {
-    helper.createClient(function (err, client) {
+    helper.createServer(function (err, server) {
         t.ifError(err);
-        t.ok(client);
-        CLIENT = client;
-        t.done();
+        t.ok(server);
+        SERVER = server;
+        helper.createClient(function (err2, client) {
+            t.ifError(err2);
+            t.ok(client);
+            CLIENT = client;
+            t.done();
+        });
     });
 });
 
@@ -473,7 +479,10 @@ test('teardown', function (t) {
         t.ifError(err);
         CLIENT.unbind(function (err2) {
             t.ifError(err2);
-            t.done();
+            helper.destroyServer(SERVER, function (err3) {
+                t.ifError(err3);
+                t.done();
+            });
         });
     });
 });

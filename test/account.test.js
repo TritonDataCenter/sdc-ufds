@@ -23,6 +23,7 @@ var helper = require('./helper.js');
 // --- Globals
 
 var CLIENT;
+var SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'uuid=%s, ' + SUFFIX;
 
@@ -46,11 +47,16 @@ var POLICY_NAME, GROUP_NAME;
 // --- Tests
 
 test('setup', function (t) {
-    helper.createClient(function (err, client) {
+    helper.createServer(function (err, server) {
         t.ifError(err);
-        t.ok(client);
-        CLIENT = client;
-        t.done();
+        t.ok(server);
+        SERVER = server;
+        helper.createClient(function (err2, client) {
+            t.ifError(err2);
+            t.ok(client);
+            CLIENT = client;
+            t.done();
+        });
     });
 });
 
@@ -674,7 +680,10 @@ test('teardown', function (t) {
         t.ifError(err);
         CLIENT.unbind(function (err2) {
             t.ifError(err2);
-            t.done();
+            helper.destroyServer(SERVER, function (err3) {
+                t.ifError(err3);
+                t.done();
+            });
         });
     });
 });

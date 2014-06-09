@@ -21,6 +21,7 @@ var helper = require('./helper.js');
 ///--- Globals
 
 var CLIENT;
+var SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'uuid=%s, ' + SUFFIX;
 
@@ -90,28 +91,15 @@ function getUser(login, callback) {
 ///--- Tests
 
 test('setup', function (t) {
-    helper.createClient(function (err, client) {
+    helper.createServer(function (err, server) {
         t.ifError(err);
-        t.ok(client);
-        CLIENT = client;
-        var entry = {
-            o: 'o=smartdc',
-            objectclass: 'organization'
-        };
-        CLIENT.add(SUFFIX, entry, function (er1) {
-            if (er1) {
-                if (er1.name !== 'EntryAlreadyExistsError') {
-                    t.ifError(er1);
-                }
-            }
-            CLIENT.add('cn=pwdpolicy, ' + SUFFIX, pwdPolicy, function (er2) {
-                if (er2) {
-                    if (er2.name !== 'EntryAlreadyExistsError') {
-                        t.ifError(er2);
-                    }
-                }
-                t.done();
-            });
+        t.ok(server);
+        SERVER = server;
+        helper.createClient(function (err2, client) {
+            t.ifError(err2);
+            t.ok(client);
+            CLIENT = client;
+            t.done();
         });
     });
 });
@@ -535,7 +523,10 @@ test('teardown', function (t) {
         t.ifError(err);
         CLIENT.unbind(function (err2) {
             t.ifError(err2);
-            t.done();
+            helper.destroyServer(SERVER, function (err3) {
+                t.ifError(err3);
+                t.done();
+            });
         });
     });
 });

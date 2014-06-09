@@ -8,6 +8,7 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
+var child_process = require('child_process');
 
 var Logger = require('bunyan');
 var ldapjs = require('ldapjs');
@@ -21,6 +22,8 @@ var CFG_FILE = process.env.TEST_CONFIG_FILE ||
 
 try {
     CONFIG = JSON.parse(fs.readFileSync(CFG_FILE, 'utf8'));
+    CONFIG.host = CONFIG.host || '10.99.99.18';
+    CONFIG.port = CONFIG.port || 636;
 } catch (e) {
     console.error('Unable to parse configuration file: ' + e.message);
     process.exit(1);
@@ -83,19 +86,8 @@ module.exports = {
         }
         assert.equal(typeof (callback), 'function');
 
-        var host, port;
-        if (!CONFIG.port && !CONFIG.host) {
-            host = '10.99.99.18';
-            port = 636;
-        } else if (!CONFIG.host && CONFIG.port) {
-            host = '127.0.0.1';
-            port = CONFIG.port;
-        } else {
-            port = CONFIG.port;
-            host = CONFIG.host;
-        }
-        var proto = (port === 636) ? 'ldaps' : 'ldap';
-        var url = util.format('%s://%s:%s', proto, host, port);
+        var proto = (CONFIG.port === 636) ? 'ldaps' : 'ldap';
+        var url = util.format('%s://%s:%s', proto, CONFIG.host, CONFIG.port);
 
         var client = ldapjs.createClient({
             connectTimeout: 1000,
@@ -139,6 +131,51 @@ module.exports = {
         });
 
         return cb(client);
+    },
+
+    createServer: function createServer(cb) {
+        assert.equal(typeof (cb), 'function');
+        // Don't initialize local server if remote is specified.
+        if (CONFIG.host !== '127.0.0.1') {
+            return cb(null, {});
+        }
+        var basePath = path.normalize(__dirname + '/../');
+        var ufds = require(basePath + '/lib/ufds');
+        var config = ufds.processConfigFile(CFG_FILE);
+        config.log =  new Logger({
+            name: 'ufds',
+            stream: fs.createWriteStream(basePath + '/ufds.log', {flags: 'a'}),
+            serializers: {
+                err: Logger.stdSerializers.err
+            }
+        });
+        var server = ufds.createServer(config);
+        server.init(function () {
+            cb(null, server);
+            return true;
+        });
+    },
+
+    destroyServer: function destroyServer(server, cb) {
+        assert.equal(typeof (cb), 'function');
+        // No cleanup needed for remote server
+        if (CONFIG.host !== '127.0.0.1') {
+            return cb();
+        }
+        server.server.close();
+        server.moray.close();
+        cb();
+    },
+
+    createCAPIServer: function createCAPIServer(cb) {
+        assert.equal(typeof (cb), 'function');
+        var server = {};
+        cb(server);
+    },
+
+    destroyCAPIServer: function destroyCAPIServer(cb) {
+        assert.equal(typeof (cb), 'function');
+        cb();
     },
 
     cleanup: function cleanupMoray(suffix, callback) {

@@ -1,4 +1,4 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 //
 // See helper.js for customization options.
 //
@@ -249,6 +249,14 @@ test('modify sub-user login', function (t) {
                 });
             });
         });
+    });
+});
+
+
+test('remove fixture', function (t) {
+    CLIENT.del(USER_DN, function (err) {
+        t.ifError(err);
+        t.done();
     });
 });
 

@@ -169,13 +169,27 @@ module.exports = {
 
     createCAPIServer: function createCAPIServer(cb) {
         assert.equal(typeof (cb), 'function');
-        var server = {};
-        cb(server);
+        var basePath = path.normalize(__dirname + '/../');
+        var capi = require(basePath + '/capi/server.js');
+        var config = capi.processConfigFile(CFG_FILE);
+        config.log = new Logger({
+            name: 'capi',
+            level: config.logLevel,
+            stream: fs.createWriteStream(basePath + '/capi.log', {flags: 'a'}),
+            serializers: restify.bunyan.serializers
+        });
+        var server = capi.createServer(config);
+        server.connect(function (err) {
+          if (err) {
+            return cb(err);
+          }
+          cb(null, server);
+        });
     },
 
-    destroyCAPIServer: function destroyCAPIServer(cb) {
+    destroyCAPIServer: function destroyCAPIServer(server, cb) {
         assert.equal(typeof (cb), 'function');
-        cb();
+        server.close(cb);
     },
 
     cleanup: function cleanupMoray(suffix, callback) {

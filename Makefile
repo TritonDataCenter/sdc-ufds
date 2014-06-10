@@ -126,8 +126,12 @@ pwdpolicy_test: $(NODEUNIT)
 account_test: $(NODEUNIT)
 	$(NODEUNIT) test/account.test.js --reporter tap
 
+.PHONY: capi_test
+capi_test: $(NODEUNIT)
+	$(NODEUNIT) test/capi/customers.test.js --reporter tap
+
 .PHONY: test
-test: add_test bind_test compare_test del_test mod_test search_test pwdpolicy_test account_test
+test: add_test bind_test compare_test del_test mod_test search_test pwdpolicy_test account_test capi_test
 
 .PHONY: pkg
 pkg:

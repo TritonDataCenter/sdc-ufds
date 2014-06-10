@@ -1,4 +1,4 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 //
 
 var path = require('path');
@@ -17,10 +17,13 @@ var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
 }
+var vasync = require('vasync');
 
 ///--- Globals
 var test = helper.test;
 var CAPI;
+var SERVER;
+var UFDS_SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 
 var DUP_ID = uuid();
@@ -45,9 +48,42 @@ var METADATA_STR_VAL_PLAIN = 'notQueryStringParseable';
 ///--- Tests
 
 test('setup', function (t) {
-    helper.createCAPIClient(function (client) {
-        t.ok(client);
-        CAPI = client;
+    vasync.pipeline({
+        'funcs': [
+            function createUFDS(_, cb) {
+                helper.createServer(function (err, ufds) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    t.ok(ufds);
+                    UFDS_SERVER = ufds;
+                    cb();
+                });
+            },
+            function createServer(_, cb) {
+                helper.createCAPIServer(function (err, server) {
+                    if (err) {
+                        return cb(err);
+                    }
+                    t.ok(server);
+                    SERVER = server;
+                    cb();
+                });
+            },
+            function createClient(_, cb) {
+                helper.createCAPIClient(function (client) {
+                    t.ok(client);
+                    CAPI = client;
+                    cb();
+                });
+            }
+        ]
+    }, function (err, result) {
+        if (err) {
+            t.ifError(err);
+            // Fail hard if startup isn't successful
+            process.exit(1);
+        }
         t.done();
     });
 });
@@ -786,9 +822,29 @@ test('delete customer', function (t) {
 
 
 test('teardown', function (t) {
-    helper.cleanup(SUFFIX, function (err3) {
-        t.ifError(err3);
-        CAPI.close();
+    vasync.pipeline({
+        funcs: [
+            function cleanupData(_, cb) {
+                helper.cleanup(SUFFIX, function (err) {
+                    t.ifError(err);
+                    cb(err);
+                });
+            },
+            function destroyClient(_, cb) {
+                CAPI.close();
+                cb();
+            },
+            function destroyServer(_, cb) {
+                helper.destroyCAPIServer(SERVER, cb);
+            },
+            function destroyUFDS(_, cb) {
+                helper.destroyServer(UFDS_SERVER, cb);
+            }
+        ]
+    }, function (err, result) {
+        if (err) {
+            t.ifError(err);
+        }
         t.done();
     });
 });

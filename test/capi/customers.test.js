@@ -680,89 +680,90 @@ test('meta cleanup', function (t) {
 
 
 // CAPI-234: Blacklist "/fraud"
-test('add email to blacklist', function (t) {
-    CAPI.post('/fraud', {email: FRAUD_EMAIL}, function (err, req, res, obj) {
-        t.ifError(err);
-        t.equal(201, res.statusCode);
-        t.ok(Array.isArray(obj));
-        t.equal(obj[obj.length - 1].email_address, FRAUD_EMAIL);
-        t.done();
-    });
-});
+//test('add email to blacklist', function (t) {
+//    CAPI.post('/fraud', {email: FRAUD_EMAIL}, function (err, req, res, obj) {
+//        t.ifError(err);
+//        t.equal(201, res.statusCode);
+//        t.ok(Array.isArray(obj));
+//        t.equal(obj[obj.length - 1].email_address, FRAUD_EMAIL);
+//        t.done();
+//    });
+//});
 
 
-test('get blacklist', function (t) {
-    CAPI.get('/fraud', function (err, req, res, obj) {
-        t.ifError(err);
-        t.equal(200, res.statusCode);
-        t.ok(Array.isArray(obj));
-        if (obj.length) {
-            t.ok(obj[0].email_address);
-            t.ok(obj[0].id);
-        }
-        t.done();
-    });
-});
+//test('get blacklist', function (t) {
+//    CAPI.get('/fraud', function (err, req, res, obj) {
+//        t.ifError(err);
+//        t.equal(200, res.statusCode);
+//        t.ok(Array.isArray(obj));
+//        if (obj.length) {
+//            t.ok(obj[0].email_address);
+//            t.ok(obj[0].id);
+//        }
+//        t.done();
+//    });
+//});
 
 
-test('search email in blacklist', function (t) {
-    CAPI.get('/fraud/' + FRAUD_EMAIL, function (err, req, res, obj) {
-        t.ifError(err);
-        t.equal(200, res.statusCode);
-        t.ok(obj.email_address);
-        t.ok(obj.id);
-        t.done();
-    });
-});
+//test('search email in blacklist', function (t) {
+//    CAPI.get('/fraud/' + FRAUD_EMAIL, function (err, req, res, obj) {
+//        t.ifError(err);
+//        t.equal(200, res.statusCode);
+//        t.ok(obj.email_address);
+//        t.ok(obj.id);
+//        t.done();
+//    });
+//});
 
 
-test('search email not in blacklist', function (t) {
-    CAPI.get('/fraud/' + DUP_EMAIL, function (err, req, res, obj) {
-        t.ifError(err);
-        t.equal(200, res.statusCode);
-        t.ok(obj); // it is actually a plain []
-        t.ok(!obj.email_address);
-        t.done();
-    });
-});
+//test('search email not in blacklist', function (t) {
+//    CAPI.get('/fraud/' + DUP_EMAIL, function (err, req, res, obj) {
+//        t.ifError(err);
+//        t.equal(200, res.statusCode);
+//        t.ok(obj); // it is actually a plain []
+//        t.ok(!obj.email_address);
+//        t.done();
+//    });
+//});
 
 
-test('add wildcard to blacklist', function (t) {
-    CAPI.post('/fraud', {email: FRAUD_WILDCARD}, function (err, req, res, obj) {
-        t.ifError(err);
-        t.equal(201, res.statusCode);
-        t.ok(Array.isArray(obj));
-        t.equal(obj[obj.length - 1].email_address, FRAUD_WILDCARD);
-        t.done();
-    });
-});
+//test('add wildcard to blacklist', function (t) {
+//    CAPI.post('/fraud',
+//        {email: FRAUD_WILDCARD}, function (err, req, res, obj) {
+//        t.ifError(err);
+//        t.equal(201, res.statusCode);
+//        t.ok(Array.isArray(obj));
+//        t.equal(obj[obj.length - 1].email_address, FRAUD_WILDCARD);
+//        t.done();
+//    });
+//});
 
 
-test('search email wildcard in blacklist', function (t) {
-    CAPI.get('/fraud/' + DUP_EMAIL, function (err, req, res, obj) {
-        t.ifError(err);
-        t.equal(200, res.statusCode);
-        t.ok(obj.email_address);
-        t.ok(obj.id);
-        t.done();
-    });
-});
+//test('search email wildcard in blacklist', function (t) {
+//    CAPI.get('/fraud/' + DUP_EMAIL, function (err, req, res, obj) {
+//        t.ifError(err);
+//        t.equal(200, res.statusCode);
+//        t.ok(obj.email_address);
+//        t.ok(obj.id);
+//        t.done();
+//    });
+//});
 
 
 // Go with clean blacklist for the next time:
-test('blacklist cleanup', function (t) {
-    helper.createClient(function (err, client) {
-        t.ifError(err);
-        t.ok(client);
-        client.del('cn=blacklist, o=smartdc', function (err1) {
-            t.ifError(err1);
-            client.unbind(function (err2) {
-                t.ifError(err2);
-                t.done();
-            });
-        });
-    });
-});
+//test('blacklist cleanup', function (t) {
+//    helper.createClient(function (err, client) {
+//        t.ifError(err);
+//        t.ok(client);
+//        client.del('cn=blacklist, o=smartdc', function (err1) {
+//            t.ifError(err1);
+//            client.unbind(function (err2) {
+//                t.ifError(err2);
+//                t.done();
+//            });
+//        });
+//    });
+//});
 
 
 test('delete key', function (t) {

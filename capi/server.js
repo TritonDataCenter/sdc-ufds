@@ -10,7 +10,7 @@ var path = require('path');
 var sprintf = require('util').format;
 
 var Logger = require('bunyan');
-var SDC = require('sdc-clients');
+var UFDS = require('ufds');
 var nopt = require('nopt');
 var restify = require('restify');
 var libuuid = require('libuuid');
@@ -58,7 +58,7 @@ function toXml(elm) {
 
 
 function createUfdsClient(options, callback) {
-    var ufds = new SDC.UFDS(options);
+    var ufds = new UFDS(options);
 
     ufds.once('connect', function () {
         ufds.removeAllListeners('error');

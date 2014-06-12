@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Joyent, Inc. All rights reserved.
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
  *
  * See helper.js for customization options.
  */
@@ -219,6 +219,35 @@ test('Add case-only different login', function (t) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
         t.done();
+    });
+});
+
+
+test('add large entry', function (t) {
+    DUP_ID = uuid();
+    DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
+    DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
+    DUP_DN = sprintf(DN_FMT, DUP_ID);
+    var len = 65536;
+    var largeAttr = '';
+    for (var i = 0; i < len; i++) {
+      largeAttr += 'X';
+    }
+    var entry = {
+        cn: largeAttr,
+        login: DUP_LOGIN,
+        email: DUP_EMAIL,
+        uuid: DUP_ID,
+        userpassword: 'secret123',
+        objectclass: 'sdcperson'
+    };
+    CLIENT.add(DUP_DN, entry, function (err) {
+        t.ifError(err);
+        // Clean up
+        CLIENT.del(DUP_DN, function (err2) {
+            t.ifError(err2);
+            t.done();
+        });
     });
 });
 

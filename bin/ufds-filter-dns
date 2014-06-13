@@ -1,0 +1,99 @@
+#!/usr/bin/env node
+
+var fs = require('fs');
+var ldap = require('ldapjs');
+var path = require('path');
+var readline = require('readline');
+
+
+// --- Helpers
+function parseQuery(qs) {
+        var parts = qs.split('?');
+        var dn = parts[0].split('/')[1];
+        var filter = ldap.parseFilter(parts[3]);
+        return ({
+                dn: dn,
+                filter: filter
+        });
+}
+
+// Thank you stack overflow...
+function endsWith(str, suffix) {
+        return str.indexOf(suffix, str.length - suffix.length) !== -1;
+}
+
+function matches(queries, dn, cl) {
+        for (var i = 0; i < queries.length; ++i) {
+                var query = queries[i];
+                var matches = endsWith(dn, query.dn) &&
+                        query.filter.matches({ 'objectclass': cl });
+                if (matches) {
+                        return (true);
+                }
+        }
+        return (false);
+}
+
+// In the format: {x[,y]+}
+function parseObjectClasses(cl) {
+        var classes = cl.split(',');
+        classes[0] = classes[0].replace('{', '');
+        classes[classes.length - 1] =
+                classes[classes.length - 1].replace('}', '');
+        return (classes);
+}
+
+// --- Main
+var configFile = path.resolve(__dirname, '../etc/replicator.json');
+try {
+        var contents = fs.readFileSync(configFile);
+        var config = JSON.parse(contents);
+} catch (e) {
+        console.log(e);
+        process.exit(1);
+}
+
+if (!process.argv[2]) {
+        var usage = [
+                'usage: ufds-filter-dns <file>',
+                '',
+                'File must be in the format:',
+                '   dn + \'|\' + objectclasses',
+                '',
+                'For example: ',
+                'datacenter=staging-1, region=staging, o=smartdc|{datacenter}',
+                '',
+                'You can get a file in that format from manatee with:',
+                '   sudo -u postgres psql moray \\',
+                '       -c "select _key, objectclass from ufds_o_smartdc" \\',
+                '       -A -t -o /var/tmp/ufds.txt'
+        ];
+        console.log(usage.join('\n'));
+        process.exit(1);
+}
+
+var filename = process.argv[2];
+var queries = config.remotes[0].queries.map(parseQuery);
+var linenum = 1;
+
+var rd = readline.createInterface({
+        input: fs.createReadStream(filename),
+        output: process.stdout,
+        terminal: false
+});
+
+rd.on('line', function (line) {
+        line = line.trim();
+        if ('' === line) {
+                return;
+        }
+        var parts = line.split('|');
+        if (parts.length !== 2) {
+                console.error('Invalid input on line ' + linenum +
+                              ': ' + line);
+                process.exit(1);
+        }
+        if (matches(queries, parts[0], parseObjectClasses(parts[1]))) {
+                console.log(line);
+        }
+});

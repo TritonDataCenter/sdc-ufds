@@ -8,7 +8,7 @@
     "private": true,
     "main": "./main.js",
     "engines": {
-        "node": ">=0.8"
+        "node": ">=0.10"
     },
     "dependencies": {
         "bunyan": "0.22.1",

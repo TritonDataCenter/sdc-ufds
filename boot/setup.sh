@@ -162,7 +162,6 @@ sdc_log_rotation_add ufds-master-1391 /var/svc/log/*ufds-1391*.log 1g
 sdc_log_rotation_add ufds-master-1392 /var/svc/log/*ufds-1392*.log 1g
 sdc_log_rotation_add ufds-master-1393 /var/svc/log/*ufds-1393*.log 1g
 sdc_log_rotation_add ufds-capi /var/svc/log/*ufds-capi*.log 1g
-sdc_log_rotation_setup_end
 
 # Add build/node/bin and node_modules/.bin to PATH
 echo "" >>/root/.profile
@@ -202,9 +201,14 @@ fi
 # the checkpoint in the local ufds under a tree that was added during reconcile/
 # bootstrap
 if [[ "${IS_MASTER}" == "false" ]]; then
-  echo "Importing UFDS Replicator SMF Manifest"
-  /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-replicator.xml
+    echo "Importing UFDS Replicator SMF Manifest"
+    /usr/sbin/svccfg import /opt/smartdc/$role/smf/manifests/$role-replicator.xml
+    echo "Adding log rotation for UFDS Replicator"
+    sdc_log_rotation_add ufds-replicator /var/svc/log/*ufds-replicator*.log 1g
 fi
+
+# End log rotation setup here in case we also setup rotation for ufds-replicator
+sdc_log_rotation_setup_end
 
 # All done, run boilerplate end-of-setup
 sdc_setup_complete

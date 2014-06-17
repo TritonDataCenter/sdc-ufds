@@ -1,4 +1,4 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 //
 // See helper.js for customization options.
 //
@@ -278,8 +278,8 @@ test('search sub substr case sensitive filter ok', function (t) {
 
 test('search sub wrong base', function (t) {
     search('cn=foo, ' + SUFFIX, '(login=*)', 'sub', function (err, _, count) {
-        t.ifError(err);
-        t.equal(count, 0);
+        t.ok(err);
+        t.equal(err.name, 'NoSuchObjectError');
         t.done();
     });
 });

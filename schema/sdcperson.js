@@ -58,7 +58,8 @@ function SDCPerson() {
             _replicated: 1,
             approved_for_provisioning: 1,
             created_at: 1,
-            updated_at: 1
+            updated_at: 1,
+            tenant: 1
         }
     });
 }

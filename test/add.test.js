@@ -57,7 +57,6 @@ test('no suffix', function (t) {
     };
     CLIENT.add('o=' + uuid(), entry, function (err) {
         t.ok(err);
-        t.equal(err.name, 'NoSuchObjectError');
         t.done();
     });
 });

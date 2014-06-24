@@ -8,7 +8,7 @@
 var assert = require('assert-plus');
 
 var fixtures = require('./fixtures');
-var Replicator = require('../lib/ufds-replicator');
+var Replicator = require('../../lib/ufds-replicator');
 var rep;
 
 var bunyan = require('bunyan');
@@ -62,8 +62,9 @@ var REMOTE_TWO = {
 var REPLICATOR_OPTS = {
     log: LOG,
     localUfds: LOCAL_UFDS,
+    localUfdsVersion: 18,
     remotes: [REMOTE_ONE, REMOTE_TWO],
-    checkpointDn: 'cn=replicator, datacenter=coal, o=smartdc'
+    checkpointDn: 'cn=replicator, datacenter=coal, region=coal, o=smartdc'
 };
 
 
@@ -73,21 +74,6 @@ exports.initReplicator = function (t) {
 
     rep.once('started', function () {
         t.done();
-    });
-};
-
-
-// // Give the replicators time to catch up
-exports.catchUp = function (t) {
-    var done = 0;
-
-    rep.on('caughtup', function (id, cn) {
-        done++;
-
-        if (done == 2) {
-            rep.removeAllListeners('caughtup');
-            t.done();
-        }
     });
 };
 

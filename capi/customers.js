@@ -348,6 +348,8 @@ module.exports = {
                                   user.dn);
                         return next(res.sendError([err2.toString()]));
                     }
+                    // FIXME: using ufds.client bypasses logic to clear cache
+                    req.ufds._newCache();
                     // Need to explicitly override role here, since we already
                     // translated customer before.
                     customer.role = 2;
@@ -589,6 +591,8 @@ module.exports = {
                 }
             }
 
+            // FIXME: using ufds.client bypasses logic to clear cache
+            req.ufds._newCache();
             log.debug({id: req.params.uuid}, 'UpdateCustomer: ok');
             return next();
         });
@@ -624,6 +628,8 @@ module.exports = {
                 }
             }
 
+            // FIXME: using ufds.client bypasses logic to clear cache
+            req.ufds._newCache();
             log.debug({id: req.params.uuid}, 'forgot_password: ok');
             return next();
         });
@@ -650,6 +656,8 @@ module.exports = {
                 }
             };
             return req.ufds.client.modify(OPERATORS_DN, change, function () {
+                // FIXME: using ufds.client bypasses logic to clear cache
+                req.ufds._newCache();
                 // Ignore error, as it may not have existed in the group.
                 res.send(200);
                 return next();

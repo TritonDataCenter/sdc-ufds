@@ -297,9 +297,9 @@ module.exports = {
         log.debug({customer: customer}, 'CreateCustomer: saving');
         return req.ufds.addUser(customer, function (err, user) {
             if (err) {
-                if (err instanceof ldap.EntryAlreadyExistsError) {
+                if (err.code === ldap.LDAP_ENTRY_ALREADY_EXISTS) {
                     return next(res.sendError(['Username is already taken']));
-                } else if (err instanceof ldap.ConstraintViolationError) {
+                } else if (err.code === ldap.LDAP_CONSTRAINT_VIOLATION) {
                     return next(res.sendError([err.message]));
                 } else {
                     return next(res.sendError([err.toString()]));
@@ -584,7 +584,7 @@ module.exports = {
         var _dn = req.customer.dn.toString();
         return req.ufds.client.modify(_dn, changes, function (err) {
             if (err) {
-                if (err instanceof ldap.ConstraintViolationError) {
+                if (err.code === ldap.LDAP_CONSTRAINT_VIOLATION) {
                     return next(res.sendError([err.message]));
                 } else {
                     return next(res.sendError([err.toString()]));
@@ -621,7 +621,7 @@ module.exports = {
         var _dn = req.customer.dn.toString();
         return req.ufds.client.modify(_dn, changes, function (err) {
             if (err) {
-                if (err instanceof ldap.ConstraintViolationError) {
+                if (err.code === ldap.LDAP_CONSTRAINT_VIOLATION) {
                     return next(res.sendError([err.message]));
                 } else {
                     return next(res.sendError([err.toString()]));

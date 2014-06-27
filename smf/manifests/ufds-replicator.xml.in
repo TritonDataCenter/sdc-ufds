@@ -36,6 +36,8 @@
                             value="/opt/smartdc/ufds/build/node/bin:/opt/local/bin:/usr/bin:/usr/sbin:/bin"/>
                     <envvar name="LD_PRELOAD_32"
                             value="/usr/lib/extendedFILE.so.1" />
+                    <envvar name="NODE_TLS_REJECT_UNAUTHORIZED"
+                            value="0" />
                 </method_environment>
             </method_context>
         </exec_method>

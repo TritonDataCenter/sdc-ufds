@@ -17,6 +17,7 @@ var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
 }
+var once = require('once');
 
 var customers = require('./customers');
 var keys = require('./keys');
@@ -54,29 +55,6 @@ function toXml(elm) {
         xml += entitify(elm);
     }
     return (xml);
-}
-
-
-function createUfdsClient(options, callback) {
-    var ufds = new UFDS(options);
-
-    ufds.once('connect', function () {
-        ufds.removeAllListeners('error');
-        ufds.on('error', function (err) {
-            options.log.error(err, 'UFDS disconnected');
-        });
-        ufds.on('connect', function () {
-            options.log.info('UFDS reconnected');
-        });
-        callback(null, ufds);
-    });
-
-    ufds.once('error', function (err) {
-        // You are screwed. It's likely that the bind credentials were bad.
-        // Treat this as fatal and move on:
-        options.log.error({err: err}, 'UFDS connection error');
-        callback(err);
-    });
 }
 
 function processConfigFile(file) {
@@ -227,7 +205,9 @@ function CAPI(config) {
 
 CAPI.prototype.connect = function connect(cb) {
     var self = this;
-    createUfdsClient({
+    cb = once(cb);
+
+    var ufds = new UFDS({
         url: this.config.ufds,
         bindDN: this.config.rootDN,
         bindPassword: this.config.rootPassword,
@@ -235,21 +215,40 @@ CAPI.prototype.connect = function connect(cb) {
             size: 5000,
             expiry: 30
         },
-        maxConnections: 1,
         retry: {
             initialDelay: 1000
         },
         clientTimeout: 120000,
         hidden: true,
-        log: this.log
-    }, function (err, ufds) {
-        if (err) {
-            self.log.error({err: err}, 'CAPI UFDS connect error');
-            cb(err);
-            return;
-        }
-        self.ufds_client = ufds;
+        log: this.log,
+        failFast: true,
+        idleTimeout: 90000
+    });
+    ufds.once('destroy', function (err) {
+        // Give up on life if client exits during setup
+        // (such as for bad credentials)
+        self.log.fatal(err, 'UFDS abort during setup');
+        ufds.close();
+        cb(err);
+    });
 
+    ufds.once('connect', function () {
+        ufds.on('error', function (err) {
+            self.log.err(err, 'UFDS error');
+        });
+        ufds.on('close', function () {
+            self.log.info('UFDS disconnected');
+        });
+        ufds.on('connect', function () {
+            self.log.info('UFDS reconnected');
+        });
+        ufds.removeAllListeners('destroy');
+        ufds.on('destroy', function (err) {
+            self.log.err(err, 'Aborting on UFDS error');
+            self.close();
+        });
+
+        self.ufds_client = ufds;
         self.server.listen(self.config.port, function () {
             self.log.info('CAPI listening on port %d', self.config.port);
             cb();

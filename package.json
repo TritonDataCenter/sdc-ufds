@@ -13,7 +13,7 @@
     "dependencies": {
         "bunyan": "0.22.1",
         "http-signature": "0.9.9",
-        "ldapjs": "git+ssh://git@github.com:mcavage/node-ldapjs.git#aed6d2b043715e1a37c45a6293935c25c023ebce",
+        "ldapjs": "git+ssh://git@github.com:mcavage/node-ldapjs.git#0509dd44c0eb6dad7235df7838bdb05ea31cde14",
         "libuuid": "0.1.2",
         "nopt": "2.1.1",
         "restify": "2.3.4",

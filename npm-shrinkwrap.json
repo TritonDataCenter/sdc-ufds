@@ -119,8 +119,8 @@
     },
     "ldapjs": {
       "version": "0.7.1",
-      "from": "ldapjs@git+ssh://git@github.com:mcavage/node-ldapjs.git#aed6d2b043715e1a37c45a6293935c25c023ebce",
-      "resolved": "git+ssh://git@github.com:mcavage/node-ldapjs.git#aed6d2b043715e1a37c45a6293935c25c023ebce",
+      "from": "ldapjs@git+ssh://git@github.com:mcavage/node-ldapjs.git#0509dd44c0eb6dad7235df7838bdb05ea31cde14",
+      "resolved": "git+ssh://git@github.com:mcavage/node-ldapjs.git#0509dd44c0eb6dad7235df7838bdb05ea31cde14",
       "dependencies": {
         "asn1": {
           "version": "0.2.1",

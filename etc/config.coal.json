@@ -100,7 +100,8 @@
             "account": { "type": "string" },
             "memberpolicy": { "type": "[string]" },
             "memberrole": { "type": "[string]" },
-            "rule": { "type": "[string]" }
+            "rule": { "type": "[string]" },
+            "tenant": { "type": "string" }
         }
     }
 }

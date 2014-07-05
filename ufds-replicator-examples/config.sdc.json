@@ -1,28 +1,28 @@
 {
-	"logLevel": "debug",
-	"checkpointDn": "cn=replicator, datacenter=coal, o=smartdc",
-	"localUfds": {
-		"url": "ldap://127.0.0.1:1389",
-		"maxConnections": 1,
-		"bindDN": "cn=root",
-		"bindCredentials": "secret"
-	},
-	"remotes": [{
-		"url": "ldaps://10.99.99.14",
-		"queries": [
-			"/ou=users, o=smartdc??sub?",
-			"/ou=servers, datacenter=coal, o=smartdc??sub?"
-		],
-		"maxConnections": 1,
-		"bindDN": "cn=root",
-		"bindCredentials": "secret"
-	}, {
-		"url": "ldaps://10.99.99.14",
-		"queries": [
-			"/ou=packages, o=smartdc??sub?"
-		],
-		"maxConnections": 1,
-		"bindDN": "cn=root",
-		"bindCredentials": "secret"
-	}]
+    "logLevel": "debug",
+    "checkpointDn": "cn=replicator, datacenter=macbook, o=smartdc",
+    "localUfds": {
+        "url": "ldap://127.0.0.1:1389",
+        "maxConnections": 1,
+        "bindDN": "cn=root",
+        "bindCredentials": "secret"
+    },
+    "remotes": [{
+        "url": "ldaps://10.99.99.18",
+        "queries": [
+            "/o=smartdc??sub?(objectclass=version)",
+            "/ou=users, o=smartdc??sub?(&(!(objectclass=amonprobe))(!(objectclass=amonprobegroup)))",
+            "/o=smartdc??sub?(objectclass=emailblacklist)",
+            "/ou=groups, o=smartdc??sub?(objectclass=groupofuniquenames)",
+            "/o=smartdc??sub?(objectclass=keyapiprivkey)",
+            "/o=smartdc??sub?(objectclass=region)",
+            "/region=coal, o=smartdc??sub?(|(objectclass=datacenter)(objectclass=network)(objectclass=resolver))"
+        ],
+        "maxConnections": 1,
+        "bindDN": "cn=root",
+        "bindCredentials": "secret",
+        "tlsOptions": {
+            "rejectUnauthorized": false
+        }
+    }]
 }

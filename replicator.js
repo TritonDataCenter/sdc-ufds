@@ -1,14 +1,12 @@
-/*
- * Copyright (c) 2012, Joyent, Inc. All rights reserved.
- */
+// Copyright (c) 2014, Joyent, Inc. All rights reserved.
 
 var path = require('path');
 var fs = require('fs');
 
-var nopt = require('nopt');
+var dashdash = require('dashdash');
 var bunyan = require('bunyan');
 
-var Replicator = require('./lib/ufds-replicator');
+var Replicator = require('./lib/replicator');
 
 
 var LOG = bunyan.createLogger({
@@ -18,125 +16,114 @@ var LOG = bunyan.createLogger({
 });
 
 
-var OPTS = {
-    'file': String,
-    'ufdsFile': String,
-    'help': Boolean
-};
-
-
-var SHORT_OPTS = {
-    'f': ['--file'],
-    'u': ['--ufdsFile'],
-    'h': ['--help']
-};
-
-
-function usage(code, message) {
-    var _opts = '', msg;
-    Object.keys(SHORT_OPTS).forEach(function (k) {
-        var longOpt = SHORT_OPTS[k][0].replace('--', ''),
-            type = OPTS[longOpt].name || 'string';
-
-        if (type && type === 'boolean') {
-            type = '';
+var parser = dashdash.createParser({
+    options: [
+        {
+            names: ['file', 'f'],
+            type: 'string',
+            default: path.join(__dirname, 'etc/replicator.json'),
+            help: 'Replicator config file'
+        },
+        {
+            names: ['ufdsFile', 'u'],
+            type: 'string',
+            default: path.join(__dirname, 'etc/config.json'),
+            help: 'UFDS config file'
+        },
+        {
+            names: ['help', 'h'],
+            type: 'bool',
+            help: 'Print this help and exit.'
         }
-        type = type.toLowerCase();
+    ]
+});
 
-        _opts += ' [--' + longOpt + ' ' + type + ']';
-    });
-
-    msg = (message ? message + '\n' : '') +
-        'usage: ' + path.basename(process.argv[1]) + _opts;
-
-    console.error(msg);
+function usage(code, msg) {
+    console.error((msg ? msg + '\n' : '') +
+        'usage: ' + path.basename(process.argv[1]) +
+        ' [options]\n\n' + parser.help());
     process.exit(code);
 }
 
 
-function errorAndExit(err, message) {
-    LOG.fatal({err: err}, message);
-    process.exit(1);
-}
-
-
-function processConfig() {
-    var _config,
-        parsed = nopt(OPTS, SHORT_OPTS, process.argv, 2),
-        file = parsed.file || path.join(__dirname, 'etc/replicator.json'),
-        ufdsFile = parsed.ufdsFile || path.join(__dirname, 'etc/config.json');
+function loadConfig() {
+    var parsed = parser.parse(process.argv);
+    var config;
 
     if (parsed.help) {
         usage(0);
     }
 
-    LOG.info({file: file}, 'Processing configuration file');
+    LOG.info({file: parsed.file}, 'Processing configuration file');
 
     try {
-        _config = JSON.parse(fs.readFileSync(file, 'utf8'));
-
+        config = JSON.parse(fs.readFileSync(parsed.file, 'utf8'));
     } catch (e) {
-        console.error('Unable to parse configuration file: ' + e.message);
+        LOG.fatal('Unable to parse configuration file: ' + e.message);
         process.exit(1);
     }
 
     try {
-        var ufdsConfigObj = JSON.parse(fs.readFileSync(ufdsFile, 'utf8'));
-        if (ufdsConfigObj.moray.version === undefined) {
+        var ufdsConfig = JSON.parse(fs.readFileSync(parsed.ufdsFile, 'utf8'));
+        if (ufdsConfig.moray.version === undefined) {
             console.error('Unable to find local ufds version.');
             process.exit(1);
         }
-        var localVersion = parseInt(ufdsConfigObj.moray.version, 10);
+        var localVersion = parseInt(ufdsConfig.moray.version, 10);
         LOG.info({
             version: localVersion
         }, 'found local ufds version');
-        _config.localUfdsVersion = localVersion;
+        config.localUfdsVersion = localVersion;
     } catch (e) {
         console.error('Unable to parse ufds configuration file: ' + e.message);
         process.exit(1);
     }
 
-    LOG.level(_config.logLevel || 'info');
+    LOG.level(config.logLevel || 'info');
 
-    LOG.debug('config processed: %j', _config);
-    _config.log = LOG;
-    return _config;
+    LOG.debug(config, 'config processed');
+    config.log = LOG;
+    return config;
 }
 
 
 function main() {
-    var config = processConfig();
-    var rep;
+    var config = loadConfig();
 
-    rep = new Replicator(config);
-    rep.init();
-
-
-    rep.once('started', function () {
-        LOG.info('Replicator has started!');
+    var rep = new Replicator({
+        log: LOG,
+        ldapConfig: config.localUfds,
+    });
+    rep.connect();
+    config.remotes.forEach(function (remote) {
+        rep.addRemote(remote);
     });
 
-
-    rep.on('caughtup', function (id, cn) {
-        LOG.info('Replicator %d has caught up with UFDS at changenumber %s',
-            id, cn);
-    });
-
-
-    rep.once('stopped', function () {
-        LOG.info('Replicator has stopped!');
-        process.exit(0);
-    });
-
-
-    process.on('SIGINT', function () {
-        rep.stop();
-    });
+//   rep = new Replicator(config);
+//   rep.init();
+//
+//
+//   rep.once('started', function () {
+//       LOG.info('Replicator has started!');
+//   });
+//
+//
+//   rep.on('caughtup', function (id, cn) {
+//       LOG.info('Replicator %d has caught up with UFDS at changenumber %s',
+//           id, cn);
+//   });
+//
+//
+//   rep.once('stopped', function () {
+//       LOG.info('Replicator has stopped!');
+//       process.exit(0);
+//   });
+//
+//
+   process.on('SIGINT', function () {
+       rep.destroy();
+   });
 }
 
-process.on('uncaughtException', function (err) {
-    console.log('UncaughtException happened.');
-    LOG.fatal({err: err}, 'uncaughtException');
-});
 
 main();

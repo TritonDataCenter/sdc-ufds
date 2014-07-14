@@ -5,6 +5,7 @@ var fs = require('fs');
 
 var dashdash = require('dashdash');
 var bunyan = require('bunyan');
+var vasync = require('vasync');
 
 var Replicator = require('./lib/replicator');
 
@@ -92,37 +93,24 @@ function main() {
 
     var rep = new Replicator({
         log: LOG,
-        ldapConfig: config.localUfds,
+        ldapConfig: config.localUfds
     });
-    rep.connect();
-    config.remotes.forEach(function (remote) {
-        rep.addRemote(remote);
+    vasync.forEachPipeline({
+        func: function (item, cb) {
+            rep.addRemote(item, cb);
+        },
+        inputs: config.remotes
+    }, function (err, res) {
+        if (err) {
+            LOG.fatal({err: err}, 'unable to initialize remotes');
+            process.exit(1);
+        }
+        rep.start();
     });
 
-//   rep = new Replicator(config);
-//   rep.init();
-//
-//
-//   rep.once('started', function () {
-//       LOG.info('Replicator has started!');
-//   });
-//
-//
-//   rep.on('caughtup', function (id, cn) {
-//       LOG.info('Replicator %d has caught up with UFDS at changenumber %s',
-//           id, cn);
-//   });
-//
-//
-//   rep.once('stopped', function () {
-//       LOG.info('Replicator has stopped!');
-//       process.exit(0);
-//   });
-//
-//
-   process.on('SIGINT', function () {
-       rep.destroy();
-   });
+    process.on('SIGINT', function () {
+        rep.destroy();
+    });
 }
 
 

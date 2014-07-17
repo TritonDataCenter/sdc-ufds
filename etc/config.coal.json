@@ -26,7 +26,9 @@
         "schema": {
             "changetype": { "type": "string"},
             "changetime": { "type": "number" },
-            "targetdn": { "type": "string"}
+            "targetdn": { "type": "string"},
+            "replchangenumber": { "type": "number" },
+            "replurl": { "type": "string"}
         }
     },
     "o=smartdc": {

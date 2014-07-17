@@ -14,7 +14,7 @@
         "asn1": "0.2.1",
         "bunyan": "0.23.1",
         "http-signature": "0.9.9",
-        "ldapjs": "git+ssh://git@github.com:mcavage/node-ldapjs.git#48bd7bfe8215fd7eb113770f37de99a1858624d6",
+        "ldapjs": "git+ssh://git@github.com:mcavage/node-ldapjs.git#59bebe537bba85df06027f3230b418f7e97b933c",
         "libuuid": "0.1.2",
         "nopt": "2.1.1",
         "dashdash": "1.6.0",

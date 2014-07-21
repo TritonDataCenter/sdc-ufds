@@ -390,53 +390,8 @@ test('changelog search', function (t) {
 });
 
 
-test('changelog count', function (t) {
-    CLIENT.search('cn=changelogcount', {
-        filter: '(&(objectclass=*))'
-    }, function (err, res) {
-        t.ifError(err, 'changelogcount search error');
-
-        res.on('searchEntry', function (entry) {
-            t.ok(entry.attributes);
-            t.ok(entry.attributes.some(function (attr) {
-                return (attr.type === 'count');
-            }), 'count attr present');
-        });
-
-        res.on('error', function (error) {
-            t.ifError(error);
-        });
-
-        res.on('end', function (result) {
-            t.done();
-        });
-    });
-});
-
-
-test('latestchangenumber', function (t) {
-    CLIENT.search('cn=latestchangenumber', {
-        filter: '(&(objectclass=*))'
-    }, function (err, res) {
-        t.ifError(err, 'latestchangenumber search error');
-
-        res.on('searchEntry', function (entry) {
-            t.ok(entry.attributes);
-            t.ok(entry.attributes.some(function (attr) {
-                return (attr.type === 'count');
-            }), 'count attr present');
-        });
-
-        res.on('error', function (error) {
-            t.ifError(error);
-            t.done();
-        });
-
-        res.on('end', function (result) {
-            t.done();
-        });
-    });
-});
+//test('latestchangenumber', function (t)
+// TODO: Switch to server-side-sort method test
 
 
 // CAPI-354: sizeLimit:

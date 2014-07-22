@@ -60,7 +60,7 @@ function toXml(elm) {
 function processConfigFile(file) {
     var config = JSON.parse(fs.readFileSync(file, 'utf8'));
     if (!config.ufds) {
-        config.ufds = 'ldaps://127.0.0.1:1391';
+        config.ufds = 'ldaps://127.0.0.1:636';
     }
     if (!config.logLevel) {
         config.logLevel = 'info';

@@ -429,6 +429,29 @@ test('search sizeLimit', function (t) {
     });
 });
 
+
+test('search server uuid', function (t) {
+    var opts = {
+        scope: 'base'
+    };
+    var count = 0;
+    CLIENT.search('cn=uuid', opts, function (err, res) {
+        t.ifError(err, 'send error');
+        res.on('error', function (err2) {
+            t.ifError(err2, 'search error');
+        });
+        res.on('searchEntry', function (entry) {
+            var obj = entry.object;
+            t.ok(obj['uuid']);
+            count++;
+        });
+        res.on('end', function () {
+            t.equal(count, 1);
+            t.done();
+        });
+    });
+});
+
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {
         t.ifError(err);

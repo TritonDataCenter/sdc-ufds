@@ -162,8 +162,7 @@ module.exports = {
         if (CONFIG.host !== '127.0.0.1') {
             return cb();
         }
-        server.server.close();
-        server.moray.close();
+        server.close();
         cb();
     },
 

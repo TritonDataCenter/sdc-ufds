@@ -19,7 +19,7 @@
         "dns": {
             "resolvers": ["10.99.99.11"]
         },
-        "version": 18
+        "version": 19
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -27,8 +27,8 @@
             "changetype": { "type": "string"},
             "changetime": { "type": "number" },
             "targetdn": { "type": "string"},
-            "replchangenumber": { "type": "number" },
-            "replurl": { "type": "string"}
+            "srcchangenumber": { "type": "number" },
+            "srcuuid": { "type": "string"}
         }
     },
     "o=smartdc": {

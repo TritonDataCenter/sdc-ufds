@@ -12,10 +12,13 @@ function SdcReplCheckpoint() {
     Validator.call(this, {
         name: 'sdcreplcheckpoint',
         required: {
-            uid: 1,
             changenumber: 1,
             url: 1,
             query: 0
+        },
+        optional: {
+            uid: 1,
+            uuid: 1
         },
         strict: true
     });

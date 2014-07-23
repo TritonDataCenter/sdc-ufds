@@ -1,5 +1,5 @@
 {
-    "name": "ufds",
+    "name": "ufds-server",
     "version": "7.1.1",
     "repository": {
         "type": "git",

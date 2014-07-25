@@ -101,6 +101,51 @@ test('add sub-user', function (t) {
     });
 });
 
+function get(dn, cb) {
+    var obj;
+    CLIENT.search(dn, {
+        scope: 'base',
+        filter: '(objectclass=*)'
+    }, function (err, res) {
+        res.on('searchEntry', function (entry) {
+            obj = entry.object;
+        });
+
+        res.on('error', function (error) {
+            return cb(error);
+        });
+
+        res.on('end', function (result) {
+            return cb(null, obj);
+        });
+    });
+}
+
+test('authenticate user (compare)', function (t) {
+    var login;
+    CLIENT.compare(SUB_USER_DN, 'userpassword', 'secret123',
+        function (err, ok) {
+        t.ifError(err);
+        t.ok(ok);
+        get(SUB_USER_DN, function (err2, obj) {
+            t.ifError(err2);
+            login = obj.login;
+            // Now with wrong password to make sure login attempt didn't mess
+            // the user entry:
+            CLIENT.compare(SUB_USER_DN, 'userpassword', 'wrong123',
+                function (err3, ok2) {
+                t.ifError(err3);
+                t.ok(!ok2);
+                get(SUB_USER_DN, function (err4, obj2) {
+                    t.ifError(err4);
+                    t.equal(login, obj2.login);
+                    t.done();
+                });
+            });
+        });
+    });
+});
+
 
 test('add sub-user (duplicated login outside account)', function (t) {
     // Should be perfectly valid

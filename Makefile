@@ -121,7 +121,6 @@ release: all docs
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \
 		$(ROOT)/package.json \
-		$(ROOT)/npm-shrinkwrap.json \
 		$(ROOT)/schema \
 		$(ROOT)/sapi_manifests \
 		$(ROOT)/smf \

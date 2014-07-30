@@ -1,8 +1,6 @@
 // Copyright 2014 Joyent, Inc.  All rights reserved.
-//
-// See helper.js for customization options.
-//
 
+var test = require('tape');
 var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
@@ -10,9 +8,6 @@ function uuid() {
 var util = require('util'),
     sprintf = util.format;
 
-if (require.cache[__dirname + '/helper.js']) {
-    delete require.cache[__dirname + '/helper.js'];
-}
 var helper = require('./helper.js');
 
 
@@ -29,8 +24,6 @@ var DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
 var DN_FMT = 'login=%s, ' + SUFFIX;
 var USER_DN = sprintf(DN_FMT, DUP_LOGIN);
 
-var test = helper.test;
-
 
 
 ///--- Tests
@@ -44,7 +37,7 @@ test('setup', function (t) {
             t.ifError(err2);
             t.ok(client);
             CLIENT = client;
-            t.done();
+            t.end();
         });
     });
 });
@@ -74,7 +67,7 @@ test('add fixtures', function (t) {
                     t.ifError(err2);
                 }
             }
-            t.done();
+            t.end();
         });
     });
 });
@@ -84,7 +77,7 @@ test('bind invalid password', function (t) {
     CLIENT.bind(USER_DN, 'secre', function (err) {
         t.ok(err);
         t.equal(err.name, 'InvalidCredentialsError');
-        t.done();
+        t.end();
     });
 });
 
@@ -93,7 +86,7 @@ test('bind non-existent entry', function (t) {
     CLIENT.bind('cn=child, ' + SUFFIX, 'foo', function (err) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
-        t.done();
+        t.end();
     });
 });
 
@@ -101,7 +94,7 @@ test('bind non-existent entry', function (t) {
 test('bind success', function (t) {
     CLIENT.bind(USER_DN, 'secret123', function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -110,7 +103,7 @@ test('authorize ok', function (t) {
     CLIENT.compare(USER_DN, 'login', DUP_LOGIN, function (err, matched) {
         t.ifError(err);
         t.ok(matched);
-        t.done();
+        t.end();
     });
 });
 
@@ -119,7 +112,7 @@ test('authorization denied', function (t) {
     CLIENT.compare(SUFFIX, 'o', 'smartdc', function (err, matched) {
         t.ok(err);
         t.equal(err.name, 'InsufficientAccessRightsError');
-        t.done();
+        t.end();
     });
 });
 
@@ -147,11 +140,11 @@ test('unbound client should not throw exceptions', function (t) {
                     t.ok(error);
                     t.equal(error.name, 'InsufficientAccessRightsError');
                     unboundClient.socket.destroy();
-                    t.done();
+                    t.end();
                 });
 
                 res.on('end', function (result) {
-                    t.done();
+                    t.end();
                 });
             });
 
@@ -167,7 +160,7 @@ test('teardown', function (t) {
             t.ifError(err2);
             helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
-                t.done();
+                t.end();
             });
         });
     });

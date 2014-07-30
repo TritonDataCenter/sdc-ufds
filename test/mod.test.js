@@ -1,24 +1,17 @@
 // Copyright 2014 Joyent, Inc.  All rights reserved.
-//
-// See helper.js for customization options.
-//
 
+var test = require('tape');
 var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
 }
 var util = require('util');
 
-if (require.cache[__dirname + '/helper.js']) {
-    delete require.cache[__dirname + '/helper.js'];
-}
 var helper = require('./helper.js');
 
 
 
 ///--- Globals
-
-var test = helper.test;
 
 var CLIENT;
 var SERVER;
@@ -93,7 +86,7 @@ test('setup', function (t) {
             t.ifError(err2);
             t.ok(client);
             CLIENT = client;
-            t.done();
+            t.end();
         });
     });
 });
@@ -113,7 +106,7 @@ test('add fixtures', function (t) {
 
         CLIENT.add(USER_DN, USER, function (err2) {
             t.ifError(err2);
-            t.done();
+            t.end();
         });
     });
 });
@@ -135,7 +128,7 @@ test('modify add ok', function (t) {
             change.modification.pets.forEach(function (pet) {
                 t.ok(entry.pets.indexOf(pet) !== -1);
             });
-            t.done();
+            t.end();
         });
     });
 });
@@ -155,7 +148,7 @@ test('modify replace ok', function (t) {
             t.ifError(err2);
             t.ok(entry);
             t.equal(entry.pets, change.modification.pets);
-            t.done();
+            t.end();
         });
     });
 });
@@ -175,7 +168,7 @@ test('modify delete ok', function (t) {
             t.ifError(err2);
             t.ok(entry);
             t.ok(!entry.pets);
-            t.done();
+            t.end();
         });
     });
 });
@@ -191,7 +184,7 @@ test('modify non-existent entry', function (t) {
     CLIENT.modify('cn=child1,' + SUFFIX, change, function (err) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
-        t.done();
+        t.end();
     });
 });
 
@@ -206,7 +199,7 @@ test('modify sdcPerson UUID', function (t) {
     CLIENT.modify(USER_DN, change, function (err) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
-        t.done();
+        t.end();
     });
 });
 
@@ -244,7 +237,7 @@ test('modify sub-user login', function (t) {
                     t.ok(matches2, 'sub-user compare matches');
                     CLIENT.del(dn, function (err3) {
                         t.ifError(err3, 'Delete sub-user error');
-                        t.done();
+                        t.end();
                     });
                 });
             });
@@ -256,7 +249,7 @@ test('modify sub-user login', function (t) {
 test('remove fixture', function (t) {
     CLIENT.del(USER_DN, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -268,7 +261,7 @@ test('teardown', function (t) {
             t.ifError(err2);
             helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
-                t.done();
+                t.end();
             });
         });
     });

@@ -1,16 +1,11 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
-//
-// See helper.js for customization options.
-//
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 
+var test = require('tape');
 var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
 }
 
-if (require.cache[__dirname + '/helper.js']) {
-    delete require.cache[__dirname + '/helper.js'];
-}
 var helper = require('./helper.js');
 
 
@@ -22,8 +17,6 @@ var SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'login=%s, ' + SUFFIX;
 var O = SUFFIX.split('=')[1];
-
-var test = helper.test;
 
 
 
@@ -38,7 +31,7 @@ test('setup', function (t) {
             t.ifError(err2);
             t.ok(client);
             CLIENT = client;
-            t.done();
+            t.end();
         });
     });
 });
@@ -55,7 +48,7 @@ test('add fixtures', function (t) {
                 t.ifError(err);
             }
         }
-        t.done();
+        t.end();
     });
 });
 
@@ -64,7 +57,7 @@ test('compare true', function (t) {
     CLIENT.compare(SUFFIX, 'o', O, function (err, matched) {
         t.ifError(err);
         t.ok(matched);
-        t.done();
+        t.end();
     });
 });
 
@@ -73,7 +66,7 @@ test('compare false', function (t) {
     CLIENT.compare(SUFFIX, 'o', 'foo', function (err, matched) {
         t.ifError(err);
         t.equal(matched, false);
-        t.done();
+        t.end();
     });
 });
 
@@ -82,7 +75,7 @@ test('compare non-existent attribute', function (t) {
     CLIENT.compare(SUFFIX, uuid(), 'foo', function (err) {
         t.ok(err);
         t.equal(err.name, 'NoSuchAttributeError');
-        t.done();
+        t.end();
     });
 });
 
@@ -91,7 +84,7 @@ test('compare non-existent entry', function (t) {
     CLIENT.compare('cn=child,' + SUFFIX, 'foo', 'bar', function (err) {
         t.ok(err);
         t.ok(err.name, 'NoSuchObjectError');
-        t.done();
+        t.end();
     });
 });
 
@@ -103,7 +96,7 @@ test('teardown', function (t) {
             t.ifError(err2);
             helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
-                t.done();
+                t.end();
             });
         });
     });

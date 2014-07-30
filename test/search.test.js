@@ -1,8 +1,6 @@
 // Copyright 2014 Joyent, Inc.  All rights reserved.
-//
-// See helper.js for customization options.
-//
 
+var test = require('tape');
 var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
@@ -18,8 +16,6 @@ var ldap = require('ldapjs');
 
 
 ///--- Globals
-
-var test = helper.test;
 
 var CLIENT;
 var SERVER;
@@ -143,7 +139,7 @@ test('setup', function (t) {
             t.ifError(err2);
             t.ok(client);
             CLIENT = client;
-            t.done();
+            t.end();
         });
     });
 });
@@ -162,7 +158,7 @@ test('add fixtures', function (t) {
         }
         load(function (err2) {
             t.ifError(err2);
-            t.done();
+            t.end();
         });
     });
 });
@@ -178,7 +174,7 @@ test('search base objectclass=*', function (t) {
         Object.keys(USERS[dn]).forEach(function (attr) {
             t.equal(USERS[dn][attr], results[0].attributes[attr]);
         });
-        t.done();
+        t.end();
 
     });
 });
@@ -195,7 +191,7 @@ test('search base eq filter ok', function (t) {
         Object.keys(USERS[dn]).forEach(function (attr) {
             t.equal(USERS[dn][attr], results[0].attributes[attr]);
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -206,7 +202,7 @@ test('search base case sensitive search filter ok', function (t) {
         function (err, results, count) {
         t.ifError(err);
         t.equal(count, 0);
-        t.done();
+        t.end();
     });
 });
 
@@ -223,7 +219,7 @@ test('search base caseIgnoreMatch filter ok', function (t) {
         Object.keys(USERS[dn]).forEach(function (attr) {
             t.equal(USERS[dn][attr], results[0].attributes[attr]);
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -233,7 +229,7 @@ test('search base eq filter no match', function (t) {
     search(dn, sprintf('(login=%s_child2)', LOGIN), function (err, _, count) {
         t.ifError(err);
         t.equal(count, 0);
-        t.done();
+        t.end();
     });
 });
 
@@ -247,7 +243,7 @@ test('search sub substr filter ok', function (t) {
                 t.equal(USERS[r.dn][attr], r.attributes[attr]);
             });
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -262,7 +258,7 @@ test('search sub substr caseIgnoreSubstringsMatch filter ok', function (t) {
                 t.equal(USERS[r.dn][attr], r.attributes[attr]);
             });
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -271,7 +267,7 @@ test('search sub substr case sensitive filter ok', function (t) {
     search(SUFFIX, '(login=A*c*d*)', 'sub', function (err, results, count) {
         t.ifError(err);
         t.equal(count, 0);
-        t.done();
+        t.end();
     });
 });
 
@@ -280,7 +276,7 @@ test('search sub wrong base', function (t) {
     search('cn=foo, ' + SUFFIX, '(login=*)', 'sub', function (err, _, count) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
-        t.done();
+        t.end();
     });
 });
 
@@ -289,7 +285,7 @@ test('search sub filter no match', function (t) {
     search(SUFFIX, '(!(login=*c*))', 'sub', function (err, _, count) {
         t.ifError(err);
         t.equal(count, 0);
-        t.done();
+        t.end();
     });
 });
 
@@ -304,7 +300,7 @@ test('search sub filter ge ok', function (t) {
                 t.equal(USERS[r.dn][attr], r.attributes[attr]);
             });
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -319,7 +315,7 @@ test('search sub filter le ok', function (t) {
                 t.equal(USERS[r.dn][attr], r.attributes[attr]);
             });
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -334,7 +330,7 @@ test('search sub filter and ok', function (t) {
                 t.equal(USERS[r.dn][attr], r.attributes[attr]);
             });
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -350,7 +346,7 @@ test('search sub filter or ok', function (t) {
                 t.equal(USERS[r.dn][attr], r.attributes[attr]);
             });
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -361,7 +357,7 @@ test('search sub filter compound ok', function (t) {
     search(SUFFIX, filter, 'sub', function (err, _, count) {
         t.ifError(err);
         t.equal(count, 0);
-        t.done();
+        t.end();
     });
 });
 
@@ -384,7 +380,7 @@ test('changelog search', function (t) {
 
         res.on('end', function (result) {
             t.equal(retrieved, 5);
-            t.done();
+            t.end();
         });
     });
 });
@@ -419,12 +415,12 @@ test('search sizeLimit', function (t) {
 
         res.on('error', function (error) {
             t.ifError(error);
-            t.done();
+            t.end();
         });
 
         res.on('end', function (result) {
             t.equal(retrieved, opts.sizeLimit);
-            t.done();
+            t.end();
         });
     });
 });
@@ -459,7 +455,7 @@ test('teardown', function (t) {
             t.ifError(err2);
             helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
-                t.done();
+                t.end();
             });
         });
     });

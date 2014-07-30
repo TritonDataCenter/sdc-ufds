@@ -1,16 +1,11 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
-//
-// See helper.js for customization options.
-//
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 
+var test = require('tape');
 var libuuid = require('libuuid');
 function uuid() {
     return (libuuid.create());
 }
 
-if (require.cache[__dirname + '/helper.js']) {
-    delete require.cache[__dirname + '/helper.js'];
-}
 var helper = require('./helper.js');
 
 
@@ -23,8 +18,6 @@ var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'login=%s, ' + SUFFIX;
 var O = SUFFIX.split('=')[1];
 
-var test = helper.test;
-
 ///--- Tests
 
 test('setup', function (t) {
@@ -36,7 +29,7 @@ test('setup', function (t) {
             t.ifError(err2);
             t.ok(client);
             CLIENT = client;
-            t.done();
+            t.end();
         });
     });
 });
@@ -68,7 +61,7 @@ test('add fixtures', function (t) {
                 }
 
                 if (++finished === 2) {
-                    t.done();
+                    t.end();
                 }
             });
         }
@@ -79,7 +72,7 @@ test('add fixtures', function (t) {
 test('delete ok', function (t) {
     CLIENT.del('ou=child1,' + SUFFIX, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -88,7 +81,7 @@ test('delete non-existent entry', function (t) {
     CLIENT.del('cn=child1,' + SUFFIX, function (err) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
-        t.done();
+        t.end();
     });
 });
 
@@ -97,7 +90,7 @@ test('delete non-leaf entry', function (t) {
     CLIENT.del(SUFFIX, function (err) {
         t.ok(err);
         t.equal(err.name, 'NotAllowedOnNonLeafError');
-        t.done();
+        t.end();
     });
 });
 
@@ -109,7 +102,7 @@ test('teardown', function (t) {
             t.ifError(err2);
             helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
-                t.done();
+                t.end();
             });
         });
     });

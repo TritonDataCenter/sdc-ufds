@@ -18,7 +18,7 @@ NAME		:= ufds
 #
 # Tools
 #
-NODEUNIT	:= ./node_modules/.bin/nodeunit
+ISTANBUL	:= ./node_modules/.bin/istanbul
 
 #
 # Files
@@ -38,7 +38,7 @@ SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 			smf/manifests/ufds-capi-8084.xml.in \
 			smf/manifests/ufds-replicator.xml.in
 
-CLEAN_FILES	+= node_modules cscope.files
+CLEAN_FILES	+= node_modules cscope.files coverage
 
 NODE_PREBUILT_VERSION=v0.10.26
 # The prebuilt sdcnode version we want. See
@@ -74,10 +74,10 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: haproxy $(SMF_MANIFESTS) | $(NODEUNIT) $(REPO_DEPS) sdc-scripts
+all: haproxy $(SMF_MANIFESTS) | $(ISTANBUL) $(REPO_DEPS) sdc-scripts
 	$(NPM) install && $(NPM) update
 
-$(NODEUNIT): | $(NPM_EXEC)
+$(ISTANBUL): | $(NPM_EXEC)
 	$(NPM) install && $(NPM) update
 
 # Build HAProxy when in SunOS
@@ -94,44 +94,9 @@ endif
 
 CLEAN_FILES += deps/haproxy/haproxy
 
-.PHONY: add_test
-add_test: $(NODEUNIT)
-	$(NODEUNIT) test/add.test.js --reporter tap
-
-.PHONY: bind_test
-bind_test: $(NODEUNIT)
-	$(NODEUNIT) test/bind.test.js --reporter tap
-
-.PHONY: compare_test
-compare_test: $(NODEUNIT)
-	$(NODEUNIT) test/compare.test.js --reporter tap
-
-.PHONY: del_test
-del_test: $(NODEUNIT)
-	$(NODEUNIT) test/del.test.js --reporter tap
-
-.PHONY: mod_test
-mod_test: $(NODEUNIT)
-	$(NODEUNIT) test/mod.test.js --reporter tap
-
-.PHONY: search_test
-search_test: $(NODEUNIT)
-	$(NODEUNIT) test/search.test.js --reporter tap
-
-.PHONY: pwdpolicy_test
-pwdpolicy_test: $(NODEUNIT)
-	$(NODEUNIT) test/pwdpolicy.test.js --reporter tap
-
-.PHONY: account_test
-account_test: $(NODEUNIT)
-	$(NODEUNIT) test/account.test.js --reporter tap
-
-.PHONY: capi_test
-capi_test: $(NODEUNIT)
-	$(NODEUNIT) test/capi/customers.test.js --reporter tap
-
 .PHONY: test
-test: add_test bind_test compare_test del_test mod_test search_test pwdpolicy_test account_test capi_test
+test: $(ISTANBUL)
+	$(ISTANBUL) cover --print none test/test.js
 
 .PHONY: pkg
 pkg:
@@ -156,7 +121,6 @@ release: all docs
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \
 		$(ROOT)/package.json \
-		$(ROOT)/npm-shrinkwrap.json \
 		$(ROOT)/schema \
 		$(ROOT)/sapi_manifests \
 		$(ROOT)/smf \

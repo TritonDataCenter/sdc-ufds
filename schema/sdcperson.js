@@ -59,7 +59,8 @@ function SDCPerson() {
             approved_for_provisioning: 1,
             created_at: 1,
             updated_at: 1,
-            tenant: 1
+            tenant: 1,
+            disabled: 1
         }
     });
 }

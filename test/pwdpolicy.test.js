@@ -1,8 +1,6 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
-//
-// See helper.js for customization options.
-//
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 
+var test = require('tape');
 var ldap = require('ldapjs');
 var util = require('util');
 var sprintf = util.format;
@@ -11,9 +9,6 @@ function uuid() {
     return (libuuid.create());
 }
 
-if (require.cache[__dirname + '/helper.js']) {
-    delete require.cache[__dirname + '/helper.js'];
-}
 var helper = require('./helper.js');
 
 
@@ -25,7 +20,6 @@ var SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'uuid=%s, ' + SUFFIX;
 
-var test = helper.test;
 var IMPORTED, NOT_IMPORTED;
 
 var pwdPolicy = {
@@ -99,7 +93,7 @@ test('setup', function (t) {
             t.ifError(err2);
             t.ok(client);
             CLIENT = client;
-            t.done();
+            t.end();
         });
     });
 });
@@ -129,7 +123,7 @@ test('CAPI Imported sdcPerson entry', function (t) {
             t.ok(user._salt.length !== 29);
             IMPORTED = user;
             t.ok(user.pwdchangedtime);
-            t.done();
+            t.end();
         });
     });
 });
@@ -140,7 +134,7 @@ test('Authenticate imported sdcPerson entry', function (t) {
     CLIENT.compare(dn, 'userpassword', 'joypass123', function (err, ok) {
         t.ifError(err);
         t.ok(ok);
-        t.done();
+        t.end();
     });
 });
 
@@ -171,7 +165,7 @@ test('UFDS new sdcPerson entry', function (t) {
             }
             t.ok(user.pwdchangedtime);
             NOT_IMPORTED = user;
-            t.done();
+            t.end();
         });
     });
 });
@@ -182,7 +176,7 @@ test('Authenticate new sdcPerson entry', function (t) {
     CLIENT.compare(dn, 'userpassword', 'joypass123', function (err, ok) {
         t.ifError(err);
         t.ok(ok);
-        t.done();
+        t.end();
     });
 });
 
@@ -210,7 +204,7 @@ test('Update CAPI imported entry', function (t) {
             t.ok(user.pwdchangedtime);
             t.ok(user.pwdchangedtime > IMPORTED.pwdchangedtime);
             t.ok(user.pwdendtime);
-            t.done();
+            t.end();
         });
     });
 });
@@ -221,7 +215,7 @@ test('Authenticate imported sdcPerson entry after update', function (t) {
     CLIENT.compare(dn, 'userpassword', '123joyent', function (err, ok) {
         t.ifError(err);
         t.ok(ok);
-        t.done();
+        t.end();
     });
 });
 
@@ -249,7 +243,7 @@ test('Update not imported entry', function (t) {
             t.ok(user.pwdchangedtime);
             t.ok(user.pwdchangedtime > IMPORTED.pwdchangedtime);
             t.ok(user.pwdendtime);
-            t.done();
+            t.end();
         });
     });
 });
@@ -260,7 +254,7 @@ test('Authenticate not imported sdcPerson entry after update', function (t) {
     CLIENT.compare(dn, 'userpassword', '123joyent', function (err, ok) {
         t.ifError(err);
         t.ok(ok);
-        t.done();
+        t.end();
     });
 });
 
@@ -283,7 +277,7 @@ test('Password too short not allowed', function (t) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
         t.equal(err.message, 'passwordTooShort');
-        t.done();
+        t.end();
     });
 });
 
@@ -311,7 +305,7 @@ test('Passwords must contain alphanumeric chars', function (t) {
             t.ok(er2);
             t.equal(er2.name, 'ConstraintViolationError');
             t.equal(er2.message, 'insufficientPasswordQuality');
-            t.done();
+            t.end();
         });
     });
 });
@@ -339,7 +333,7 @@ test('Updated passwords quality', function (t) {
                 t.ok(er3);
                 t.equal(er3.name, 'ConstraintViolationError');
                 t.equal(er3.message, 'insufficientPasswordQuality');
-                t.done();
+                t.end();
             });
         });
     });
@@ -391,7 +385,7 @@ test('Password history', function (t) {
                                     }
                                     t.equal(pwdPolicy.pwdinhistory,
                                         user.pwdhistory.length);
-                                    t.done();
+                                    t.end();
                                 });
                             });
                         });
@@ -437,7 +431,7 @@ test('Expired password', function (t) {
                         function (er5, ok2, res2) {
                         t.ifError(er5);
                         t.ok(ok2);
-                        t.done();
+                        t.end();
                     });
                 });
             });
@@ -500,7 +494,7 @@ test('Failed login attempts', function (t) {
                                                         t.ifError(e5);
                                                         t.ok(!u5.pwdfailuretime);
                                                         t.ok(!u5.pwdaccountlockedtime);
-                                                        t.done();
+                                                        t.end();
                                                     });
                                                 });
                                             });
@@ -525,7 +519,7 @@ test('teardown', function (t) {
             t.ifError(err2);
             helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
-                t.done();
+                t.end();
             });
         });
     });

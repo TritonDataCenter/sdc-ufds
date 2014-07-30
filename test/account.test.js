@@ -5,6 +5,7 @@
  * See helper.js for customization options.
  */
 
+var test = require('tape');
 var ldap = require('ldapjs');
 var util = require('util'),
     sprintf = util.format;
@@ -13,9 +14,6 @@ function uuid() {
     return (libuuid.create());
 }
 
-if (require.cache[__dirname + '/helper.js']) {
-    delete require.cache[__dirname + '/helper.js'];
-}
 var helper = require('./helper.js');
 
 
@@ -32,8 +30,6 @@ var SUB_DN_FMT = 'uuid=%s, uuid=%s, ' + SUFFIX;
 var POLICY_DN_FMT = 'policy-uuid=%s, uuid=%s, ' + SUFFIX;
 var ROLE_DN_FMT = 'role-uuid=%s, uuid=%s, ' + SUFFIX;
 var RESOURCE_DN_FMT = 'resource-uuid=%s, uuid=%s, ' + SUFFIX;
-
-var test = helper.test;
 
 var DUP_ID = uuid();
 var DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
@@ -55,7 +51,7 @@ test('setup', function (t) {
             t.ifError(err2);
             t.ok(client);
             CLIENT = client;
-            t.done();
+            t.end();
         });
     });
 });
@@ -71,7 +67,7 @@ test('add user', function (t) {
     };
     CLIENT.add(DUP_DN, entry, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -96,7 +92,7 @@ test('add sub-user', function (t) {
             t.equal(obj.account, DUP_ID);
             t.equal(obj.login, login);
             t.notEqual(-1, obj.objectclass.indexOf('sdcaccountuser'));
-            t.done();
+            t.end();
         });
     });
 });
@@ -139,7 +135,7 @@ test('authenticate user (compare)', function (t) {
                 get(SUB_USER_DN, function (err4, obj2) {
                     t.ifError(err4);
                     t.equal(login, obj2.login);
-                    t.done();
+                    t.end();
                 });
             });
         });
@@ -166,7 +162,7 @@ test('add sub-user (duplicated login outside account)', function (t) {
             function (err2, matches) {
             t.ifError(err2);
             t.ok(matches, 'sub-user compare matches');
-            t.done();
+            t.end();
         });
     });
 });
@@ -188,7 +184,7 @@ test('add sub-user (duplicated login within account)', function (t) {
     CLIENT.add(dn, entry, function (err) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
-        t.done();
+        t.end();
     });
 });
 
@@ -213,7 +209,7 @@ test('add policy', function (t) {
         helper.get(CLIENT, _1ST_POLICY_DN, function (err2, obj) {
             t.ifError(err2);
             t.ok(obj);
-            t.done();
+            t.end();
         });
     });
 });
@@ -234,7 +230,7 @@ test('add policy with wrong rule', function (t) {
         entry, function (err) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
-        t.done();
+        t.end();
     });
 });
 
@@ -254,7 +250,7 @@ test('add policy with dupe name', function (t) {
         entry, function (err) {
         t.equal(err.name, 'ConstraintViolationError');
         t.ok(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -284,7 +280,7 @@ test('add role with policy', function (t) {
                 t.ifError(err3);
                 t.ok(obj3);
                 t.equal(obj3.memberrole, _1ST_GRP_DN);
-                t.done();
+                t.end();
             });
         });
     });
@@ -306,7 +302,7 @@ test('add role with dupe name', function (t) {
     CLIENT.add(sprintf(ROLE_DN_FMT, role_uuid, DUP_ID), entry, function (err) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
-        t.done();
+        t.end();
     });
 });
 
@@ -331,7 +327,7 @@ test('add resource', function (t) {
         helper.get(CLIENT, _RESOURCE_DN, function (err2, obj) {
             t.ifError(err2);
             t.ok(obj);
-            t.done();
+            t.end();
         });
     });
 });
@@ -340,7 +336,7 @@ test('add resource', function (t) {
 test('delete resource', function (t) {
     CLIENT.del(_RESOURCE_DN, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -363,7 +359,7 @@ test('add role w/o policy', function (t) {
         helper.get(CLIENT, _2ND_GRP_DN, function (err2, obj) {
             t.ifError(err2);
             t.ok(obj);
-            t.done();
+            t.end();
         });
     });
 });
@@ -380,7 +376,7 @@ test('Update role to duplicated name', function (t) {
     CLIENT.modify(_2ND_GRP_DN, change, function (err) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
-        t.done();
+        t.end();
     });
 });
 
@@ -398,7 +394,7 @@ test('add member to role', function (t) {
         helper.get(CLIENT, _2ND_GRP_DN, function (err2, obj) {
             t.ifError(err2);
             t.equal(2, obj.uniquemember.length);
-            t.done();
+            t.end();
         });
     });
 });
@@ -429,7 +425,7 @@ test('add policy with role', function (t) {
                 t.ifError(err3);
                 t.ok(obj3);
                 t.equal(obj3.memberpolicy, _2ND_POLICY_DN);
-                t.done();
+                t.end();
             });
         });
     });
@@ -471,7 +467,7 @@ test('prepare modifications', function (t) {
                 helper.get(CLIENT, _3RD_GRP_DN, function (err4, obj2) {
                     t.ifError(err4);
                     t.ok(obj2);
-                    t.done();
+                    t.end();
                 });
             });
         });
@@ -498,7 +494,7 @@ test('mod policy (changetype add)', function (t) {
                 helper.get(CLIENT, _2ND_GRP_DN, function (err4, obj4) {
                     t.ifError(err4);
                     t.ok(obj4.memberpolicy.indexOf(_3RD_POLICY_DN) !== -1);
-                    t.done();
+                    t.end();
                 });
             });
         });
@@ -529,7 +525,7 @@ test('mod policy (changetype replace keep one, replace other)', function (t) {
                     helper.get(CLIENT, _2ND_GRP_DN, function (err5, obj5) {
                         t.ifError(err5);
                         t.ok(obj5.memberpolicy.indexOf(_3RD_POLICY_DN) === -1);
-                        t.done();
+                        t.end();
                     });
                 });
             });
@@ -557,7 +553,7 @@ test('mod policy (changetype delete with values)', function (t) {
                 helper.get(CLIENT, _3RD_GRP_DN, function (err4, obj4) {
                     t.ifError(err4);
                     t.ok(obj4.memberpolicy.indexOf(_3RD_POLICY_DN) === -1);
-                    t.done();
+                    t.end();
                 });
             });
         });
@@ -580,7 +576,7 @@ test('mod policy (changetype delete w/o values)', function (t) {
             helper.get(CLIENT, _1ST_GRP_DN, function (err3, obj3) {
                 t.ifError(err3);
                 t.ok(obj3.memberpolicy.indexOf(_3RD_POLICY_DN) === -1);
-                t.done();
+                t.end();
             });
         });
     });
@@ -599,7 +595,7 @@ test('mod policy (changetype delete entry has no values)', function (t) {
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj2) {
             t.ifError(err2);
             t.ok(!obj2.memberrole);
-            t.done();
+            t.end();
         });
     });
 });
@@ -646,7 +642,7 @@ test('mod policy (changetype replace w/o values)', function (t) {
                                     t.ifError(err8);
                                     t.ok(obj8.memberpolicy.indexOf(
                                             _3RD_POLICY_DN) === -1);
-                                    t.done();
+                                    t.end();
                                 });
                             });
                         });
@@ -666,7 +662,7 @@ test('delete policy with roles', function (t) {
             t.ifError(err3);
             t.ok(obj3);
             t.ok(obj3.memberpolicy.indexOf(_2ND_POLICY_DN) === -1);
-            t.done();
+            t.end();
         });
     });
 });
@@ -684,7 +680,7 @@ test('mod policy (with fake role)', function (t) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
         t.equal(err.message, FAKE_DN);
-        t.done();
+        t.end();
     });
 });
 
@@ -697,7 +693,7 @@ test('delete role with policies', function (t) {
             t.ifError(err3);
             t.ok(obj3);
             t.ok(obj3.memberrole.indexOf(_2ND_GRP_DN) === -1);
-            t.done();
+            t.end();
         });
     });
 });
@@ -712,7 +708,7 @@ test('cleanup db', function (t) {
                 t.ifError(err2);
                 CLIENT.del(_3RD_POLICY_DN, function (err3) {
                     t.ifError(err3);
-                    t.done();
+                    t.end();
                 });
             });
         });
@@ -727,7 +723,7 @@ test('teardown', function (t) {
             t.ifError(err2);
             helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
-                t.done();
+                t.end();
             });
         });
     });

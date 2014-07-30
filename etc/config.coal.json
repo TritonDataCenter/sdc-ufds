@@ -98,12 +98,13 @@
             "created_at": { "type": "number" },
             "updated_at": { "type": "number" },
             "expires_at": { "type": "string" },
-            "company": {"type": "string"},
+            "company": { "type": "string" },
             "account": { "type": "string" },
             "memberpolicy": { "type": "[string]" },
             "memberrole": { "type": "[string]" },
             "rule": { "type": "[string]" },
-            "tenant": { "type": "string" }
+            "tenant": { "type": "string" },
+            "disabled": { "type": "boolean" }
         }
     }
 }

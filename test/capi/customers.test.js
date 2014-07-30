@@ -1,6 +1,6 @@
 // Copyright 2014 Joyent, Inc.  All rights reserved.
-//
 
+var test = require('tape');
 var path = require('path');
 var util = require('util');
 var qs = require('querystring');
@@ -20,7 +20,6 @@ function uuid() {
 var vasync = require('vasync');
 
 ///--- Globals
-var test = helper.test;
 var CAPI;
 var SERVER;
 var UFDS_SERVER;
@@ -84,7 +83,7 @@ test('setup', function (t) {
             // Fail hard if startup isn't successful
             process.exit(1);
         }
-        t.done();
+        t.end();
     });
 });
 
@@ -95,7 +94,7 @@ test('list customers', function (t) {
         t.ok(obj);
         t.ok(Array.isArray(obj));
         t.ok(obj.length);
-        t.done();
+        t.end();
     });
 });
 
@@ -113,7 +112,7 @@ test('create customer (missing login)', function (t) {
         if (obj.errors) {
             t.ok(/login/.test(obj.errors[0]), 'obj errors ok');
         }
-        t.done();
+        t.end();
     });
 });
 
@@ -128,7 +127,7 @@ test('create customer (missing email)', function (t) {
         t.equal(res.statusCode, 409);
         t.ok(obj.errors);
         t.ok(/email_address/.test(obj.errors[0]));
-        t.done();
+        t.end();
     });
 });
 
@@ -144,7 +143,7 @@ test('create customer (password confirmation missmatch)', function (t) {
         t.equal(res.statusCode, 409);
         t.ok(obj.errors);
         t.ok(/password confirmation/.test(obj.errors[0]));
-        t.done();
+        t.end();
     });
 });
 
@@ -170,7 +169,7 @@ test('create customer', function (t) {
         t.ok(obj.updated_at);
         t.ok(obj.forgot_password_code);
         CUSTOMER = obj;
-        t.done();
+        t.end();
     });
 });
 
@@ -186,7 +185,7 @@ test('create customer (duplicated login)', function (t) {
         t.ok(obj.errors);
         t.ok(/login/i.test(obj.errors[0]));
         t.ok(/already taken/.test(obj.errors[0]));
-        t.done();
+        t.end();
     });
 });
 
@@ -197,7 +196,7 @@ test('get customer', function (t) {
         t.ok(obj);
         t.equal(CUSTOMER.login, obj.login);
         t.ok(obj.approved_for_provisioning);
-        t.done();
+        t.end();
     });
 });
 
@@ -209,7 +208,7 @@ test('customer forgot_password', function (t) {
         t.ok(obj, 'forgot password response');
         t.equal(CUSTOMER.login, obj.login, 'forgot pwd login');
         t.ok(obj.forgot_password_code, 'forgot pwd code');
-        t.done();
+        t.end();
     });
 });
 
@@ -217,7 +216,7 @@ test('get customer (404)', function (t) {
     CAPI.get('/customers/' + CUSTOMER.login, function (err, req, res, obj) {
         t.ok(err);
         t.equal(res.statusCode, 404);
-        t.done();
+        t.end();
     });
 });
 
@@ -234,7 +233,7 @@ test('update customer', function (t) {
         t.equal(obj.first_name, 'Victor');
         t.equal(obj.last_name, 'Von Doom');
         t.equal(obj.country, 'Latveria');
-        t.done();
+        t.end();
     });
 });
 
@@ -247,7 +246,7 @@ test('get salt', function (t) {
         t.ok(obj, 'get salt response');
         t.ok(obj.salt, 'get salt salt');
         SALT = obj.salt;
-        t.done();
+        t.end();
     });
 });
 
@@ -264,7 +263,7 @@ test('login', function (t) {
         t.ok(obj);
         t.ok(Object.keys(obj).length !== 0);
         t.equal(obj.uuid, CUSTOMER.uuid);
-        t.done();
+        t.end();
     });
 });
 
@@ -280,7 +279,7 @@ test('forgot password', function (t) {
         t.ok(obj.length);
         t.equal(obj[0].uuid, CUSTOMER.uuid);
         t.ok(obj[0].forgot_password_code);
-        t.done();
+        t.end();
     });
 });
 
@@ -291,7 +290,7 @@ test('forgot password unknown email', function (t) {
     }, function (err, req, res, obj) {
         t.ok(err);
         t.equal(res.statusCode, 404);
-        t.done();
+        t.end();
     });
 });
 
@@ -307,7 +306,7 @@ test('update customer password too short', function (t) {
         t.ok(obj.errors);
         t.ok(Array.isArray(obj.errors));
         t.equal(obj.errors[0], 'passwordTooShort');
-        t.done();
+        t.end();
     });
 });
 
@@ -323,7 +322,7 @@ test('update customer password insuficient quality', function (t) {
         t.ok(obj.errors);
         t.ok(Array.isArray(obj.errors));
         t.equal(obj.errors[0], 'insufficientPasswordQuality');
-        t.done();
+        t.end();
     });
 });
 
@@ -339,7 +338,7 @@ test('update customer password do not match', function (t) {
         t.equal(obj.code, 'InvalidArgument');
         t.ok(obj.message);
         t.equal(obj.message, 'passwords do not match');
-        t.done();
+        t.end();
     });
 });
 
@@ -352,7 +351,7 @@ test('update customer password', function (t) {
     }, function (err, req, res, obj) {
         t.ifError(err);
         t.ok(obj);
-        t.done();
+        t.end();
     });
 });
 
@@ -378,7 +377,7 @@ test('login with new password', function (t) {
             // the response
             t.ok(obj2);
             t.ok(Object.keys(obj2).length !== 0);
-            t.done();
+            t.end();
         });
     });
 });
@@ -394,7 +393,7 @@ test('search customer by login (positive match)', function (t) {
         t.ok(obj.length);
         t.equal(obj[0].login, CUSTOMER.login);
         t.equal(obj[0].role, CUSTOMER.role);
-        t.done();
+        t.end();
     });
 });
 
@@ -408,7 +407,7 @@ test('search customer by login (negative match)', function (t) {
         t.ok(obj);
         t.ok(Array.isArray(obj));
         t.ok(!obj.length);
-        t.done();
+        t.end();
     });
 });
 
@@ -439,7 +438,7 @@ test('add key', function (t) {
         t.ok(obj.body);
         t.ok(obj.fingerprint);
         KEY = obj;
-        t.done();
+        t.end();
     });
 });
 
@@ -456,7 +455,7 @@ test('list keys', function (t) {
         t.ok(obj[0].name);
         t.ok(obj[0].body);
         t.ok(obj[0].fingerprint);
-        t.done();
+        t.end();
     });
 });
 
@@ -471,7 +470,7 @@ test('get key', function (t) {
         t.equal(obj.name, KEY.name);
         t.ok(obj.body);
         t.ok(obj.fingerprint);
-        t.done();
+        t.end();
     });
 });
 
@@ -483,7 +482,7 @@ test('smartlogin', function (t) {
     }, function (err, req, res, obj) {
         t.ifError(err);
         t.equal(res.statusCode, 201);
-        t.done();
+        t.end();
     });
 });
 
@@ -494,7 +493,7 @@ test('update key', function (t) {
         name: 'my_rsa_key'
     }, function (err, req, res, obj) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -511,7 +510,7 @@ test('add limit', function (t) {
         t.ifError(err);
         t.equal(res.statusCode, 201);
         client.close();
-        t.done();
+        t.end();
     });
 });
 
@@ -524,7 +523,7 @@ test('list limits', function (t) {
         t.ok(Array.isArray(obj));
         t.equal(obj[0].limit, 7);
         t.equal(obj[0].value, 7);
-        t.done();
+        t.end();
     });
 });
 
@@ -546,7 +545,7 @@ test('modify limit', function (t) {
             t.ok(obj2);
             t.ok(Array.isArray(obj2));
             t.equal(obj2[0].limit, 14);
-            t.done();
+            t.end();
         });
     });
 });
@@ -558,7 +557,7 @@ test('delete limit', function (t) {
     CAPI.del(limitPath, function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
-        t.done();
+        t.end();
     });
 });
 
@@ -573,7 +572,7 @@ test('limit cleanup', function (t) {
             t.ifError(err1);
             client.unbind(function (err2) {
                 t.ifError(err2);
-                t.done();
+                t.end();
             });
         });
     });
@@ -591,7 +590,7 @@ test('add app meta key (parseable string)', function (t) {
     client.put(appKeyMetaPath, METADATA_STR_VAL, function (err, req, res, obj) {
         t.equal(res.statusCode, 201);
         client.close();
-        t.done();
+        t.end();
     });
 });
 
@@ -607,7 +606,7 @@ test('get app meta key (parseable string)', function (t) {
         vals.forEach(function (k) {
             t.equal(orig[k], obj[k]);
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -623,7 +622,7 @@ test('update app meta key (to plain string)', function (t) {
         function (err, req, res, obj) {
             t.equal(res.statusCode, 200);
             client.close();
-            t.done();
+            t.end();
         });
 });
 
@@ -635,7 +634,7 @@ test('get app meta key (string plain)', function (t) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
         t.equal(METADATA_STR_VAL_PLAIN, obj);
-        t.done();
+        t.end();
     });
 });
 
@@ -650,7 +649,7 @@ test('add app meta key (object)', function (t) {
     client.put(appKeyMetaPath, METADATA_OBJ_VAL, function (err, req, res, obj) {
         t.equal(res.statusCode, 201);
         client.close();
-        t.done();
+        t.end();
     });
 });
 
@@ -666,7 +665,7 @@ test('get app meta key (object)', function (t) {
         keys.forEach(function (k) {
             t.equal(METADATA_OBJ_VAL[k], obj[k]);
         });
-        t.done();
+        t.end();
     });
 });
 
@@ -680,7 +679,7 @@ test('get app meta', function (t) {
         t.ok(Array.isArray(obj));
         t.equal(obj.length, 2);
         t.ok(obj.indexOf(METADATA_STR_KEY.toLowerCase()) !== -1);
-        t.done();
+        t.end();
     });
 });
 
@@ -691,7 +690,7 @@ test('delete app meta key', function (t) {
     CAPI.del(appKeyMetaPath, function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
-        t.done();
+        t.end();
     });
 });
 
@@ -708,7 +707,7 @@ test('meta cleanup', function (t) {
             t.ifError(err1);
             client.unbind(function (err2) {
                 t.ifError(err2);
-                t.done();
+                t.end();
             });
         });
     });
@@ -722,7 +721,7 @@ test('meta cleanup', function (t) {
 //        t.equal(201, res.statusCode);
 //        t.ok(Array.isArray(obj));
 //        t.equal(obj[obj.length - 1].email_address, FRAUD_EMAIL);
-//        t.done();
+//        t.end();
 //    });
 //});
 
@@ -736,7 +735,7 @@ test('meta cleanup', function (t) {
 //            t.ok(obj[0].email_address);
 //            t.ok(obj[0].id);
 //        }
-//        t.done();
+//        t.end();
 //    });
 //});
 
@@ -747,7 +746,7 @@ test('meta cleanup', function (t) {
 //        t.equal(200, res.statusCode);
 //        t.ok(obj.email_address);
 //        t.ok(obj.id);
-//        t.done();
+//        t.end();
 //    });
 //});
 
@@ -758,7 +757,7 @@ test('meta cleanup', function (t) {
 //        t.equal(200, res.statusCode);
 //        t.ok(obj); // it is actually a plain []
 //        t.ok(!obj.email_address);
-//        t.done();
+//        t.end();
 //    });
 //});
 
@@ -770,7 +769,7 @@ test('meta cleanup', function (t) {
 //        t.equal(201, res.statusCode);
 //        t.ok(Array.isArray(obj));
 //        t.equal(obj[obj.length - 1].email_address, FRAUD_WILDCARD);
-//        t.done();
+//        t.end();
 //    });
 //});
 
@@ -781,7 +780,7 @@ test('meta cleanup', function (t) {
 //        t.equal(200, res.statusCode);
 //        t.ok(obj.email_address);
 //        t.ok(obj.id);
-//        t.done();
+//        t.end();
 //    });
 //});
 
@@ -795,7 +794,7 @@ test('meta cleanup', function (t) {
 //            t.ifError(err1);
 //            client.unbind(function (err2) {
 //                t.ifError(err2);
-//                t.done();
+//                t.end();
 //            });
 //        });
 //    });
@@ -807,7 +806,7 @@ test('delete key', function (t) {
     CAPI.del(p, function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
-        t.done();
+        t.end();
     });
 });
 
@@ -816,7 +815,7 @@ test('delete customer', function (t) {
     CAPI.del('/customers/' + CUSTOMER.uuid, function (err, req, res) {
         t.ifError(err);
         t.equal(200, res.statusCode);
-        t.done();
+        t.end();
     });
 });
 
@@ -845,6 +844,6 @@ test('teardown', function (t) {
         if (err) {
             t.ifError(err);
         }
-        t.done();
+        t.end();
     });
 });

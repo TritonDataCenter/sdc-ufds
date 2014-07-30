@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2013, Joyent, Inc. All rights reserved.
+# Copyright (c) 2014, Joyent, Inc. All rights reserved.
 #
 # Run the UFDS tests.
 # Run `./runtests -h` for usage info.
@@ -105,7 +105,7 @@ if [[ -n "$opt_test_pattern" ]]; then
 fi
 
 if [[ -n "$test_files" ]]; then
-    PATH=$NODE_INSTALL/bin:$PATH TEST_CONFIG_FILE=$TOP/etc/config.json $NODEUNIT test/*.test.js --reporter tap \
+    PATH=$NODE_INSTALL/bin:$PATH TEST_CONFIG_FILE=$TOP/etc/config.json node test/test.js \
         | tee $OUTPUT_DIR/ufds.tap
 fi
 

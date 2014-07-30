@@ -35,22 +35,18 @@ This assumes several things:
 
 # Testing
 
-File by file:
+Normal tap-formatted output:
 
-    ./node_modules/.bin/nodeunit test/add.test.js
+    make test
 
-or the make task for this file:
+Faucet enhanced output:
 
-    make add_test
+    npm run test
 
-The following make tasks are available:
+View generated coverage information
 
-    add_test
-    bind_test
-    compare_test
-    del_test
-    mod_test
-    search_test
+    npm run report
+
 
 Of course, if you run `make test` all these tasks will run.
 

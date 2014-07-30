@@ -1,8 +1,6 @@
-// Copyright 2013 Joyent, Inc.  All rights reserved.
-//
-// Just a simple wrapper over nodeunit's exports syntax. Also exposes
-// a common logger for all tests.
-//
+// Copyright 2014 Joyent, Inc.  All rights reserved.
+
+// Also expose a common logger for all tests.
 
 var assert = require('assert');
 var fs = require('fs');
@@ -30,7 +28,7 @@ try {
 }
 
 var LOG = new Logger({
-    level: (CONFIG.logLevel || 'info'),
+    level: (process.env.LOG_LEVEL || 'warn'),
     name: process.argv[1],
     stream: process.stderr,
     src: true,
@@ -66,19 +64,6 @@ function get(client, DN, callback) {
 ///--- Exports
 
 module.exports = {
-
-    after: function after(callback) {
-        module.parent.tearDown = callback;
-    },
-
-    before: function before(callback) {
-        module.parent.setUp = callback;
-    },
-
-    test: function test(name, tester) {
-        module.parent.exports[name] = tester;
-    },
-
     createClient: function createClient(nobind, callback) {
         if (typeof (nobind) === 'function') {
             callback = nobind;

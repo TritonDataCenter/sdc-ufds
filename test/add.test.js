@@ -1,9 +1,6 @@
-/*
- * Copyright (c) 2014, Joyent, Inc. All rights reserved.
- *
- * See helper.js for customization options.
- */
+// Copyright 2014 Joyent, Inc.  All rights reserved.
 
+var test = require('tape');
 var ldap = require('ldapjs');
 var util = require('util'),
     sprintf = util.format;
@@ -12,9 +9,6 @@ function uuid() {
     return (libuuid.create());
 }
 
-if (require.cache[__dirname + '/helper.js']) {
-    delete require.cache[__dirname + '/helper.js'];
-}
 var helper = require('./helper.js');
 
 
@@ -25,8 +19,6 @@ var CLIENT;
 var SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'uuid=%s, ' + SUFFIX;
-
-var test = helper.test;
 
 var DUP_ID = uuid();
 var DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
@@ -44,7 +36,7 @@ test('setup', function (t) {
             t.ifError(err2);
             t.ok(client);
             CLIENT = client;
-            t.done();
+            t.end();
         });
     });
 });
@@ -57,7 +49,7 @@ test('no suffix', function (t) {
     };
     CLIENT.add('o=' + uuid(), entry, function (err) {
         t.ok(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -73,7 +65,7 @@ test('add suffix', function (t) {
                 t.ifError(err);
             }
         }
-        t.done();
+        t.end();
     });
 });
 
@@ -87,7 +79,7 @@ test('add child missing parent', function (t) {
     CLIENT.add('cn=fail, ou=fail, ' + SUFFIX, entry, function (err) {
         t.ok(err);
         t.equal(err.name, 'NoSuchObjectError');
-        t.done();
+        t.end();
     });
 });
 
@@ -102,7 +94,7 @@ test('add child', function (t) {
     };
     CLIENT.add(DUP_DN, entry, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -118,7 +110,7 @@ test('add child already exists', function (t) {
     CLIENT.add(DUP_DN, entry, function (err) {
         t.ok(err);
         t.equal(err.name, 'EntryAlreadyExistsError');
-        t.done();
+        t.end();
     });
 });
 
@@ -139,7 +131,7 @@ test('add child unique conflict', function (t) {
         if (err) {
             t.equal(err.name, 'ConstraintViolationError');
         }
-        t.done();
+        t.end();
     });
 });
 
@@ -158,7 +150,7 @@ test('add child manage DSA', function (t) {
 
     CLIENT.add(dn, entry, controls, function (err) {
         t.ifError(err);
-        t.done();
+        t.end();
     });
 });
 
@@ -196,7 +188,7 @@ test('add blacklisted email', function (t) {
                 t.ok(er2);
                 t.equal(er2.name, 'ConstraintViolationError');
                 t.equal(er2.message, 'Email address is blacklisted.');
-                t.done();
+                t.end();
             });
         });
     });
@@ -217,7 +209,7 @@ test('Add case-only different login', function (t) {
     CLIENT.add(DN, entry, function (err) {
         t.ok(err);
         t.equal(err.name, 'ConstraintViolationError');
-        t.done();
+        t.end();
     });
 });
 
@@ -245,7 +237,7 @@ test('add large entry', function (t) {
         // Clean up
         CLIENT.del(DUP_DN, function (err2) {
             t.ifError(err2);
-            t.done();
+            t.end();
         });
     });
 });
@@ -258,7 +250,7 @@ test('teardown', function (t) {
             t.ifError(err2);
             helper.destroyServer(SERVER, function (err3) {
                 t.ifError(err3);
-                t.done();
+                t.end();
             });
         });
     });

@@ -14,7 +14,7 @@
             "retries": 3,
             "minTimeout": 1000
         },
-        "version": 19
+        "version": 20
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",

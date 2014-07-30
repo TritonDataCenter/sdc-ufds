@@ -19,7 +19,7 @@
         "dns": {
             "resolvers": ["10.99.99.11"]
         },
-        "version": 19
+        "version": 20
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",

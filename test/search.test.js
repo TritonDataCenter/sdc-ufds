@@ -13,6 +13,7 @@ if (require.cache[__dirname + '/helper.js']) {
 }
 var helper = require('./helper.js');
 var ldap = require('ldapjs');
+var vasync = require('vasync');
 
 
 ///--- Globals
@@ -102,9 +103,7 @@ function search(dn, filter, scope, callback) {
 }
 
 
-function load(callback) {
-    var finished = 0;
-
+function loadChildren(callback) {
     for (var i = 0; i < TOTAL_ENTRIES; i++) {
         var dn = sprintf('login=%s_child' + i + ', ' + SUFFIX, LOGIN);
         USERS[dn] = {
@@ -114,16 +113,18 @@ function load(callback) {
             userpassword: 'secret123',
             objectclass: 'sdcperson'
         };
-        CLIENT.add(dn, USERS[dn], function (err) {
-            if (err) {
-                return callback(err);
-            }
-
-            if (++finished === TOTAL_ENTRIES) {
-                return callback(null);
-            }
-        });
     }
+
+    vasync.forEachParallel({
+        inputs: Object.keys(USERS),
+        func: function (name, cb) {
+            CLIENT.add(name, USERS[name], function (err) {
+                return cb(err);
+            });
+        }
+    }, function (err, res) {
+        callback(err);
+    });
 }
 
 
@@ -154,9 +155,11 @@ test('add fixtures', function (t) {
         if (err) {
             if (err.name !== 'EntryAlreadyExistsError') {
                 t.ifError(err);
+                t.end();
+                return;
             }
         }
-        load(function (err2) {
+        loadChildren(function (err2) {
             t.ifError(err2);
             t.end();
         });
@@ -438,12 +441,12 @@ test('search server uuid', function (t) {
         });
         res.on('searchEntry', function (entry) {
             var obj = entry.object;
-            t.ok(obj['uuid']);
+            t.ok(obj.uuid);
             count++;
         });
         res.on('end', function () {
             t.equal(count, 1);
-            t.done();
+            t.end();
         });
     });
 });

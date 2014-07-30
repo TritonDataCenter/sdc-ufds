@@ -23,7 +23,7 @@ ISTANBUL	:= ./node_modules/.bin/istanbul
 #
 # Files
 #
-DOC_FILES	 = index.restdown ufds-replicator.restdown
+DOC_FILES	 = index.restdown
 JS_FILES	:= $(shell ls *.js) \
                    $(shell find lib capi schema test -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf
@@ -35,8 +35,7 @@ SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 			smf/manifests/ufds-capi-8081.xml.in \
 			smf/manifests/ufds-capi-8082.xml.in \
 			smf/manifests/ufds-capi-8083.xml.in \
-			smf/manifests/ufds-capi-8084.xml.in \
-			smf/manifests/ufds-replicator.xml.in
+			smf/manifests/ufds-capi-8084.xml.in
 
 CLEAN_FILES	+= node_modules cscope.files coverage
 
@@ -113,7 +112,6 @@ release: all docs
 	cp -r   $(ROOT)/build \
 								$(ROOT)/capi \
 								$(ROOT)/capi.js \
-								$(ROOT)/replicator.js \
 								$(ROOT)/data \
 		$(ROOT)/deps/haproxy \
 		$(ROOT)/bin \

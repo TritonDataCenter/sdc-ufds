@@ -81,7 +81,12 @@ function processConfig() {
 
     LOG.info({file: file}, 'Processing configuration file');
 
-    _config = ufds.processConfigFile(file);
+    try {
+        _config = ufds.processConfigFile(file);
+    } catch (e) {
+        console.error('Unable to parse configuration file: ' + e.message);
+        process.exit(1);
+    }
 
     if (parsed.port) {
         _config.port = parsed.port;

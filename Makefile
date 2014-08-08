@@ -41,6 +41,7 @@ SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 CLEAN_FILES	+= node_modules cscope.files coverage
 
 NODE_PREBUILT_VERSION=v0.10.26
+NODE_PREBUILT_IMAGE=fd2cc906-8938-11e3-beab-4359c665ac99
 # The prebuilt sdcnode version we want. See
 # "tools/mk/Makefile.node_prebuilt.targ" for details.
 ifeq ($(shell uname -s),SunOS)
@@ -75,10 +76,10 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 #
 .PHONY: all
 all: haproxy $(SMF_MANIFESTS) | $(ISTANBUL) $(REPO_DEPS) sdc-scripts
-	$(NPM) install && $(NPM) update
+	$(NPM) install
 
 $(ISTANBUL): | $(NPM_EXEC)
-	$(NPM) install && $(NPM) update
+	$(NPM) install
 
 # Build HAProxy when in SunOS
 .PHONY: haproxy

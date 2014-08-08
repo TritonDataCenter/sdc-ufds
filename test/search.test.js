@@ -14,6 +14,7 @@ if (require.cache[__dirname + '/helper.js']) {
 var helper = require('./helper.js');
 var ldap = require('ldapjs');
 var vasync = require('vasync');
+var moray = require('moray');
 
 
 ///--- Globals
@@ -389,11 +390,57 @@ test('changelog search', function (t) {
 });
 
 
-//test('latestchangenumber', function (t)
-// TODO: Switch to server-side-sort method test
+test('latest changenumber', function (t) {
+    var morayVal, ufdsVal;
+    vasync.parallel({
+        funcs: [
+            function morayLast(cb) {
+                // To find the expected result, the server moray client is used
+                var bucket = SERVER.config.changelog.bucket;
+                var opts = {
+                    sort: { attribute: '_id', order: 'DESC' },
+                    limit: 1
+                };
+                var filter = '(_id>=0)';
+                var res = SERVER.moray.findObjects(bucket, filter, opts);
+                res.once('error', cb.bind(null));
+                res.once('record', function (record) {
+                    morayVal = record._id;
+                });
+                res.once('end', cb.bind(null, null));
+            },
+            function ufdsLast(cb) {
+                var dn = 'cn=changelog';
+                var opts = {
+                    scope: 'sub',
+                    filter: '(changenumber>=0)',
+                    sizeLimit: 1
+                };
+                var controls =  new ldap.ServerSideSortingRequestControl({
+                    value: {
+                        attributeType: 'changenumber',
+                        reverseOrder: true
+                    }
+                });
+                CLIENT.search(dn, opts, controls, function (err, res) {
+                    t.ifError(err, 'changelog search error');
+                    res.once('searchEntry', function (entry) {
+                        ufdsVal = parseInt(entry.object.changenumber, 10);
+                        res.on('searchEntry', t.fail.bind(t, 'past sizelimit'));
+                    });
+                    res.once('end', cb.bind(null, null));
+                    res.once('error', cb.bind(null));
+                });
+            }
+        ]
+    }, function (err, res) {
+        t.ifError(err);
+        t.equal(morayVal, ufdsVal);
+        t.end();
+    });
+});
 
 
-// CAPI-354: sizeLimit:
 test('search sizeLimit', function (t) {
     var opts = {
         scope: 'sub',
@@ -450,6 +497,7 @@ test('search server uuid', function (t) {
         });
     });
 });
+
 
 test('teardown', function (t) {
     helper.cleanup(SUFFIX, function (err) {

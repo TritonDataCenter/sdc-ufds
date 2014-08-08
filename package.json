@@ -36,7 +36,6 @@
         "tape": "2.13.3"
     },
     "scripts": {
-        "report": "./node_modules/.bin/istanbul report html && open ./coverage/lcov-report/index.html",
-        "test": "./node_modules/.bin/istanbul cover --print none test/test.js | ./node_modules/.bin/faucet"
+        "test": "node test/test.js | ./node_modules/.bin/faucet"
     }
 }

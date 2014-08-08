@@ -95,7 +95,9 @@ CLEAN_FILES += deps/haproxy/haproxy
 
 .PHONY: test
 test: $(ISTANBUL)
-	$(ISTANBUL) cover --print none test/test.js
+	# CAPI-461: disable istanbul
+	#$(ISTANBUL) cover --print none test/test.js
+	node test/test.js
 
 .PHONY: pkg
 pkg:

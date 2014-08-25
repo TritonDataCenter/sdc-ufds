@@ -1,15 +1,18 @@
 /*
- * Copyright (c) 2012, Joyent, Inc. All rights reserved.
- *
- * A brief overview of this source file: what is its purpose.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+/*
+ * Copyright (c) 2014, Joyent, Inc.
+ */
 
 /*
  * Bootstrap the local UFDS tree with:
  *
  * LDAPTLS_REQCERT=allow ldapadd -H ldap://127.0.0.1:1389 \
- *		-x -D cn=root -w secret \
+ *      -x -D cn=root -w secret \
  *      -f data/bootstrap.ldif
  */
 

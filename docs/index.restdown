@@ -17,7 +17,7 @@ markdown2extras: wiki-tables, code-friendly
 # UFDS
 
 UFDS is the "unified foundational directory service" built for SDC over
-[ldapjs](http://ldapjs.org) and [Moray](https://mo.joyent.com/docs/moray/master/),
+[ldapjs](http://ldapjs.org) and [Moray](https://github.com/joyent/moray),
 and is used to track accounts, credentials, and more. It is a superset of
 functionality offered by previous SDC versions employing CAPI (there is a
 backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
@@ -90,7 +90,7 @@ attributes are not hidden
 
 <div class="intro">
 Please, note we're in the process to move <code>sdcPackages</code> into their own dedicated
-API. Updated info at the new <a href="https://mo.joyent.com/docs/papi/master/" title="PAPI">Packages API</a>
+API. Updated info at the new <a href="https://github.com/joyent/sdc-papi" title="PAPI">Packages API</a>
 documentation.
 </div>
 
@@ -146,7 +146,7 @@ an instance type:
 ||zfs\_io\_priority||Mandatory||ZFS IO Priority, Integer 0 - 1000||
 ||fss||Mandatory||Typically computed value, formula: OverProvision Ratio == 1 ? CPU\_CAP: (Guest DRAM/Host DRAM provisionable) * Host CPUs * 100||
 ||cpu\_burst\_ratio||Optional||Typically computed value, formula: (CPU\_CAP / (OverProvision Ratio * Burst Ratio))/FSS||
-||ram\_ratio||Optional||Typically computed value, formula: RAM GB/((CPU\_CAP/100)*Bursting Ratio * OverProvision Ratio)||
+||ram\_ratio||Optional||Typically computed value, formula: RAM GB/((CPU\_CAP/100)\*Bursting Ratio * OverProvision Ratio)||
 ||overprovision\_cpu||Optional||Overprovision CPU, 1=don't overprovision, 2=overprovision||
 ||overprovision\_memory||Optional||Overprovision Memory, 1=don't overprovision, 2=overprovision||
 ||overprovision\_storage||Optional||Overprovision Storage, 1=don't overprovision, 2=overprovision||
@@ -699,7 +699,7 @@ Now, we'll add a limit for an image not already limited for the user:
     dn: dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc
     changetype: modify
     add: multiarch
-    multiarch: 3 
+    multiarch: 3
 
 Again, we saved as the same file name, we'll run the same command:
 

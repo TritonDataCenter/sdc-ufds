@@ -10,24 +10,22 @@
 
 # UFDS
 
-Repository: <git@git.joyent.com:ufds.git>
-Browsing: <https://mo.joyent.com/ufds>
-Who: Mark Cavage, Pedro Palazón Candel
-Docs: <https://mo.joyent.com/docs/ufds/master/>.
-Tickets/bugs: <https://devhub.joyent.com/jira/browse/PUBAPI>
+This repository is part of the Joyent SmartDataCenter project (SDC).  For
+contribution guidelines, issues, and general documentation, visit the main
+[SDC](http://github.com/joyent/sdc) project page.
 
 # Overview
 
 UFDS is the "unified foundational directory service" built for SDC over
-[ldapjs](http://ldapjs.org) and [moray](https://mo.joyent.com/docs/moray/master/),
+[ldapjs](http://ldapjs.org) and [moray](https://github.com/joyent/moray),
 and is used to track accounts, credentials, and more. It is a superset of
 functionality offered by previous SDC versions employing CAPI (there is a
 backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
 
 # Development
 
-    git clone git@git.joyent.com:ufds.git
-    cd ufds
+    git clone git@github.com:joyent/sdc-ufds.git
+    cd sdc-ufds
     git submodule update --init
     make all
     node main.js -f ./etc/config.coal.json -d 2 2>&1 | bunyan
@@ -81,4 +79,3 @@ use the _optional_ block to describe optional attributes.  If _strict_
 is false, then _optional_ is pretty much irrelevant, as anything
 goes (_required_ attributes however, must be present). The default for
 strictness is _false_.
-

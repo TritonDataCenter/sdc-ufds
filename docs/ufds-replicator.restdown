@@ -100,8 +100,8 @@ running UFDS server regardless the method we use.
 
 For installing UFDS on Mac OS X follow the next steps:
 
-        $ git clone git@git.joyent.com:ufds.git
-        $ cd ufds/
+        $ git clone git@github.com:joyent/sdc-ufds.git
+        $ cd sdc-ufds/
         $ npm install
 
 Now, we have to edit /etc/ufds.laptop.config.json so UFDS uses different

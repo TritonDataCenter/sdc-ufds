@@ -2,7 +2,7 @@
 title: UFDS
 mediaroot: ./media
 apisections: SmartDataCenter Tree, Changelog, CAPI
-markdown2extras: wiki-tables, code-friendly
+markdown2extras: tables, code-friendly
 ---
 <!--
     This Source Code Form is subject to the terms of the Mozilla Public
@@ -124,34 +124,35 @@ an instance type:
 
 
 
-||**Attribute**||**Required**||**Explanation**||
-||uuid||Mandatory||UUID for the sdcPackage||
-||owner\_uuid||Optional||UUID of the owner of this sdcPackage||
-||active||Mandatory||is this provisionable: true or false||
-||vcpus||Mandatory if type == kvm||number of cpus to show, Integer 1 - 64||
-||cpu\_cap||Mandatory||CPU CAP,Integer 20-1000, formula: VCPU * Bursting Ratio * OverProvision Ratio * 100 + (vCPU <= 1 ? 50: 100)||
-||default||Mandatory||is this the default instance type: true or false||
-||group||Mandatory||group of associated instance types, either: Standard, High CPU, High Memory, High Storage, High IO or the Customer's Name||
-||description||Mandatory||description of this instance type||
-||max\_lwps||Mandatory||max processes, Integer||
-||max\_physical_memory||Mandatory||max RAM in MB, Integer||
-||max\_swap||Mandatory||max SWAP in MB, Integer||
-||name||Mandatory||API name, using this formula: [version]-[familyname]-[RAM GB]-[type]-[flags], version is currently g3, familyname is group, type is either smartos or kvm, flags is to catch cluster computes (cc)||
-||common\_name||Mandatory||Name displayed in the Portal||
-||quota||Mandatory||disk size in MB||
-||networks||Optional||List of networks to associate with||
-||version||Mandatory||semver version number||
-||parent||Mandatory, if created for customer||API name of the instance type this was cloned from||
-||traits||Optional||set of traits for provisioning, currently limited to ssd:true and storage:true by current server installation||
-||zfs\_io\_priority||Mandatory||ZFS IO Priority, Integer 0 - 1000||
-||fss||Mandatory||Typically computed value, formula: OverProvision Ratio == 1 ? CPU\_CAP: (Guest DRAM/Host DRAM provisionable) * Host CPUs * 100||
-||cpu\_burst\_ratio||Optional||Typically computed value, formula: (CPU\_CAP / (OverProvision Ratio * Burst Ratio))/FSS||
-||ram\_ratio||Optional||Typically computed value, formula: RAM GB/((CPU\_CAP/100)\*Bursting Ratio * OverProvision Ratio)||
-||overprovision\_cpu||Optional||Overprovision CPU, 1=don't overprovision, 2=overprovision||
-||overprovision\_memory||Optional||Overprovision Memory, 1=don't overprovision, 2=overprovision||
-||overprovision\_storage||Optional||Overprovision Storage, 1=don't overprovision, 2=overprovision||
-||overprovision\_network||Optional||Overprovision Network, 1=don't overprovision, 2=overprovision||
-||overprovision\_io||Optional||Overprovision IO, 1=don't overprovision, 2=overprovision||
+| Attribute              | Required                           | Explanation                                                                                                                                                                                        |
+| ---------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| uuid                   | Mandatory                          | UUID for the sdcPackage                                                                                                                                                                            |
+| owner\_uuid            | Optional                           | UUID of the owner of this sdcPackage                                                                                                                                                               |
+| active                 | Mandatory                          | is this provisionable: true or false                                                                                                                                                               |
+| vcpus                  | Mandatory if type == kvm           | number of cpus to show, Integer 1 - 64                                                                                                                                                             |
+| cpu\_cap               | Mandatory                          | CPU CAP,Integer 20-1000, formula: VCPU * Bursting Ratio * OverProvision Ratio * 100 + (vCPU <= 1 ? 50: 100)                                                                                        |
+| default                | Mandatory                          | is this the default instance type: true or false                                                                                                                                                   |
+| group                  | Mandatory                          | group of associated instance types, either: Standard, High CPU, High Memory, High Storage, High IO or the Customer's Name                                                                          |
+| description            | Mandatory                          | description of this instance type                                                                                                                                                                  |
+| max\_lwps              | Mandatory                          | max processes, Integer                                                                                                                                                                             |
+| max\_physical_memory   | Mandatory                          | max RAM in MB, Integer                                                                                                                                                                             |
+| max\_swap              | Mandatory                          | max SWAP in MB, Integer                                                                                                                                                                            |
+| name                   | Mandatory                          | API name, using this formula: [version]-[familyname]-[RAM GB]-[type]-[flags], version is currently g3, familyname is group, type is either smartos or kvm, flags is to catch cluster computes (cc) |
+| common\_name           | Mandatory                          | Name displayed in the Portal                                                                                                                                                                       |
+| quota                  | Mandatory                          | disk size in MB                                                                                                                                                                                    |
+| networks               | Optional                           | List of networks to associate with                                                                                                                                                                 |
+| version                | Mandatory                          | semver version number                                                                                                                                                                              |
+| parent                 | Mandatory, if created for customer | API name of the instance type this was cloned from                                                                                                                                                 |
+| traits                 | Optional                           | set of traits for provisioning, currently limited to ssd:true and storage:true by current server installation                                                                                      |
+| zfs\_io\_priority      | Mandatory                          | ZFS IO Priority, Integer 0 - 1000                                                                                                                                                                  |
+| fss                    | Mandatory                          | Typically computed value, formula: OverProvision Ratio == 1 ? CPU\_CAP: (Guest DRAM/Host DRAM provisionable) * Host CPUs * 100                                                                     |
+| cpu\_burst\_ratio      | Optional                           | Typically computed value, formula: (CPU\_CAP / (OverProvision Ratio * Burst Ratio))/FSS                                                                                                            |
+| ram\_ratio             | Optional                           | Typically computed value, formula: RAM GB/((CPU\_CAP/100)\*Bursting Ratio * OverProvision Ratio)                                                                                                   |
+| overprovision\_cpu     | Optional                           | Overprovision CPU, 1=don't overprovision, 2=overprovision                                                                                                                                          |
+| overprovision\_memory  | Optional                           | Overprovision Memory, 1=don't overprovision, 2=overprovision                                                                                                                                       |
+| overprovision\_storage | Optional                           | Overprovision Storage, 1=don't overprovision, 2=overprovision                                                                                                                                      |
+| overprovision\_network | Optional                           | Overprovision Network, 1=don't overprovision, 2=overprovision                                                                                                                                      |
+| overprovision\_io      | Optional                           | Overprovision IO, 1=don't overprovision, 2=overprovision                                                                                                                                           |
 
 
 ## SSH Keys (sdcKey)
@@ -229,14 +230,15 @@ While it's possible to manipulate such values using raw LDAP commands, we
 encourage you to do not add/modify/delete such entries but through the
 different applications associated with each Object type:
 
-||**ObjectClass**||**Application**||
-||sdcPackage||AdminUI||
-||sdcImage||ImageAPI||
-||amonprobegroup||Amon||
-||amonprobe||Amon||
-||fwrule||FWAPI||
-||vmusage||VMAPI||
-||sdcreplicator||UFDS configuration||
+| ObjectClass    | Application        |
+| -------------- | ------------------ |
+| sdcPackage     | AdminUI            |
+| sdcImage       | ImageAPI           |
+| amonprobegroup | Amon               |
+| amonprobe      | Amon               |
+| fwrule         | FWAPI              |
+| vmusage        | VMAPI              |
+| sdcreplicator  | UFDS configuration |
 
 
 # Account Users, Groups and Policies
@@ -566,23 +568,27 @@ To make curl'ing the CAPI thing easier, I have a small bash function:
 
 After that, reference the CAPI api at <http://apidocs.joyent.com/sdcapidoc/capi>.
 
-But, here's some helpers for you:
+But, here are some helpers for you:
 
 ### Customers
 
-||*create*||`capi /customers -d @/Users/mark/work/ufds/data/capi_customer.xml`||
-||*update*||`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -d @/Users/mark/work/ufds/data/update_customer.xml -X PUT`||
-||*get*||`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d`||
-||*list*||`capi /customers`||
-||*search*||`capi /customers?email_address=%40joyent.com`||
-||*delete*||`capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -X DELETE`||
+| Action   | Command                                                                                                          |
+| -------- | ---------------------------------------------------------------------------------------------------------------- |
+| *create* | `capi /customers -d @/Users/mark/work/ufds/data/capi_customer.xml`                                               |
+| *update* | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -d @/Users/mark/work/ufds/data/update_customer.xml -X PUT` |
+| *get*    | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d`                                                           |
+| *list*   | `capi /customers`                                                                                                |
+| *search* | `capi /customers?email_address=%40joyent.com`                                                                    |
+| *delete* | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -X DELETE`                                                 |
 
 ### SSH keys
 
-||*add*||`/usr/bin/curl -is http://localhost:8080/customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d/keys --data-urlencode key@/Users/mark/.ssh/id_rsa.pub -d name=id_rsa`||
-||*list*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys`||
-||*rename*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f?name=foo -X PUT`||
-||*delete*||`capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f -X DELETE`||
+| Action   | Command                                                                                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| *add*    | `/usr/bin/curl -is http://localhost:8080/customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d/keys --data-urlencode key@/Users/mark/.ssh/id_rsa.pub -d name=id_rsa` |
+| *list*   | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys`                                                                                                   |
+| *rename* | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f?name=foo -X PUT`                                                  |
+| *delete* | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f -X DELETE`                                                        |
 
 # Using Bcrypt to encrypt passwords
 

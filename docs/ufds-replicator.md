@@ -1,6 +1,6 @@
 ---
 title: UFDS Replicator
-markdown2extras: wiki-tables, code-friendly
+markdown2extras: tables, code-friendly
 apisections: Overview, Geting Started
 ---
 <!--
@@ -71,10 +71,11 @@ As an example, let's take a look at an URL for replicating all users in SDC:
 
 And the following is the meaning of each of the fields in the URL:
 
-||**field**||**value**||**meaning**||
-||dn||ou=users, o=smartdc||base subtree to replicate||
-||scope||sub||LDAP search scope, can be sub, one or base||
-||filter||empty (defaults to objectclass=\*)||LDAP search filter||
+| field  | value                              | meaning                                    |
+| ------ | ---------------------------------- | ------------------------------------------ |
+| dn     | ou=users, o=smartdc                | base subtree to replicate                  |
+| scope  | sub                                | LDAP search scope, can be sub, one or base |
+| filter | empty (defaults to objectclass=\*) | LDAP search filter                         |
 
 Given this, if we wanted to replicate only sdcperson or sdckey objects under
 the users tree (ignoring vms) our URL would look like:

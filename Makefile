@@ -31,7 +31,7 @@ ISTANBUL	:= ./node_modules/.bin/istanbul
 #
 # Files
 #
-DOC_FILES	 = index.restdown ufds-replicator.restdown
+DOC_FILES	 = index.md ufds-replicator.md
 JS_FILES	:= $(shell ls *.js) \
                    $(shell find lib capi schema test -name '*.js')
 JSL_CONF_NODE	 = tools/jsl.node.conf

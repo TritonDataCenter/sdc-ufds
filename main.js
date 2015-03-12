@@ -132,7 +132,6 @@ var config = processConfig();
 // CAPI-169: Clustering intentionally disabled due to race condition on
 // ldif bootstrap.
 var server = ufds.createServer(config);
-server.on('morayError', server.morayConnectCalback);
 server.init(function () {
     return (true);
 });

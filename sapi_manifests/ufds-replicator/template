@@ -12,7 +12,7 @@
         "queries": [
             "/o=smartdc??sub?(objectclass=version)",
             "/ou=users, o=smartdc??sub?(&(!(objectclass=amonprobe))(!(objectclass=amonprobegroup)))",
-            "/o=smartdc??sub?(objectclass=emailblacklist)",
+            "/o=smartdc??sub?(|(objectclass=emailblacklist)(objectclass=emailblacklistentry))",
             "/ou=groups, o=smartdc??sub?(objectclass=groupofuniquenames)",
             "/o=smartdc??sub?(objectclass=keyapiprivkey)",
             "/o=smartdc??sub?(objectclass=region)",

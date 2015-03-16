@@ -198,9 +198,9 @@ function CAPI(config) {
     server.del('/customers/:uuid/limits/:dc/:dataset', limits.del);
 
     /// Fraud
-    server.get('/fraud', fraud.loadBlackList, fraud.list);
-    server.post('/fraud', fraud.loadBlackList, fraud.create);
-    server.get('/fraud/:email', fraud.loadBlackList, fraud.search);
+    server.get('/fraud', fraud.verifyBlackList, fraud.list);
+    server.post('/fraud', fraud.verifyBlackList, fraud.create);
+    server.get('/fraud/:email', fraud.verifyBlackList, fraud.search);
 
     ///-- Start up
     this.server = server;

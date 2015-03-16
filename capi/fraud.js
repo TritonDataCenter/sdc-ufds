@@ -14,212 +14,204 @@ var sprintf = mod_util.format;
 
 var restify = require('restify');
 
+var libuuid = require('libuuid');
 var ldap = require('ldapjs');
 var Change = ldap.Change;
+var filters = ldap.filters;
+var once = require('once');
 var util = require('./util');
 
 
 
 ///--- Globals
 
-var BLACKLIST_FILTER = '(&(email=%s)(objectclass=emailblacklist))';
 var BLACKLIST_DN = 'cn=blacklist, o=smartdc';
 
 var BadRequestError = restify.BadRequestError;
 var ResourceNotFoundError = restify.ResourceNotFoundError;
 
-function translateBlackList(blacklist) {
-    if (Array.isArray(blacklist)) {
-        return blacklist.map(function (email) {
-            return ({
-                email_address: email,
-                id: util.randomId()
-            });
-        });
-    } else {
-        return ({
-            email_address: blacklist,
-            id: util.randomId()
-        });
-    }
-}
-
-function createBlackList(ld, email, callback) {
-    if (typeof (email) === 'function') {
-        callback = email;
-        email = null;
-    }
-    var blacklist = {
-        objectclass: ['emailblacklist']
+function fetchBlacklist(ufds, cb) {
+    var opts = {
+        scope: 'one',
+        limit: 10000,
+        filter: '(objectclass=emailblacklistentry)'
     };
-
-    if (email) {
-        blacklist.email = email;
-    }
-    return ld.add(BLACKLIST_DN, blacklist, function (err) {
-        if (err) {
-            return callback(err);
+    ufds.search(BLACKLIST_DN, opts, function (e, blacklist) {
+        if (e) {
+            return cb(e);
         }
-        return callback(null);
+        blacklist = blacklist.map(function (entry) {
+            var out = {
+                id: entry.uuid
+            };
+            if (entry.denydomain !== undefined) {
+                out.email = '*@' + entry.denydomain;
+            } else {
+                out.email = entry.denyemail;
+            }
+            return out;
+        });
+        return cb(null, blacklist);
     });
 }
 
+
 module.exports = {
-    loadBlackList: function loadBlackList(req, res, next) {
+    verifyBlackList: function verifyBlackList(req, res, next) {
         assert.ok(req.ufds);
-
         var log = req.log;
-        var sent = false;
-        function createNewBlacklist() {
-            return createBlackList(req.ufds, function (err2) {
-                if (err2) {
-                    if (!sent) {
-                        log.debug(err2, 'create Blacklist error');
-                        sent = true;
-                        next(new restify.InternalError(err2.message));
-                    }
-                } else {
-                    log.debug('Blacklist created');
-                    req.blacklist = { email: []};
-                    if (!sent) {
-                        sent = true;
-                        next();
-                    }
-                }
-            });
-
-        }
-
-        function returnError(err) {
-            if (!sent) {
-                log.debug(err, 'loadBlackList: returning error');
-                sent = true;
-                next(new restify.InternalError(err.message));
+        var cb = once(function (error) {
+            if (error) {
+                next(new restify.InternalError(error.message));
+            } else {
+                next();
             }
-        }
+        });
+
         var opts = {
-            scope: 'one',
+            scope: 'base',
             filter: '(objectclass=emailblacklist)'
         };
         req.ufds.search(BLACKLIST_DN, opts, function (e, blacklist) {
             if (e) {
-                log.debug({
-                    err: e
-                }, 'loadBlackList: error starting search');
-                returnError(e);
-                return;
+                log.debug(e, 'verifyBlackList: error starting search');
+                return cb(e);
             }
 
             if (!blacklist.length) {
-                return createNewBlacklist();
+                blacklist = { objectclass: ['emailblacklist'] };
+                return req.ufds.add(BLACKLIST_DN, blacklist, function (err) {
+                    if (err) {
+                        log.debug(err, 'create Blacklist error');
+                        cb(err);
+                    } else {
+                        log.debug('Blacklist created');
+                        cb();
+                    }
+                });
             }
 
-            log.debug({
-                blacklist: blacklist
-            }, 'BlackList Loaded');
-
-            req.blacklist = blacklist[0];
-
-            // Just in case we have a single email
-            if (!Array.isArray(req.blacklist.email)) {
-                req.blacklist.email = [req.blacklist.email];
-                log.debug({
-                    entry: req.blacklist
-                }, 'BlackList Modified');
-            }
-
-            if (!sent) {
-                sent = true;
-                next();
-            }
+            log.debug('BlackList Found');
+            return cb();
         });
     },
 
     list: function list(req, res, next) {
-        var blacklist = req.blacklist || [];
-        var log = req.log;
-        if (blacklist && blacklist.email) {
-            blacklist = translateBlackList(blacklist.email);
-        }
-        if (req.accepts('application/xml')) {
-            blacklist = { blacklist: blacklist };
-        }
-        log.debug({
-            result: blacklist
-        }, 'ListBlacklist: done');
-        res.send(200, blacklist);
-        return next();
+        fetchBlacklist(req.ufds, function (err, blacklist) {
+            if (err) {
+                req.log.debug(err, 'ListBlacklist: failure');
+                return next(new restify.InternalError(err.message));
+            }
+            if (req.accepts('application/xml')) {
+                blacklist = { blacklist: blacklist };
+            }
+            req.log.debug({
+                result: blacklist
+            }, 'ListBlacklist: done');
+            res.send(200, blacklist);
+            return next();
+        });
     },
 
     create: function create(req, res, next) {
-        var log = req.log;
-
-        if (!req.params.email) {
+        var email = req.params.email;
+        if (typeof (email) !== 'string') {
             return next(new BadRequestError('email is required'));
         }
 
-        var dn = BLACKLIST_DN;
-
-        var changes = [];
-        changes.push(new Change({
-            type: 'add',
-            modification: {
-                email: req.params.email
+        var entry = {
+            uuid: libuuid.create(),
+            objectclass: ['emailblacklistentry']
+        };
+        if (email.includes('*')) {
+            // Emails containing a wildcard are assumed to be in the form
+            // *@domain.tld. That domain is used for the denydomain field.
+            var domain = email.split('@')[1];
+            if (domain === undefined || domain.length === 0) {
+                return next(new BadRequestError('invalid email wildcard'));
             }
-        }));
+            entry.denydomain = domain;
+        } else {
+            entry.denyemail = email;
+        }
 
-        return req.ufds.client.modify(dn, changes, function (err) {
+        var dn = sprintf('uuid=%s, %s', entry.uuid, BLACKLIST_DN);
+
+        return req.ufds.client.add(dn, entry, function (err) {
             if (err) {
                 return next(res.sendError([err.toString()]));
             }
 
-            log.debug({email: req.params.email}, 'Update Blacklist: ok');
-            var blacklist = req.blacklist;
-            blacklist.email.push(req.params.email);
-            blacklist = translateBlackList(blacklist.email);
-            if (req.accepts('application/xml')) {
-                blacklist = { blacklist: blacklist };
-            }
-            res.send(201, blacklist);
-            next();
-            return;
+            req.log.debug({entry: entry}, 'UpdateBlacklist: ok');
+            fetchBlacklist(req.ufds, function (error, blacklist) {
+                if (error) {
+                    req.log.debug(err, 'UpdateBlacklist: fetch failure');
+                    return next(new restify.InternalError(error.message));
+                }
+                if (req.accepts('application/xml')) {
+                    blacklist = { blacklist: blacklist };
+                }
+                req.log.debug({
+                    result: blacklist
+                }, 'UpdateBlacklist: done');
+                res.send(201, blacklist);
+                return next();
+            });
         });
     },
 
     search: function search(req, res, next) {
-
         assert.ok(req.ufds);
-        assert.ok(req.blacklist);
-        var log = req.log;
 
-        if (!req.params.email) {
+        var email = req.params.email;
+        if (typeof (email) !== 'string') {
             return next(new BadRequestError('email is required'));
         }
+        var domain = email.split('@')[1];
 
-        log.debug({uuid: req.params.email}, 'searchBlackList: entered');
-
-        var blacklisted = req.blacklist.email.some(function (x) {
-            var email = req.params.email;
-            if (x === email) {
-                return true;
-            }
-            /* JSSTYLED */
-            var re = new RegExp(x.replace(/\*/, '.\*'));
-            return re.test(email);
+        req.log.debug({email: email}, 'searchBlackList: entered');
+        var filter = new filters.AndFilter({
+            filters: [
+                new filters.EqualityFilter({
+                    attribute: 'objectclass',
+                    value: 'emailblacklistentry'
+                }),
+                new filters.OrFilter({
+                    filters: [
+                        new filters.EqualityFilter({
+                            attribute: 'denydomain',
+                            value: domain
+                        }),
+                        new filters.EqualityFilter({
+                            attribute: 'denyemail',
+                            value: email
+                        })
+                    ]
+                })
+            ]
         });
+        var opts = {
+            scope: 'one',
+            filter: filter.toString()
+        };
 
-        var blacklist;
-
-        if (blacklisted) {
-            blacklist = translateBlackList(req.params.email);
-        } else {
-            blacklist = [];
-        }
-
-        if (req.accepts('application/xml')) {
-            blacklist = { blacklist: blacklist };
-        }
-        res.send(200, blacklist);
-        return next();
+        req.ufds.search(BLACKLIST_DN, opts, function (err, results) {
+            if (err) {
+                req.log.debug(err, 'SearchBlacklist: failure');
+                return next(new restify.InternalError(err.message));
+            }
+            var blacklist = [];
+            if (results.length !== 0) {
+                blacklist.push({
+                    email_address: email,
+                    id: results[0].uuid
+                });
+            }
+            if (req.accepts('application/xml')) {
+                blacklist = { blacklist: blacklist };
+            }
+            res.send(200, blacklist);
+            return next();
+        });
     }
 };

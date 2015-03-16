@@ -7,6 +7,7 @@
     "logLevel": "info",
     "use_bcrypt": false,
     "ufds_is_master": {{{ufds_is_master}}},
+    "datacenter_name": "{{{datacenter_name}}}",
     "moray": {
         "url": "http://{{{MORAY_SERVICE}}}:2020",
         "connectTimeout": 1000,

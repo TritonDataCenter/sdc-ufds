@@ -253,6 +253,101 @@ test('modify sub-user login', function (t) {
     });
 });
 
+test('modify dclocalconfig', function (t) {
+    var dn = 'dclocalconfig=coal, ' + USER_DN;
+    var entry = {
+        dclocalconfig: 'coal',
+        defaultFabricSetup: false,
+        objectclass: 'dclocalconfig'
+    };
+    var defaultNetwork = uuid();
+    var change = {
+        type: 'add',
+        modification: {
+            defaultNetwork: defaultNetwork
+        }
+    };
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ifError(err, 'add dclocalconfig object');
+        CLIENT.modify(dn, change, function (err2) {
+            t.ifError(err2, 'dclocalconfig object modification err');
+            CLIENT.compare(dn, 'defaultNetwork', defaultNetwork,
+                function (err3, matches) {
+                t.ifError(err3, 'dclocalconfig object comparison err');
+                t.ok(matches,
+                    'dclocalconfig defaultNetwork matches modification');
+                CLIENT.del(dn, function (err4) {
+                    t.ifError(err4, util.format('delete %s', dn));
+                    t.end();
+                });
+            });
+        });
+    });
+});
+
+
+test('modify dclocalconfig dclocalconfig property', function (t) {
+    var dn = 'dclocalconfig=coal, ' + USER_DN;
+    var entry = {
+        dclocalconfig: 'coal',
+        defaultFabricSetup: false,
+        objectclass: 'dclocalconfig'
+    };
+    var change = {
+        type: 'replace',
+        modification: {
+            dclocalconfig: 'fail'
+        }
+    };
+    CLIENT.add(dn, entry, function (err) {
+        t.ifError(err, 'add dclocalconfig err');
+        CLIENT.modify(dn, change, function (err2) {
+            t.ok(err2, 'received err');
+            if (err2) {
+                t.equal(err2.name, 'ConstraintViolationError');
+                CLIENT.del(dn, function (err3) {
+                    t.ifError(err3, 'delete dclocalconfig err');
+                    t.end();
+                });
+            } else {
+                t.end();
+            }
+        });
+    });
+});
+
+test('modify dclocalconfig with identical entry', function (t) {
+    var dn = 'dclocalconfig=coal, ' + USER_DN;
+    var entry = {
+        dclocalconfig: 'coal',
+        defaultFabricSetup: false,
+        objectclass: 'dclocalconfig'
+    };
+    var change = {
+        type: 'replace',
+        modification: {
+            dclocalconfig: 'coal'
+        }
+    };
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ifError(err, 'add dclocalconfig object');
+        CLIENT.modify(dn, change, function (err2) {
+            t.ifError(err2, 'dclocalconfig object modification err');
+            CLIENT.compare(dn, 'dclocalconfig', entry.dclocalconfig,
+                function (err3, matches) {
+                t.ifError(err3, 'dclocalconfig object comparison err');
+                t.ok(matches,
+                    'dclocalconfig matches modification');
+                CLIENT.del(dn, function (err4) {
+                    t.ifError(err4, util.format('delete %s', dn));
+                    t.end();
+                });
+            });
+        });
+    });
+});
 
 test('remove fixture', function (t) {
     CLIENT.del(USER_DN, function (err) {

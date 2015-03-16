@@ -202,6 +202,51 @@ test('add blacklisted email', function (t) {
     });
 });
 
+test('add dclocalconfig with wrong datacenter in dn', function (t) {
+    var entry = {
+        dclocalconfig: 'coal',
+        defaultFabricSetup: false,
+        objectclass: 'dclocalconfig'
+    };
+    var dn = 'dclocalconfig=fail, ' + DUP_DN;
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ok(err, 'dn dclocalconfig mismatch err');
+        t.end();
+    });
+});
+
+test('add dclocalconfig with wrong datacenter in entry', function (t) {
+    var entry = {
+        dclocalconfig: 'fail',
+        defaultFabricSetup: false,
+        objectclass: 'dclocalconfig'
+    };
+    var dn = 'dclocalconfig=coal, ' + DUP_DN;
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ok(err, 'entry dclocalconfig mismatch err');
+        t.end();
+    });
+});
+
+test('add dcuserconfig child', function (t) {
+    var entry = {
+        dclocalconfig: 'coal',
+        defaultFabricSetup: false,
+        objectclass: 'dclocalconfig'
+    };
+
+    var dn = 'dclocalconfig=coal, ' + DUP_DN;
+
+    CLIENT.add(dn, entry, function (err) {
+        t.ifError(err);
+        CLIENT.del(dn, function (err2) {
+            t.ifError(err2, util.format('delete %s', dn));
+            t.end();
+        });
+    });
+});
 
 test('Add case-only different login', function (t) {
     var ID = uuid();

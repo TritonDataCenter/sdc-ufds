@@ -11,7 +11,7 @@
         "url": "ldaps://{{{ufds_remote_ip}}}",
         "queries": [
             "/o=smartdc??sub?(objectclass=version)",
-            "/ou=users, o=smartdc??sub?(&(!(objectclass=amonprobe))(!(objectclass=amonprobegroup)))",
+            "/ou=users, o=smartdc??sub?(&(!(objectclass=amonprobe))(!(objectclass=amonprobegroup))(!(objectclass=dclocalconfig)))",
             "/o=smartdc??sub?(objectclass=emailblacklist)",
             "/ou=groups, o=smartdc??sub?(objectclass=groupofuniquenames)",
             "/o=smartdc??sub?(objectclass=keyapiprivkey)",

@@ -9,6 +9,7 @@
     "logLevel": "debug",
     "use_bcrypt": false,
     "ufds_is_master": true,
+    "datacenter_name": "coal",
     "moray": {
         "url": "http://moray.coal.joyent.us:2020",
         "connectTimeout": 1000,

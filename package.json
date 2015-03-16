@@ -1,6 +1,6 @@
 {
     "name": "ufds",
-    "version": "7.1.1",
+    "version": "7.2.0",
     "repository": {
         "type": "git",
         "url": "git@github.com:joyent/sdc-ufds.git"
@@ -20,7 +20,7 @@
         "crc": "0.2.0",
         "microtime": "0.3.1",
         "moray": "git+ssh://git@github.com:joyent/node-moray.git#master",
-        "ufds": "git+ssh://git@github.com:joyent/node-ufds.git#4f9347e3987163a450889ffad0e1e1ad7841d23d",
+        "ufds": "git+ssh://git@github.com:joyent/node-ufds.git#a7c674b76696fe7ab0fff1e2486f20d3af6a0d1a",
         "bcrypt": "0.7.8",
         "vasync": "1.6.2",
         "async": "0.1.22",

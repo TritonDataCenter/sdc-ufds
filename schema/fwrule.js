@@ -12,6 +12,7 @@
 // A firewall rule for the firewall API
 //
 
+var assert = require('assert');
 var ldap = require('ldapjs');
 var net = require('net');
 var util = require('util');
@@ -117,9 +118,15 @@ function validate(entry, config, changes, callback) {
             + '(must be one of: allow,block)', attrs.action));
     }
 
-    if (attrs.enabled != 'true' && attrs.enabled != 'false') {
-        errors.push(util.format('enabled value "%s" is invalid '
-            + '(must be one of: true,false)', attrs.enabled));
+    if (attrs.hasOwnProperty('enabled')) {
+        assert.ok(attrs.enabled.length === 1,
+            util.format('fwrule %s neither enabled nor disabled', attrs.uuid));
+        var enabled = attrs.enabled[0];
+
+        if (enabled !== 'true' && enabled !== 'false') {
+            errors.push(util.format('enabled value "%s" is invalid '
+                + '(must be one of: true,false)', attrs.enabled));
+        }
     }
 
     if (!protocolRE.test(attrs.protocol)) {

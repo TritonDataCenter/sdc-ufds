@@ -42,6 +42,7 @@ The directory tree is laid out as follows:
       |  |  | +-key=:fingerprint
       |  | +-policy-uuid=:uuid
       |  | +-group-uuid=:uuid
+      |  | +-dclocalconfig=:datacenter
       +-ou=groups
       |  +-cn=:name
       +-cn=pwdpolicy

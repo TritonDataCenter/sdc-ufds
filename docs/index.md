@@ -39,7 +39,7 @@ The directory tree is laid out as follows:
       |  | +-amonprobe=:uuid
       |  | +-cn=pwdpolicy
       |  | +-uuid=:uuid
-      |  |  | +-key=:fingerprint
+      |  | | +-key=:fingerprint
       |  | +-policy-uuid=:uuid
       |  | +-group-uuid=:uuid
       |  | +-dclocalconfig=:datacenter
@@ -49,6 +49,7 @@ The directory tree is laid out as follows:
       +-cn=blacklist
       +-datacenter=:name
       |  +-cn=replicator
+      |  +-sdcwatchercheckpoint=checkpoint
       +-ou=images
       |  +-uuid=:uuid
       +-ou=fwrules

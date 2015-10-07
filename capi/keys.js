@@ -18,7 +18,7 @@ var assert = require('assert');
 var util = require('util');
 var sprintf = util.format;
 
-var httpSignature = require('http-signature');
+var sshpk = require('sshpk');
 var ldap = require('ldapjs');
 var restify = require('restify');
 var libuuid = require('libuuid');
@@ -37,9 +37,6 @@ var HIDDEN = [new ldap.Control({
 })];
 
 var Change = ldap.Change;
-var fingerprint = httpSignature.sshKeyFingerprint;
-
-
 
 ///--- Helpers
 
@@ -281,7 +278,8 @@ module.exports = {
                 }, 'PutKey: rename');
 
 
-                var _fp = fingerprint(req.params.key);
+                var k = sshpk.parseKey(req.params.key, 'ssh');
+                var _fp = k.fingerprint('md5').toString('hex');
                 var dn2 = sprintf(KEY_DN, _fp, req.customer.dn.toString());
                 return req.ufds.client.modifyDN(dn, dn2, function (err2) {
                     if (err2) {

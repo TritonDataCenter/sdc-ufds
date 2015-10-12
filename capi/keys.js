@@ -338,21 +338,36 @@ module.exports = {
             key_fingerprint: req.params.fingerprint
         }, 'SmartLogin: entered');
 
+        try {
+            var fp = sshpk.parseFingerprint(req.params.fingerprint);
+        } catch (e) {
+            return (next(new restify.InvalidArgumentError(
+                'Invalid key fingerprint')));
+        }
+
         return loadKeys(req, function (err, keys) {
             if (err) {
                 return next(new restify.InternalError(err.message));
             }
 
-            var k = false;
+            var key = false;
             var i;
             for (i = 0; i < keys.length; i++) {
-                if (keys[i].fingerprint === req.params.fingerprint) {
-                    k = keys[i];
+                try {
+                    var k = sshpk.parseKey(keys[i].body, 'ssh');
+                } catch (e) {
+                    return (next(new restify.InternalError(
+                        'Failed to parse candidate key')));
+                }
+                if (req.params.algorithm && req.params.algorithm !== k.type)
+                    continue;
+                if (fp.matches(k)) {
+                    key = k;
                     break;
                 }
             }
 
-            if (!k) {
+            if (!key) {
                 return next(new restify.InvalidArgumentError('Invalid Key'));
             }
 

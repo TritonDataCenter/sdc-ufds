@@ -430,6 +430,8 @@ var SSH_KEY_ONE = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDY2qV5e2q8qb+kYtn' +
 'pTXOh+vmOKkiWCzN+BJ9DvX3iei5NFiSL3rpru0j4CUjBKchUg6X7mdv42g/ZdRT9rilmEP154F' +
 'X/bVsFHitmyyYgba+X90uIR8KGLFZ4eWJNPprJFnCWXrpY5bSOgcS9aWVgCoH8sqHatNKUiQpZ4' +
 'Lsqr+Z4fAf4enldx/KMW91iKn whatever@wherever.local';
+var KEY_FP_MD5 = 'e6:c1:1a:0f:5d:88:a1:75:10:30:85:0e:28:28:ff:82';
+var KEY_FP_SHA256 = 'SHA256:EU/VWtMieb/35Lzl/igIpeHXJzbxjnaLWuTrTyhHp/k';
 
 test('add key', function (t) {
     var p = util.format(KEYS_PATH, CUSTOMER.uuid);
@@ -444,7 +446,7 @@ test('add key', function (t) {
         t.ok(obj.name);
         t.equal(obj.name, 'id_rsa');
         t.ok(obj.body);
-        t.ok(obj.fingerprint);
+        t.strictEqual(obj.fingerprint, KEY_FP_MD5);
         KEY = obj;
         t.end();
     });
@@ -482,11 +484,32 @@ test('get key', function (t) {
     });
 });
 
-
-test('smartlogin', function (t) {
+test('smartlogin invalid fp', function (t) {
     var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
     CAPI.post(p, {
-        fingerprint: KEY.fingerprint
+        fingerprint: 'asdfasdfadsfasdf'
+    }, function (err, req, res, obj) {
+        t.ok(err);
+        t.equal(res.statusCode, 409);
+        t.end();
+    });
+});
+
+test('smartlogin not found md5', function (t) {
+    var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
+    CAPI.post(p, {
+        fingerprint: KEY_FP_MD5.slice(3) + ':aa'
+    }, function (err, req, res, obj) {
+        t.ok(err);
+        t.equal(res.statusCode, 409);
+        t.end();
+    });
+});
+
+test('smartlogin ok md5', function (t) {
+    var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
+    CAPI.post(p, {
+        fingerprint: KEY_FP_MD5
     }, function (err, req, res, obj) {
         t.ifError(err);
         t.equal(res.statusCode, 201);
@@ -494,6 +517,40 @@ test('smartlogin', function (t) {
     });
 });
 
+test('smartlogin ok sha256', function (t) {
+    var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
+    CAPI.post(p, {
+        fingerprint: KEY_FP_SHA256
+    }, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(res.statusCode, 201);
+        t.end();
+    });
+});
+
+test('smartlogin wrong algorithm', function (t) {
+    var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
+    CAPI.post(p, {
+        fingerprint: KEY_FP_SHA256,
+        algorithm: 'foo'
+    }, function (err, req, res, obj) {
+        t.ok(err);
+        t.equal(res.statusCode, 409);
+        t.end();
+    });
+});
+
+test('smartlogin ok algorithm', function (t) {
+    var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
+    CAPI.post(p, {
+        fingerprint: KEY_FP_SHA256,
+        algorithm: 'rsa'
+    }, function (err, req, res, obj) {
+        t.ifError(err);
+        t.equal(res.statusCode, 201);
+        t.end();
+    });
+});
 
 test('update key', function (t) {
     var p = util.format(KEY_PATH, CUSTOMER.uuid, KEY.id);

@@ -359,8 +359,9 @@ module.exports = {
                     return (next(new restify.InternalError(
                         'Failed to parse candidate key')));
                 }
-                if (req.params.algorithm && req.params.algorithm !== k.type)
+                if (req.params.algorithm && req.params.algorithm !== k.type) {
                     continue;
+                }
                 if (fp.matches(k)) {
                     key = k;
                     break;

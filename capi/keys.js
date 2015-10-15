@@ -356,8 +356,12 @@ module.exports = {
                 try {
                     var k = sshpk.parseKey(keys[i].body, 'ssh');
                 } catch (e) {
-                    return (next(new restify.InternalError(
-                        'Failed to parse candidate key')));
+                    log.warn({
+                        customer_uuid: req.params.uuid,
+                        candidate_key: keys[i].id,
+                        err: e
+                    }, 'SmartLogin: failed to parse candidate key');
+                    continue;
                 }
                 if (req.params.algorithm && req.params.algorithm !== k.type) {
                     continue;

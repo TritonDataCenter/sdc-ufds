@@ -46,6 +46,12 @@ function validateIPv4subnetNumber(subnet) {
 }
 
 
+// Check that a port is a valid number and within the appropriate range
+function invalidPort(p) {
+    return !parseInt(p, 10) || p < 1 || p > 65535;
+}
+
+
 ///--- API
 
 function FWRule() {
@@ -135,12 +141,28 @@ function validate(entry, config, changes, callback) {
     }
 
     for (i in attrs.ports) {
+        var matched;
         var port = attrs.ports[i];
         if (port === 'all') {
             continue;
         }
 
-        if (!parseInt(port, 10) || port < 1 || port > 65535) {
+        matched = /^(\d+)-(\d+)$/.exec(port);
+        if (matched != null) {
+            if (invalidPort(matched[1])) {
+                errors.push(util.format('start of port range "%s" is invalid',
+                    matched[1]));
+            }
+            if (invalidPort(matched[2])) {
+                errors.push(util.format('end of port range "%s" is invalid',
+                    matched[2]));
+            }
+            if (matched[1] >= matched[2]) {
+                errors.push(util.format('beginning of port range (%s) should ' +
+                    'come before the end of the range (%s)',
+                    matched[1], matched[2]));
+            }
+        } else if (invalidPort(port)) {
             errors.push(util.format('port "%s" is invalid', port));
         }
     }

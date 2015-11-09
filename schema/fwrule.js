@@ -134,13 +134,31 @@ function validate(entry, config, changes, callback) {
             + '(must be one of: tcp,udp,icmp)', attrs.protocol));
     }
 
+    function invalidPort(p) {
+        return !parseInt(p, 10) || p < 1 || p > 65535;
+    }
+
     for (i in attrs.ports) {
+        var matched;
         var port = attrs.ports[i];
         if (port === 'all') {
             continue;
         }
 
-        if (!parseInt(port, 10) || port < 1 || port > 65535) {
+        matched = /^(\d+)-(\d+)$/.exec(port);
+        if (matched != null) {
+            if (invalidPort(matched[1])) {
+                errors.push(util.format('start of port range "%s" is invalid',
+                    matched[1]));
+            }
+            if (invalidPort(matched[2])) {
+                errors.push(util.format('end of port range "%s" is invalid',
+                    matched[2]));
+            }
+            continue;
+        }
+
+        if (invalidPort(port)) {
             errors.push(util.format('port "%s" is invalid', port));
         }
     }

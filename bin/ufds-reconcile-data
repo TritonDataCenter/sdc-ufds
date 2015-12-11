@@ -42,7 +42,7 @@ role=ufds
 SVC_ROOT="/opt/smartdc/$role"
 BOOTSTRAP_LDIF_IN="${SVC_ROOT}/data/bootstrap.ldif.in"
 BOOTSTRAP_REMOTE_LDIF_IN="${SVC_ROOT}/data/bootstrap_remote.ldif.in"
-LDIF_PREFIX="/var/tmp/"
+LDIF_PREFIX="/tmp/"
 X=0
 
 
@@ -265,9 +265,8 @@ function load_ldif {
 
     ldap ${ip} ldapadd -c -f ${ldif}
 
-    local rc=$?
     # 68 is "already exists"
-    if [[ $rc -ne 0 ]] && [[ $rc -ne 68 ]]; then
+    if [[ $LDAP_RESULT_CODE -ne 0 ]] && [[ $LDAP_RESULT_CODE -ne 68 ]]; then
         fatal "Failed to load ${ldif} at ip ${ip}, exiting"
     fi
 }
@@ -305,7 +304,6 @@ function bootstrap_local {
     # Since this will not error when data already exists, we simply add.  It
     # has the added benefit that new entries will be added too (on force)
     load_ldif ${LDIF} ${UFDS_ADMIN_IP}
-    rm ${LDIF}
 }
 
 
@@ -338,7 +336,6 @@ function bootstrap_remote {
         ip=${remote}
     fi
     load_ldif ${LDIF} ${ip}
-    rm ${LDIF}
 }
 
 

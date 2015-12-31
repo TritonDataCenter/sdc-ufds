@@ -157,7 +157,7 @@ function validate(entry, config, changes, callback) {
                 errors.push(util.format('end of port range "%s" is invalid',
                     matched[2]));
             }
-            if (matched[1] >= matched[2]) {
+            if (Number(matched[1]) >= Number(matched[2])) {
                 errors.push(util.format('beginning of port range (%s) should ' +
                     'come before the end of the range (%s)',
                     matched[1], matched[2]));

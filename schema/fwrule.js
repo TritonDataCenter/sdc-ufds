@@ -32,20 +32,6 @@ var actionRE = /^(allow|block)$/;
 
 ///--- Validation helpers (keep these in sync with the originals in fwapi)
 
-// Ensure subnet is in valid CIDR form
-function validateIPv4subnetNumber(subnet) {
-    var parts = subnet.split('/');
-    if (!valid.ipNumber(parts[0])) {
-        return false;
-    }
-    if (!parseInt(parts[1], 10) || (parts[1] < 1) || (parts[1] > 32)) {
-        return false;
-    }
-    return true;
-
-}
-
-
 // Check that a port is a valid number and within the appropriate range
 function invalidPort(p) {
     return !parseInt(p, 10) || p < 1 || p > 65535;
@@ -98,7 +84,7 @@ function validate(entry, config, changes, callback) {
 
         for (i in attrs[dir + 'ip']) {
             var ip = attrs[dir + 'ip'][i];
-            if (!valid.ipNumber(ip)) {
+            if (!valid.ipAddr(ip)) {
                 errors.push(util.format('IP number "%s" is invalid', ip));
             }
         }
@@ -112,7 +98,7 @@ function validate(entry, config, changes, callback) {
 
         for (i in attrs[dir + 'subnet']) {
             var subnet = attrs[dir + 'subnet'][i];
-            if (!validateIPv4subnetNumber(subnet)) {
+            if (!valid.subnet(subnet)) {
                 errors.push(util.format('subnet "%s" is invalid '
                     + '(must be in CIDR format)', subnet));
             }

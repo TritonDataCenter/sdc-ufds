@@ -19,6 +19,7 @@
         "bcrypt": "0.7.8",
         "bunyan": "0.22.1",
         "crc": "0.2.0",
+        "ipaddr.js": "1.0.5",
         "ldapjs": "git+ssh://git@github.com:mcavage/node-ldapjs.git#0509dd44c0eb6dad7235df7838bdb05ea31cde14",
         "libuuid": "0.1.2",
         "microtime": "0.3.1",

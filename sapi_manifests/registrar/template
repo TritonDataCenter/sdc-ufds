@@ -1,0 +1,28 @@
+{
+  "registration": {
+    "domain": "{{{SERVICE_DOMAIN}}}",
+    "type": "rr_host",
+    "service": {
+      "type": "service",
+      "service": {
+        "srvce": "_ldap",
+        "proto": "_tcp",
+        "ttl": 60,
+        "port": 636
+      }
+    },
+    "ttl": 60,
+    "ports": [1390, 1391, 1392, 1393]
+  },
+  "zookeeper": {
+    "servers": [
+      {{#ZK_SERVERS}}
+        {
+          "host": "{{host}}",
+          "port": {{port}}
+        }{{^last}}, {{/last}}
+      {{/ZK_SERVERS}}
+    ],
+    "timeout": 60000
+  }
+}

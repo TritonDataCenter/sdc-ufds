@@ -22,7 +22,7 @@
         "ldapjs": "git+ssh://git@github.com:mcavage/node-ldapjs.git#0509dd44c0eb6dad7235df7838bdb05ea31cde14",
         "libuuid": "0.1.2",
         "microtime": "0.3.1",
-        "moray": "git+ssh://git@github.com:joyent/node-moray.git#master",
+        "moray": "git+ssh://git@github.com:joyent/node-moray.git#fd5781bc25a9bfe2ba82167664639753fb9f0ca5",
         "nopt": "2.1.1",
         "once": "1.3.0",
         "restify": "2.3.4",

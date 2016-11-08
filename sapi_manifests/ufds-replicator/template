@@ -20,6 +20,11 @@
         ],
         "maxConnections": 1,
         "bindDN": "{{{ufds_ldap_root_dn}}}",
+        {{^ufds_remote_ldap_root_pw}}
         "bindCredentials": "{{{ufds_ldap_root_pw}}}"
+        {{/ufds_remote_ldap_root_pw}}
+        {{#ufds_remote_ldap_root_pw}}
+        "bindCredentials": "{{{ufds_remote_ldap_root_pw}}}"
+        {{/ufds_remote_ldap_root_pw}}
     }]
 }

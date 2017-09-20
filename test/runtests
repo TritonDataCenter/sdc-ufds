@@ -18,10 +18,9 @@ if [ "$TRACE" != "" ]; then
     export PS4='${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
     set -o xtrace
 fi
-# With this stuff enabled we'll get not summary at the end of the tests
-# execution if any test wrote to stderr.
-#set -o errexit
-#set -o pipefail
+
+set -o errexit
+set -o pipefail
 
 
 
@@ -112,10 +111,13 @@ if [[ -n "$opt_test_pattern" ]]; then
     echo "# Running filtered set of test files: $test_files"
 fi
 
+set +o errexit
 if [[ -n "$test_files" ]]; then
     PATH=$NODE_INSTALL/bin:$PATH TEST_CONFIG_FILE=$TOP/etc/config.json node test/test.js \
         | tee $OUTPUT_DIR/ufds.tap
 fi
+rv=$?
+set -o errexit
 
 echo ""
 echo "# test output:"
@@ -147,3 +149,4 @@ echo ""
 if [[ ${tests} != ${passed} ]]; then
     exit 1
 fi
+exit $rv

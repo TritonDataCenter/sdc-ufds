@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
 var test = require('tape');
@@ -27,9 +27,10 @@ function uuid() {
 }
 var vasync = require('vasync');
 
-///--- Globals
+// --- Globals
 var CAPI;
 var SERVER;
+var CONFIG;
 var UFDS_SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 
@@ -38,8 +39,6 @@ var DUP_LOGIN = 'a' + DUP_ID.substr(0, 7);
 var DUP_EMAIL = DUP_LOGIN + '_test@joyent.com';
 var CUSTOMER;
 
-var FRAUD_EMAIL = DUP_LOGIN + '_fraud_test@joyent.com';
-var FRAUD_WILDCARD = '*_test@joyent.com';
 
 var METADATA_OBJ_KEY = 'private-api-key';
 var METADATA_OBJ_VAL = {
@@ -52,15 +51,17 @@ var METADATA_STR_KEY = 'useMoreSecurity';
 var METADATA_STR_VAL = 'secretkey=OFRVW3Z6HJ6SQZT5JRLXGV2PG5CWSQCY';
 var METADATA_STR_VAL_PLAIN = 'notQueryStringParseable';
 
-///--- Tests
+// --- Tests
 
 test('setup', function (t) {
+    CONFIG = helper.config;
     vasync.pipeline({
         'funcs': [
             function createUFDS(_, cb) {
                 helper.createServer(function (err, ufds) {
                     if (err) {
-                        return cb(err);
+                        cb(err);
+                        return;
                     }
                     t.ok(ufds);
                     UFDS_SERVER = ufds;
@@ -70,7 +71,8 @@ test('setup', function (t) {
             function createServer(_, cb) {
                 helper.createCAPIServer(function (err, server) {
                     if (err) {
-                        return cb(err);
+                        cb(err);
+                        return;
                     }
                     t.ok(server);
                     SERVER = server;
@@ -221,7 +223,7 @@ test('customer forgot_password', function (t) {
 });
 
 test('get customer (404)', function (t) {
-    CAPI.get('/customers/' + CUSTOMER.login, function (err, req, res, obj) {
+    CAPI.get('/customers/' + CUSTOMER.login, function (err, req, res) {
         t.ok(err);
         t.equal(res.statusCode, 404);
         t.end();
@@ -295,7 +297,7 @@ test('forgot password', function (t) {
 test('forgot password unknown email', function (t) {
     CAPI.post('/forgot_password', {
         email: 'whatever@foo.net'
-    }, function (err, req, res, obj) {
+    }, function (err, req, res) {
         t.ok(err);
         t.equal(res.statusCode, 404);
         t.end();
@@ -488,7 +490,7 @@ test('smartlogin invalid fp', function (t) {
     var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
     CAPI.post(p, {
         fingerprint: 'asdfasdfadsfasdf'
-    }, function (err, req, res, obj) {
+    }, function (err, req, res) {
         t.ok(err);
         t.equal(res.statusCode, 409);
         t.end();
@@ -499,7 +501,7 @@ test('smartlogin not found md5', function (t) {
     var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
     CAPI.post(p, {
         fingerprint: KEY_FP_MD5.slice(3) + ':aa'
-    }, function (err, req, res, obj) {
+    }, function (err, req, res) {
         t.ok(err);
         t.equal(res.statusCode, 409);
         t.end();
@@ -510,7 +512,7 @@ test('smartlogin ok md5', function (t) {
     var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
     CAPI.post(p, {
         fingerprint: KEY_FP_MD5
-    }, function (err, req, res, obj) {
+    }, function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 201);
         t.end();
@@ -521,7 +523,7 @@ test('smartlogin ok sha256', function (t) {
     var p = util.format('/customers/%s/ssh_sessions', CUSTOMER.uuid);
     CAPI.post(p, {
         fingerprint: KEY_FP_SHA256
-    }, function (err, req, res, obj) {
+    }, function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 201);
         t.end();
@@ -533,7 +535,7 @@ test('smartlogin wrong algorithm', function (t) {
     CAPI.post(p, {
         fingerprint: KEY_FP_SHA256,
         algorithm: 'foo'
-    }, function (err, req, res, obj) {
+    }, function (err, req, res) {
         t.ok(err);
         t.equal(res.statusCode, 409);
         t.end();
@@ -545,7 +547,7 @@ test('smartlogin ok algorithm', function (t) {
     CAPI.post(p, {
         fingerprint: KEY_FP_SHA256,
         algorithm: 'rsa'
-    }, function (err, req, res, obj) {
+    }, function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 201);
         t.end();
@@ -556,7 +558,7 @@ test('update key', function (t) {
     var p = util.format(KEY_PATH, CUSTOMER.uuid, KEY.id);
     CAPI.put(p, {
         name: 'my_rsa_key'
-    }, function (err, req, res, obj) {
+    }, function (err, req, res) {
         t.ifError(err);
         t.end();
     });
@@ -566,12 +568,12 @@ test('update key', function (t) {
 // --- Limits:
 test('add limit', function (t) {
     var limitPath = util.format('/customers/%s/limits/%s/%s',
-        CUSTOMER.uuid, 'coal', 'smartos');
+        CUSTOMER.uuid, CONFIG.datacenter_name, 'smartos');
     var restify = require('restify');
     var client = restify.createStringClient({
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
-    client.put(limitPath, '7', function (err, req, res, obj) {
+    client.put(limitPath, '7', function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 201);
         client.close();
@@ -595,12 +597,12 @@ test('list limits', function (t) {
 
 test('modify limit', function (t) {
     var limitPath = util.format('/customers/%s/limits/%s/%s',
-        CUSTOMER.uuid, 'coal', 'smartos');
+        CUSTOMER.uuid, CONFIG.datacenter_name, 'smartos');
     var restify = require('restify');
     var client = restify.createStringClient({
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
-    client.put(limitPath, '14', function (err, req, res, obj) {
+    client.put(limitPath, '14', function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
         client.close();
@@ -618,7 +620,7 @@ test('modify limit', function (t) {
 
 test('delete limit', function (t) {
     var limitPath = util.format('/customers/%s/limits/%s/%s',
-        CUSTOMER.uuid, 'coal', 'smartos');
+        CUSTOMER.uuid, CONFIG.datacenter_name, 'smartos');
     CAPI.del(limitPath, function (err, req, res) {
         t.ifError(err);
         t.equal(res.statusCode, 200);
@@ -628,7 +630,7 @@ test('delete limit', function (t) {
 
 // Or we'll raise a NotAllowedOnNonLeafError from delete customer:
 test('limit cleanup', function (t) {
-    var limitDn = util.format('dclimit=coal, %s',
+    var limitDn = util.format('dclimit=' + CONFIG.datacenter_name + ', %s',
         'uuid=' + CUSTOMER.uuid + ', ou=users, ' + SUFFIX);
     helper.createClient(function (err, client) {
         t.ifError(err);
@@ -652,7 +654,7 @@ test('add app meta key (parseable string)', function (t) {
     var client = restify.createStringClient({
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
-    client.put(appKeyMetaPath, METADATA_STR_VAL, function (err, req, res, obj) {
+    client.put(appKeyMetaPath, METADATA_STR_VAL, function (_, req, res) {
         t.equal(res.statusCode, 201);
         client.close();
         t.end();
@@ -684,7 +686,7 @@ test('update app meta key (to plain string)', function (t) {
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
     client.put(appKeyMetaPath, METADATA_STR_VAL_PLAIN,
-        function (err, req, res, obj) {
+        function (_, req, res) {
             t.equal(res.statusCode, 200);
             client.close();
             t.end();
@@ -711,7 +713,7 @@ test('add app meta key (object)', function (t) {
     var client = restify.createStringClient({
         url: CAPI.url.protocol + '//' + CAPI.url.host
     });
-    client.put(appKeyMetaPath, METADATA_OBJ_VAL, function (err, req, res, obj) {
+    client.put(appKeyMetaPath, METADATA_OBJ_VAL, function (_, req, res) {
         t.equal(res.statusCode, 201);
         client.close();
         t.end();
@@ -777,93 +779,6 @@ test('meta cleanup', function (t) {
         });
     });
 });
-
-
-// CAPI-234: Blacklist "/fraud"
-//test('add email to blacklist', function (t) {
-//    CAPI.post('/fraud', {email: FRAUD_EMAIL}, function (err, req, res, obj) {
-//        t.ifError(err);
-//        t.equal(201, res.statusCode);
-//        t.ok(Array.isArray(obj));
-//        t.equal(obj[obj.length - 1].email_address, FRAUD_EMAIL);
-//        t.end();
-//    });
-//});
-
-
-//test('get blacklist', function (t) {
-//    CAPI.get('/fraud', function (err, req, res, obj) {
-//        t.ifError(err);
-//        t.equal(200, res.statusCode);
-//        t.ok(Array.isArray(obj));
-//        if (obj.length) {
-//            t.ok(obj[0].email_address);
-//            t.ok(obj[0].id);
-//        }
-//        t.end();
-//    });
-//});
-
-
-//test('search email in blacklist', function (t) {
-//    CAPI.get('/fraud/' + FRAUD_EMAIL, function (err, req, res, obj) {
-//        t.ifError(err);
-//        t.equal(200, res.statusCode);
-//        t.ok(obj.email_address);
-//        t.ok(obj.id);
-//        t.end();
-//    });
-//});
-
-
-//test('search email not in blacklist', function (t) {
-//    CAPI.get('/fraud/' + DUP_EMAIL, function (err, req, res, obj) {
-//        t.ifError(err);
-//        t.equal(200, res.statusCode);
-//        t.ok(obj); // it is actually a plain []
-//        t.ok(!obj.email_address);
-//        t.end();
-//    });
-//});
-
-
-//test('add wildcard to blacklist', function (t) {
-//    CAPI.post('/fraud',
-//        {email: FRAUD_WILDCARD}, function (err, req, res, obj) {
-//        t.ifError(err);
-//        t.equal(201, res.statusCode);
-//        t.ok(Array.isArray(obj));
-//        t.equal(obj[obj.length - 1].email_address, FRAUD_WILDCARD);
-//        t.end();
-//    });
-//});
-
-
-//test('search email wildcard in blacklist', function (t) {
-//    CAPI.get('/fraud/' + DUP_EMAIL, function (err, req, res, obj) {
-//        t.ifError(err);
-//        t.equal(200, res.statusCode);
-//        t.ok(obj.email_address);
-//        t.ok(obj.id);
-//        t.end();
-//    });
-//});
-
-
-// Go with clean blacklist for the next time:
-//test('blacklist cleanup', function (t) {
-//    helper.createClient(function (err, client) {
-//        t.ifError(err);
-//        t.ok(client);
-//        client.del('cn=blacklist, o=smartdc', function (err1) {
-//            t.ifError(err1);
-//            client.unbind(function (err2) {
-//                t.ifError(err2);
-//                t.end();
-//            });
-//        });
-//    });
-//});
 
 
 test('delete key', function (t) {

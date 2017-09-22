@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
 var test = require('tape');
@@ -25,6 +25,7 @@ var helper = require('./helper.js');
 
 var CLIENT;
 var SERVER;
+var CONFIG;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var DN_FMT = 'uuid=%s, ' + SUFFIX;
 
@@ -36,6 +37,7 @@ var DUP_DN = sprintf(DN_FMT, DUP_ID);
 // --- Tests
 
 test('setup', function (t) {
+    CONFIG = helper.config;
     helper.createServer(function (err, server) {
         t.ifError(err);
         t.ok(server);
@@ -204,7 +206,7 @@ test('add blacklisted email', function (t) {
 
 test('add dclocalconfig with wrong datacenter in dn', function (t) {
     var entry = {
-        dclocalconfig: 'coal',
+        dclocalconfig: CONFIG.datacenter_name,
         defaultFabricSetup: false,
         objectclass: 'dclocalconfig'
     };
@@ -222,7 +224,7 @@ test('add dclocalconfig with wrong datacenter in entry', function (t) {
         defaultFabricSetup: false,
         objectclass: 'dclocalconfig'
     };
-    var dn = 'dclocalconfig=coal, ' + DUP_DN;
+    var dn = 'dclocalconfig=' + CONFIG.datacenter_name + ', ' + DUP_DN;
 
     CLIENT.add(dn, entry, function (err) {
         t.ok(err, 'entry dclocalconfig mismatch err');
@@ -232,12 +234,12 @@ test('add dclocalconfig with wrong datacenter in entry', function (t) {
 
 test('add dcuserconfig child', function (t) {
     var entry = {
-        dclocalconfig: 'coal',
+        dclocalconfig: CONFIG.datacenter_name,
         defaultFabricSetup: false,
         objectclass: 'dclocalconfig'
     };
 
-    var dn = 'dclocalconfig=coal, ' + DUP_DN;
+    var dn = 'dclocalconfig=' + CONFIG.datacenter_name + ', ' + DUP_DN;
 
     CLIENT.add(dn, entry, function (err) {
         t.ifError(err);

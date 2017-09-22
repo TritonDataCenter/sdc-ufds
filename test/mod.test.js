@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
 var test = require('tape');
@@ -19,10 +19,11 @@ var helper = require('./helper.js');
 
 
 
-///--- Globals
+// --- Globals
 
 var CLIENT;
 var SERVER;
+var CONFIG;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
 var ID = uuid();
 var USER_DN = 'cn=child, ' + SUFFIX;
@@ -35,7 +36,7 @@ var USER = {
 };
 
 
-///--- Helpers
+// --- Helpers
 
 function get(callback) {
     return CLIENT.search(USER_DN, '(objectclass=*)', function (err, res) {
@@ -83,9 +84,10 @@ function get(callback) {
 
 
 
-///--- Tests
+// --- Tests
 
 test('setup', function (t) {
+    CONFIG = helper.config;
     helper.createServer(function (err, server) {
         t.ifError(err);
         t.ok(server);
@@ -254,9 +256,9 @@ test('modify sub-user login', function (t) {
 });
 
 test('modify dclocalconfig', function (t) {
-    var dn = 'dclocalconfig=coal, ' + USER_DN;
+    var dn = 'dclocalconfig=' + CONFIG.datacenter_name + ', ' + USER_DN;
     var entry = {
-        dclocalconfig: 'coal',
+        dclocalconfig: CONFIG.datacenter_name,
         defaultFabricSetup: false,
         objectclass: 'dclocalconfig'
     };
@@ -288,9 +290,9 @@ test('modify dclocalconfig', function (t) {
 
 
 test('modify dclocalconfig dclocalconfig property', function (t) {
-    var dn = 'dclocalconfig=coal, ' + USER_DN;
+    var dn = 'dclocalconfig=' + CONFIG.datacenter_name + ', ' + USER_DN;
     var entry = {
-        dclocalconfig: 'coal',
+        dclocalconfig: CONFIG.datacenter_name,
         defaultFabricSetup: false,
         objectclass: 'dclocalconfig'
     };
@@ -318,16 +320,16 @@ test('modify dclocalconfig dclocalconfig property', function (t) {
 });
 
 test('modify dclocalconfig with identical entry', function (t) {
-    var dn = 'dclocalconfig=coal, ' + USER_DN;
+    var dn = 'dclocalconfig=' + CONFIG.datacenter_name + ', ' + USER_DN;
     var entry = {
-        dclocalconfig: 'coal',
+        dclocalconfig: CONFIG.datacenter_name,
         defaultFabricSetup: false,
         objectclass: 'dclocalconfig'
     };
     var change = {
         type: 'replace',
         modification: {
-            dclocalconfig: 'coal'
+            dclocalconfig: CONFIG.datacenter_name
         }
     };
 

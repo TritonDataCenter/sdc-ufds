@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright (c) 2017, Joyent, Inc.
  */
 
 // Also expose a common logger for all tests.
@@ -14,22 +14,24 @@ var assert = require('assert');
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
-var child_process = require('child_process');
 
 var Logger = require('bunyan');
 var ldapjs = require('ldapjs');
 var moray = require('moray');
 var restify = require('restify');
 
-///--- Globals
+// --- Globals
 var CONFIG;
 var CFG_FILE = process.env.TEST_CONFIG_FILE ||
             path.normalize(__dirname + '/../etc/config.coal.json');
 
 try {
     CONFIG = JSON.parse(fs.readFileSync(CFG_FILE, 'utf8'));
-    CONFIG.host = CONFIG.host || '10.99.99.18';
-    CONFIG.port = CONFIG.port || 636;
+    CONFIG.host = CONFIG.host || '0.0.0.0';
+    CONFIG.port = CONFIG.port || 1389;
+    if (CONFIG.certificate) {
+        delete CONFIG.certificate;
+    }
 } catch (e) {
     console.error('Unable to parse configuration file: ' + e.message);
     process.exit(1);
@@ -45,9 +47,10 @@ var LOG = new Logger({
 
 
 function get(client, DN, callback) {
-    return client.search(DN, '(objectclass=*)', function (err, res) {
+    client.search(DN, '(objectclass=*)', function (err, res) {
         if (err) {
-            return callback(err);
+            callback(err);
+            return;
         }
 
         var obj;
@@ -57,19 +60,20 @@ function get(client, DN, callback) {
         });
 
         res.once('error', function (err2) {
-            return callback(err2);
+            callback(err2);
+            return;
         });
 
         res.once('end', function (result) {
-            return callback(null, obj);
+            callback(null, obj);
+            return;
         });
 
-        return;
     });
 }
 
 
-///--- Exports
+// --- Exports
 
 module.exports = {
     createClient: function createClient(nobind, callback) {
@@ -130,7 +134,8 @@ module.exports = {
         assert.equal(typeof (cb), 'function');
         // Don't initialize local server if remote is specified.
         if (CONFIG.host !== '127.0.0.1') {
-            return cb(null, {});
+            cb(null, {});
+            return;
         }
         var basePath = path.normalize(__dirname + '/../');
         var ufds = require(basePath + '/lib/ufds');
@@ -145,7 +150,6 @@ module.exports = {
         var server = ufds.createServer(config);
         server.init(function () {
             cb(null, server);
-            return true;
         });
     },
 
@@ -153,7 +157,8 @@ module.exports = {
         assert.equal(typeof (cb), 'function');
         // No cleanup needed for remote server
         if (CONFIG.host !== '127.0.0.1') {
-            return cb();
+            cb();
+            return;
         }
         server.server.close();
         server.moray.close();
@@ -165,6 +170,11 @@ module.exports = {
         var basePath = path.normalize(__dirname + '/../');
         var capi = require(basePath + '/capi/server.js');
         var config = capi.processConfigFile(CFG_FILE);
+        // Don't initialize local server if remote is specified.
+        if (config.host !== '127.0.0.1') {
+            cb(null, {});
+            return;
+        }
         config.log = new Logger({
             name: 'capi',
             level: config.logLevel,
@@ -174,7 +184,8 @@ module.exports = {
         var server = capi.createServer(config);
         server.connect(function (err) {
           if (err) {
-            return cb(err);
+            cb(err);
+            return;
           }
           cb(null, server);
         });
@@ -182,6 +193,11 @@ module.exports = {
 
     destroyCAPIServer: function destroyCAPIServer(server, cb) {
         assert.equal(typeof (cb), 'function');
+        // No cleanup needed for remote server
+        if (CONFIG.host !== '127.0.0.1') {
+            cb();
+            return;
+        }
         server.close(cb);
     },
 
@@ -221,7 +237,8 @@ module.exports = {
                 var finished = 0;
                 if (rows.length === 0) {
                     client.close();
-                    return callback();
+                    callback();
+                    return;
                 }
                 rows.forEach(function (r) {
                     client.delObject(r.bucket, r.key, function (err) {
@@ -229,9 +246,8 @@ module.exports = {
                         finished += 1;
                         if (finished === rows.length) {
                             client.close();
-                            return callback();
-                        } else {
-                            return false;
+                            callback();
+                            return;
                         }
                     });
                 });

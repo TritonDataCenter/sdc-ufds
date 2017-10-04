@@ -790,6 +790,45 @@ test('delete key', function (t) {
     });
 });
 
+// Given ufds-napi-watcher watches ufds changelog for new users creation
+// and adds a dclocalconfig to such users, we're gonna wait for this object
+// to appear, delete it, and move ahead to customer cleanup
+test('cleanup customer dclocalconfig', function (t) {
+    var counter = 0;
+    var limit = 60;
+    var localCfgDn = util.format(
+            'dclocalconfig=%s, uuid=%s, ou=users, %s',
+            CONFIG.datacenter_name, CUSTOMER.uuid, SUFFIX);
+
+    helper.createClient(function (clientErr, client) {
+        t.ifError(clientErr);
+        t.ok(client);
+
+        function _waitForDcLocalCfg() {
+            client.del(localCfgDn, function (err) {
+                if (err) {
+                    counter += 1;
+                    if (counter < limit) {
+                        setTimeout(_waitForDcLocalCfg, 5000);
+                    } else {
+                        t.ifError(err);
+                        client.unbind(function (err2) {
+                            t.ifError(err2);
+                            t.end();
+                        });
+                    }
+                } else {
+                    client.unbind(function (err2) {
+                        t.ifError(err2);
+                        t.end();
+                    });
+                }
+            });
+        }
+        _waitForDcLocalCfg();
+    });
+});
+
 
 test('delete customer', function (t) {
     CAPI.del('/customers/' + CUSTOMER.uuid, function (err, req, res) {

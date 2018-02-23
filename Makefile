@@ -48,8 +48,9 @@ SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 
 CLEAN_FILES	+= node_modules cscope.files coverage
 
-NODE_PREBUILT_VERSION=v0.10.26
-NODE_PREBUILT_IMAGE=fd2cc906-8938-11e3-beab-4359c665ac99
+NODE_PREBUILT_VERSION=v0.10.48
+# sdc-minimal-multiarch-lts 15.4.1
+NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
 # The prebuilt sdcnode version we want. See
 # "tools/mk/Makefile.node_prebuilt.targ" for details.
 ifeq ($(shell uname -s),SunOS)

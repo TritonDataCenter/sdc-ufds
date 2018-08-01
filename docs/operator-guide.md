@@ -10,7 +10,7 @@ apisections: Key Rotation, SPC, UFDS
 -->
 
 <!--
-    Copyright (c) 2014, Joyent, Inc.
+    Copyright (c) 2018, Joyent, Inc.
 -->
 
 

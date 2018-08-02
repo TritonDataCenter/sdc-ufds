@@ -8,7 +8,6 @@ The functional areas impacted during the change window include:
 - smartlogin
 - account CRUD and fabric creation
 - firewall rule CRUD
-- billing check
 
 ## Procedure summary
 
@@ -19,19 +18,20 @@ The high-level steps are as follows:
     - Set a new, local UFDS password.
     - Configure the passwords so they still talk to the UFDS primary using the current password. During this stage, only the data center being updated is impacted.
 
-2. Update us-west-1:
+2. Update the data center containing the UFDS primary:
     - Upgrade the Triton components that have UFDS configuration bug fixes.
-    - Set a new, local UFDS password. Once this is done, all services pointing to the UFDS primary will not work. These services include all `ufds-replicators`, sso, billing callback, and cloudapi/adminui requests that write to UFDS.
+    - Set a new, local UFDS password. Once this is done, all services pointing to the UFDS primary will not work. These services include all `ufds-replicators`, sso, and cloudapi/adminui requests that write to UFDS.
     - Update the remote UFDS password on each data center that has UFDS replicas.
 
 ### Before you begin
 
 - Make sure that you have the unique passwords ready. 
 
-    Each data center has it's own local password. One data center is selected as the primary. All others are considered replicas. The local password of the primary is used as the remote password on the replicas. Although you may find exceptions, in general, all data centers replicate from the same primary data center.
+    Each data center has a local password. One data center is the primary. All other data centers are replicas. The primary data center's local password is also the remote password for all the replica data centers. All data centers replicate from the same primary data center, though exceptions to this are possible.
 
-    Ops recommends that all data centers use the same password, but you can choose to set different password for each replica.
-    Every data center can have a unique password. Every replica uses the primary data center password as the remote password.
+    Ops recommends that all data centers use the same password. However, you can choose a different password for each replica. That is, every data center may have a unique password.
+
+    Every replica data center's remote password is the same as the primary data center's local password.
 
 - Locate the four log files that contain `ufds-master`. You can find the names by running:
 ```
@@ -54,17 +54,17 @@ sdcadm dc-maint start --message="This DC is in maintenance.  Details available a
 sdcadm dc-maint status
 ```
 
-**On each data center that has UFDS replicas:**
+**On each data center that has a UFDS replica:**
 
-1. Run `sdc-usbkey` mount.
+1. Run `sdc-usbkey mount`.
 
-2. Update `/usbkey/config and /mnt/usbkey/config` to set `ufds_ldap_root_pw` to the new `<SLAVE_PW>`.
+2. Update `/usbkey/config and /mnt/usbkey/config` to set `ufds_ldap_root_pw` to the new `<REPLICA_PW>`.
 ```
 sdc-usbkey unmount
 ```
 3. Modify the local UFDS password to the new password.
 ```
-sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<SLAVE_PW>
+sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<REPLICA_PW>
 ```
 4. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi` to ensure that the new password takes effect.
 ```
@@ -91,14 +91,14 @@ vmadm reboot $(sdc-vmname mahi)
     - `list firewall rules`
 	-  Manta CLI
 2. Check CNS to ensure it automatically picks up the password change.
-3. Check that the `ufds-master` service logs in the `ufds` zone don't have any connection errors. Connection errors indicate that some customers still have the old password.
+3. Check that the `ufds-master` service logs in the `ufds` zone don't have any connection errors. Connection errors indicate that some consumers still have the old password.
 
-**On the us-west-1 UFDS primary**:
+**On the UFDS primary**:
 
-1. Update `/usbkey/config` and `/mnt/usbkey/config` and set `ufds_ldap_root_pw` to the new `<MASTER_PW>`.
-2. Update the UFDS password to the new password `<MASTER_PW>`.
+1. Update `/usbkey/config` and `/mnt/usbkey/config` and set `ufds_ldap_root_pw` to the new `<PRIMARY_PW>`.
+2. Update the UFDS password to the new password `<PRIMARY_PW>`.
 ```
-sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<MASTER_PW>
+sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<PRIMARY_PW>
 ```
 3. Reboot ```cloudapi```, ```mahi```, ```adminui```, and ```fwapi```.
 ```
@@ -116,15 +116,15 @@ svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
 
 7. Test.
 
-**On sdcsso and billing-callback-a/b zones**:
+**On sdcsso zones**:
 
-1. Update the `billing-callback` UFDS password in ` /opt/piranha-billing-server/config.json`, and then restart the service.
+Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps are only necessary if they have been installed through a support contract.
 
-**On each data center that has UFDS replicas**:
+**On each data center that has a UFDS replica**:
 
 1. Set the remote UFDS password to match the new password for the UFDS primary.
 ```
-sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_remote_ldap_root_pw=<MASTER_PW>
+sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_remote_ldap_root_pw=<REMOTE_PW>
 ```
 2. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi`.
 ```
@@ -134,14 +134,17 @@ for uuid in $(sdcadm insts -j cloudapi adminui mahi fwapi | json -a zonename); d
 ```
 svcadm -z $(vmadm lookup alias=~ufds) restart ufds-capi
 ```
-4. Restart the `napi-ufds-watcher` service in the `sdc` zone.
+
+At this point, the `napi-ufds-watcher` may be in maintenance and will need to be cleared. 
+
+4. To clear and restart the `napi-ufds-watcher` service in the `sdc` zone.
+```
+svcadm -z $(vmadm lookup alias=~sdc) clear napi-ufds-watcher
+```
+**Note**: If the `napi-ufds-watcher` is not in a maintenance state, you can restart it by running:
 ```
 svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
-
-    **Note**: The `napi-ufds-watcher` is usually in a maintenance state at this point and needs to be cleared.
-    ```
-    svcadm -z $(vmadm lookup alias=~sdc) clear napi-ufds-watcher
-    ```
+```
 
 5. Test.
 
@@ -149,25 +152,31 @@ svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
 
 Manta will not always be deployed, so you can skip these steps if you do not have a Manta.
 
-1. Update Manta webapi and authcache for each headnode in us-east-1, us-east-2, and us-east-3:
+1. Update Manta webapi and authcache for each data center:
 ```
-source /usbkey/config
-mdash=$(sdc-sapi /services?name=marlin-dashboard\&include_master=true | json -Ha uuid) json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}") sdc-sapi /services/$mdash -X PUT -d "$json"
+webapi=( $(manta-adm show -Ho zonename webapi) )
 
-madtom=$(sdc-sapi /services?name=madtom\&include_master=true | json -Ha uuid) json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}") sdc-sapi /services/$madtom -X PUT -d "$json" ```
+for api in "${webapi[@]}"; do
+  sapiadm update "$api" metadata.UFDS_ROOT_PW="${ufds_ldap_root_pw}"
+
+done
+
+mahi=( $(manta-adm show -Ho zonename authcache) )
+
+for m in "${mahi[@]}"; do
+  sapiadm update "$m" metadata.UFDS_ROOT_PW="${ufds_ldap_root_pw}"
+manta-oneach -z "$m" reboot
 ```
 
 2. Update madtom and marlin-dashboard in us-east-1 and us-east-3.
 
 **In us-east-1**:
 ```
-mdash=$(manta-adm show marlin-dashboard | awk '/marlin-dashboard/ {print $3}')
-sapiadm update "$mdash" metadata.UFDS_ROOT_PW="${ufds_ldap_root_pw}"
+mdash=$(sdc-sapi /services?name=marlin-dashboard\&include_master=true | json -Ha uuid) json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}") sdc-sapi /services/$mdash -X PUT -d "$json"
 ```
 **In us-east-3**:
 ```
-madtom=$(manta-adm show madtom | awk '/madtom/ {print $3}')
-sapiadm update "$madtom" metadata.UFDS_ROOT_PW="${ufds_ldap_root_pw}"
+madtom=$(sdc-sapi /services?name=madtom\&include_master=true | json -Ha uuid) json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}") sdc-sapi /services/$madtom -X PUT -d "$json"
 ```
 
 ### End the data center maintenance

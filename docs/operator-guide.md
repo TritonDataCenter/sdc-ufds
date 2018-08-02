@@ -30,32 +30,32 @@ The functional areas impacted during the change window include:
 
 The high-level steps are as follows:
 
-1. Update the DCs that have UFDS slaves:
+1. Update the data centers that have UFDS slaves:
   - Upgrade the Triton components that have UFDS configuration bug fixes.
   - Set a new, local UFDS password.
-  - Configure the passwords so they still talk to the UFDS master using the current password. During this stage, only the DC being updated is impacted.
+  - Configure the passwords so they still talk to the UFDS master using the current password. During this stage, only the data center being updated is impacted.
 
 2. Update us-west-1:
   - Upgrade the Triton components that have UFDS configuration bug fixes.
-  - Set a new, local UFDS password. Once this is done, all services pointing to the UFDS master will not work. These services include all ```ufds-replicators```, sso, billing callback, and cloudapi/adminui requests that write to UFDS.
-  - Update the remote UFDS password on each DC that has UFDS slaves.
+  - Set a new, local UFDS password. Once this is done, all services pointing to the UFDS master will not work. These services include all `ufds-replicators`, sso, billing callback, and cloudapi/adminui requests that write to UFDS.
+  - Update the remote UFDS password on each data center that has UFDS slaves.
 
 ## Procedure
 
 Before you begin, make sure that you have the unique passwords ready.
 
-**DC maint start:**
+### Start data center maintenance:
 
 ```
 sdcadm dc-maint start --message="This DC is in maintenance.  Details available at https://status.joyent.com/"
 
-## confirm status
+# confirm status
 sdcadm dc-maint status
 ```
 
-**On each DC that has UFDS slaves:**
+**On each data center that has UFDS slaves:**
 
-1. Run ```sdc-usbkey``` mount.
+1. Run `sdc-usbkey` mount.
 
 2. Update ```/usbkey/config and /mnt/usbkey/config``` to set ```ufds_ldap_root_pw``` to the new ```<SLAVE_PW>```.
 ```
@@ -117,7 +117,7 @@ svcadm -z $(vmadm lookup alias=~sdc0) restart napi-ufds-watcher
 
 	**Note**: The ```config-agent``` handles this as expected. There is no need to update the ```sdcsso ufds``` password in ```/opt/smartdc/sdcsso/cfg/config.json``` and restarting the service ```config-agent```.
 
-**On each DC that has UFDS slaves**:
+**On each data center that has UFDS slaves**:
 
 1. Set the remote UFDS password to match the new password for master.
 ```
@@ -168,7 +168,7 @@ sapiadm update "$madtom" metadata.UFDS_ROOT_PW="${ufds_ldap_root_pw}"
 ```
 svcadm restart chef
 ```
-4. End the DC maint.
+### End the data center maintenance
 ```
 sdcadm dc-maint stop
 # confirm status

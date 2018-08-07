@@ -23,24 +23,24 @@ The high-level steps are as follows:
 
 ### Before you begin
 
-- Make sure that you have the unique passwords ready.
+- **Determine whether you have enabled UFDS replication**. Parts of this guide assume that you have already enabled UFDS replication using the `sdc-ufds-m2s` script. If you have not set up UFDS replication, follow the steps for the UFDS primary. You may skip all sections that refer to replicas.
 
-    Each data center has a local password. One data center is the primary. All other data centers are replicas. The primary data center's local password is also the remote password for all the replica data centers. All data centers replicate from the same primary data center, though exceptions to this are possible.
+- **Generate passwords**. You may use a single password for all data centers because they have the same content. You may also use a unique password per data center. If you use unique passwords, then all replica data centers must use the primary's password as the remote password.
 
-    Ops recommends that all data centers use the same password. However, you can choose a different password for each replica. That is, every data center may have a unique password.
+    If you are unsure which data center is the primary, check `/usbkey/config` on the headnode for the line `ufds_is_master=true`.
 
-    Every replica data center's remote password is the same as the primary data center's local password.
+- **Prepare to monitor UFDS log files**. Monitor the logs while making the changes is a best practice to catch anything that might go wrong.
 
-- Locate the four log files that contain `ufds-master`. You can find the names by running:
-
-    ```
-    svcs -L ufds-master
-    ```
-
-- Check each file by running:
+    - To monitor the primary:
 
     ```
-    tail -1f $(svcs -L ufds-master) | bunyan
+    tail -1f $(svcs -L ufds-master | bunyan
+    ```
+
+    - To monitor the `ufds-replicator` log:
+
+    ```
+    tail -1f $(svcs -L ufds-replicator)
     ```
 
 ## Procedure
@@ -58,19 +58,17 @@ The high-level steps are as follows:
 
 1. Run `sdc-usbkey mount`.
 
-2. Update `/usbkey/config and /mnt/usbkey/config` to set `ufds_ldap_root_pw` to the new `<REPLICA_PW>`, and then unmount the usbkey:
+2. Update `/usbkey/config` and `/mnt/usbkey/config` to set `ufds_ldap_root_pw` to the new `<REPLICA_PW>`.
 
-    ```
-    sdc-usbkey unmount
-    ```
+3. Run `sdc-usbkey unmount`.
 
-3. Modify the local UFDS password to the new password.
+4. Modify the local UFDS password to the new password.
 
     ```
     sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<REPLICA_PW>
     ```
 
-4. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi` to ensure that the new password takes effect.
+5. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi` to ensure that the new password takes effect.
 
     ```
     for uuid in $(sdcadm insts -j cloudapi adminui mahi fwapi | json -a zonename); do
@@ -79,48 +77,40 @@ The high-level steps are as follows:
     done
     ```
 
-5. Restart the `ufds-capi` service in the `ufds` zone.
+6. Restart the `ufds-capi` service in the `ufds` zone.
 
     ```
     svcadm -z $(vmadm lookup alias=~ufds) restart ufds-capi
     ```
 
-6. Restart the `napi-ufds-watcher` service in the `sdc` zone.
+7. Restart the `napi-ufds-watcher` service in the `sdc` zone.
 
     ```
     svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
     ```
 
-7. Update the Manta authcache UFDS password stored in the `sapi` instance metadata, and then reboot the zone.
+8. Update the Manta authcache UFDS password stored in the `sapi` instance metadata, and then reboot the zone.
 
     ```
     sapiadm update $(sdc-vmname mahi) metadata.UFDS_ROOT_PW=<LOCAL_UFDS_PW>
     vmadm reboot $(sdc-vmname mahi)
     ```
-	
-#### Testing
-
-1. Test all affected functions, including:
-    - `CRUD account/sub-user/role`
-    - `provisioning`
-    - `list firewall rules`
-    -  Manta CLI
-
-2. Check CNS to ensure it automatically picks up the password change.
-
-3. Check that the `ufds-master` service logs in the `ufds` zone don't have any connection errors. Connection errors indicate that some consumers still have the old password.
 
 ### On the UFDS primary
 
-1. Update `/usbkey/config` and `/mnt/usbkey/config` and set `ufds_ldap_root_pw` to the new `<PRIMARY_PW>`.
+1. Run `sdc-usbkey mount`.
 
-2. Update the UFDS password to the new password `<PRIMARY_PW>`.
+2. Update `/usbkey/config` and `/mnt/usbkey/config` and set `ufds_ldap_root_pw` to the new `<PRIMARY_PW>`.
+
+3. Run `sdc-usbkey unmount`.
+
+4. Update the UFDS password to the new password `<PRIMARY_PW>`.
 
     ```
     sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<PRIMARY_PW>
     ```
 
-3. Reboot ```cloudapi```, ```mahi```, ```adminui```, and ```fwapi```.
+5. Reboot ```cloudapi```, ```mahi```, ```adminui```, and ```fwapi```.
 
     ```
     for uuid in $(sdcadm insts -j cloudapi adminui mahi fwapi | json -a zonename); do
@@ -129,47 +119,49 @@ The high-level steps are as follows:
     done
     ```
 
-4. Restart the `ufds-capi` service in the `ufds` zone.
+6. Restart the `ufds-capi` service in the `ufds` zone.
 
     ```
     svcadm -z $(vmadm lookup alias=~ufds) restart ufds-capi
     ```
 
-5. Restart the `napi-ufds-watcher` service in the `sdc` zone.
+7. Restart the `napi-ufds-watcher` service in the `sdc` zone.
 
     ```
     svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
     ```
 
-6. Update the password in the Manta authcache zone.
+8. Update the password in the Manta authcache zone.
 
-7. Test.
+9. Test.
 
 ### Portal and sdcsso
 
 Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps are only necessary if they have been installed through a support contract.
-- To update sdcsso:
-    - In the sdcsso zone, edit `/opt/smartdc/sdcsso/cfg/config.json`, and then restart the `sdcsso` service.
-- To update each of the portal instances:
-    - In the portal installation directory, edit `/site/config/config.pro.json`, and then restart the `portal` service.
 
-### On each data center
+- To update sdcsso:
+    - In the sdcsso zone, edit `/opt/smartdc/sdcsso/cfg/config.json`.
+    - Restart the `sdcsso` service.
+
+- To update each of the portal instances:
+    - In the portal installation directory, edit `/site/config/config.pro.json`.
+    - Restart the `portal` service.
+
+### On each replica data center
 
 1. Run `sdc-usbkey mount`.
 
-2. Update `/usbkey/config and /mnt/usbkey/config` to set `ufds_ldap_root_pw` to the new `<REMOTE_PW>`, and then unmount the usbkey:
+2. Update `/usbkey/config` and `/mnt/usbkey/config` and set `ufds_ldap_root_pw` to the new `<REMOTE_PW>`.
 
-    ```
-    sdc-usbkey unmount
-    ```
+3. Run `sdc-usbkey unmount`.
 
-1. Set the remote UFDS password to match the new password for the UFDS primary.
+4. Set the remote UFDS password to match the new password for the UFDS primary.
 
     ```
     sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_remote_ldap_root_pw=<REMOTE_PW>
     ```
 
-2. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi`.
+5. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi`.
 
     ```
     for uuid in $(sdcadm insts -j cloudapi adminui mahi fwapi | json -a zonename); do
@@ -178,7 +170,7 @@ Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps a
     done
     ```
 
-3. Restart the `capi` service in the `ufds` zone.
+6. Restart the `capi` service in the `ufds` zone.
 
     ```
     svcadm -z $(vmadm lookup alias=~ufds) restart ufds-capi
@@ -186,7 +178,7 @@ Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps a
 
     At this point, the `napi-ufds-watcher` will need to be restarted. However, if it is in maintenance, you can  simply clear it.
 
-4. To restart the `napi-ufds-watcher` service in the `sdc` zone.
+7. To restart the `napi-ufds-watcher` service in the `sdc` zone.
 
     ```
     svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
@@ -198,11 +190,11 @@ Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps a
     svcadm -z $(vmadm lookup alias=~sdc) clear napi-ufds-watcher
     ```
 
-5. Test.
+8. Test.
 
 ## Update Manta components
 
-Manta will not always be deployed, so you can skip these steps if you do not have a Manta.
+Manta will not always be deployed. If there is no Manta, skip these steps.
 
 1. Update Manta webapi and authcache for each data center:
 
@@ -236,3 +228,14 @@ Manta will not always be deployed, so you can skip these steps if you do not hav
     # confirm status
     sdcadm dc-maint status
     ```
+## Testing
+
+1. Test all affected functions, including:
+    - `CRUD account/sub-user/role`
+    - `provisioning`
+    - `list firewall rules`
+    -  Manta CLI
+
+2. Check CNS to ensure it automatically picks up the password change.
+
+3. Check that the `ufds-master` service logs in the `ufds` zone don't have any connection errors. Connection errors indicate that some consumers still have the old password.

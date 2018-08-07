@@ -97,6 +97,7 @@ The high-level steps are as follows:
     sapiadm update $(sdc-vmname mahi) metadata.UFDS_ROOT_PW=<LOCAL_UFDS_PW>
     vmadm reboot $(sdc-vmname mahi)
     ```
+	
 #### Testing
 
 1. Test all affected functions, including:
@@ -149,7 +150,6 @@ The high-level steps are as follows:
 Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps are only necessary if they have been installed through a support contract.
 - To update sdcsso:
     - In the sdcsso zone, edit `/opt/smartdc/sdcsso/cfg/config.json`, and then restart the `sdcsso` service.
-
 - To update each of the portal instances:
     - In the portal installation directory, edit `/site/config/config.pro.json`, and then restart the `portal` service.
 
@@ -184,7 +184,7 @@ Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps a
     svcadm -z $(vmadm lookup alias=~ufds) restart ufds-capi
     ```
 
-At this point, the `napi-ufds-watcher` will need to be restarted. However, if it is in maintenance, you can  simply clear it.
+    At this point, the `napi-ufds-watcher` will need to be restarted. However, if it is in maintenance, you can  simply clear it.
 
 4. To restart the `napi-ufds-watcher` service in the `sdc` zone.
 
@@ -192,7 +192,7 @@ At this point, the `napi-ufds-watcher` will need to be restarted. However, if it
     svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
     ```
 
-If the `napi-ufds-watcher` is in a maintenance state, you can clear it by running:
+    If the `napi-ufds-watcher` is in a maintenance state, you can clear it by running:
 
     ```
     svcadm -z $(vmadm lookup alias=~sdc) clear napi-ufds-watcher

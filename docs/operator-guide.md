@@ -34,13 +34,13 @@ The high-level steps are as follows:
     - To monitor the primary:
 
     ```
-    tail -1f $(svcs -L ufds-master | bunyan
+    tail -1f $(svcs -L ufds-master) | bunyan
     ```
 
     - To monitor the `ufds-replicator` log:
 
     ```
-    tail -1f $(svcs -L ufds-replicator)
+    tail -1f $(svcs -L ufds-replicator) | bunyan
     ```
 
 ## Procedure
@@ -110,7 +110,7 @@ The high-level steps are as follows:
     sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<PRIMARY_PW>
     ```
 
-5. Reboot ```cloudapi```, ```mahi```, ```adminui```, and ```fwapi```.
+5. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi`.
 
     ```
     for uuid in $(sdcadm insts -j cloudapi adminui mahi fwapi | json -a zonename); do

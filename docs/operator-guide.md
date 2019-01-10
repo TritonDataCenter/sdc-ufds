@@ -68,13 +68,13 @@ The high-level steps are as follows:
     sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<REPLICA_PW>
     ```
 
-5. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi` to ensure that the new password takes effect.
+5. Reboot `cloudapi`, `mahi`, `adminui`, `fwapi`, and `imgapi` to ensure that the new password takes effect.
 
     ```
-    for uuid in $(sdcadm insts -j cloudapi adminui mahi fwapi | json -a zonename); do
-        echo "restarting $uuid"
-        vmadm reboot $uuid
-    done
+    hn=$(sysinfo | json UUID)
+    hn2=$(sdc-server lookup traits.triton=headnode)
+    # check that the csv of HN and secondary HN uuids look correct (expects 3 of them) echo $hn $hn2 | tr""","
+    sdc-oneachnode -n $(echo $hn $hn2 | tr""",") 'for uuid in $(sdcadm insts cloudapi adminui mahi fwapi imgapi | grep -v INSTANCE | awk '{print $1}'); do echo "restarting $uuid"; vmadm reboot $uuid; done'
     ```
 
 6. Restart the `ufds-capi` service in the `ufds` zone.
@@ -89,12 +89,17 @@ The high-level steps are as follows:
     svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
     ```
 
-8. Update the Manta authcache UFDS password stored in the `sapi` instance metadata, and then reboot the zone.
+#### Test the modifications
 
-    ```
-    sapiadm update $(sdc-vmname mahi) metadata.UFDS_ROOT_PW=<LOCAL_UFDS_PW>
-    vmadm reboot $(sdc-vmname mahi)
-    ```
+8. Test all affected features:
+    - CRUD account/sub-user/role
+    - provisioning
+    - list firewall rules
+    - Manta CLI
+
+9. Check CNS to ensure that it automatically picks up the password change.
+
+10. Check that that the ufds-master log doesn't have any connection errors. Connection errors indicate that some consumers still have the old password.
 
 ### On the UFDS primary
 
@@ -110,13 +115,13 @@ The high-level steps are as follows:
     sapiadm update $(sdc-sapi /applications?name=sdc | json -Ha uuid) metadata.ufds_ldap_root_pw=<PRIMARY_PW>
     ```
 
-5. Reboot `cloudapi`, `mahi`, `adminui`, and `fwapi`.
+5. Reboot `cloudapi`, `mahi`, `adminui`, `imgapi`, and `fwapi`.
 
     ```
-    for uuid in $(sdcadm insts -j cloudapi adminui mahi fwapi | json -a zonename); do
-        echo "restarting $uuid"
-        vmadm reboot $uuid
-    done
+    hn=$(sysinfo | json UUID)
+    hn2=$(sdc-server lookup traits.triton=headnode)
+    # check that the csv of HN and secondary HN uuids look correct (expects 3 of them) echo $hn $hn2 | tr""","
+    sdc-oneachnode -n $(echo $hn $hn2 | tr""",") 'for uuid in $(sdcadm insts cloudapi adminui mahi fwapi imgapi | grep -v INSTANCE | awk '{print $1}'); do echo "restarting $uuid"; vmadm reboot $uuid; done'
     ```
 
 6. Restart the `ufds-capi` service in the `ufds` zone.
@@ -131,17 +136,15 @@ The high-level steps are as follows:
     svcadm -z $(vmadm lookup alias=~sdc) restart napi-ufds-watcher
     ```
 
-8. Update the password in the Manta authcache zone.
-
-9. Test.
+8. Test.
 
 ### Portal and sdcsso
 
 Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps are only necessary if they have been installed through a support contract.
 
-- To update sdcsso:
-    - In the sdcsso zone, edit `/opt/smartdc/sdcsso/cfg/config.json`.
-    - Restart the `sdcsso` service.
+- In the `billing-callback-a/b` zones:
+    - Update the `billing-callback ufds` password in `/opt/piranha-billing-server/config.json`
+    - Restart the service.
 
 - To update each of the portal instances:
     - In the portal installation directory, edit `/site/config/config.pro.json`.
@@ -196,6 +199,8 @@ Sdcsso is an optional component of the Triton Service Portal. SSO/portal steps a
 
 Manta will not always be deployed. If there is no Manta, skip these steps.
 
+In `/usbkey/config`:
+
 1. Update Manta webapi and authcache for each data center:
 
     ```
@@ -221,6 +226,18 @@ Manta will not always be deployed. If there is no Manta, skip these steps.
     madtom=$(sdc-sapi /services?name=madtom\&include_master=true | json -Ha uuid) json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}") sdc-sapi /services/$madtom -X PUT -d "$json"
     ```
 
+## Locate any reshard zone in the DC and update its metadata. 
+
+Normally, there is one reshard zone in each SPC region:
+    ```
+    reshard=manta-adm show -Ho zonename reshard
+    sdc-sapi /instances/$reshard -X PUT -d'{"action":"update","metadata":{"UFDS_ROOT_PW": "${ufds_ldap_root_pw}"}}'
+
+## Restart chef on portal instances if applicable
+    ```
+    svcadm restart chef
+    ```
+    
 ### End the data center maintenance
 
     ```

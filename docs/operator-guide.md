@@ -226,7 +226,7 @@ In `/usbkey/config`:
     madtom=$(sdc-sapi /services?name=madtom\&include_master=true | json -Ha uuid) json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}") sdc-sapi /services/$madtom -X PUT -d "$json"
     ```
 
-## Locate any reshard zone in the DC and update its metadata. 
+## Locate any reshard zone in the DC and update its metadata
 
 Normally, there is one reshard zone in each SPC region:
     ```
@@ -237,7 +237,7 @@ Normally, there is one reshard zone in each SPC region:
     ```
     svcadm restart chef
     ```
-    
+
 ### End the data center maintenance
 
     ```

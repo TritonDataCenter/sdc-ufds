@@ -1,4 +1,6 @@
+/bits
 build
+/make_stamps
 node_modules
 coverage
 var/*

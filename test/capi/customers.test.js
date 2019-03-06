@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2017, Joyent, Inc.
+ * Copyright (c) 2019, Joyent, Inc.
  */
 
 var test = require('tape');
@@ -790,10 +790,7 @@ test('delete key', function (t) {
     });
 });
 
-// Given ufds-napi-watcher watches ufds changelog for new users creation
-// and adds a dclocalconfig to such users, we're gonna wait for this object
-// to appear, delete it, and move ahead to customer cleanup
-test('cleanup customer dclocalconfig', function (t) {
+function tryDeleteDclocalconfig(t, cb) {
     var counter = 0;
     var limit = 60;
     var localCfgDn = util.format(
@@ -811,30 +808,48 @@ test('cleanup customer dclocalconfig', function (t) {
                     if (counter < limit) {
                         setTimeout(_waitForDcLocalCfg, 5000);
                     } else {
-                        t.ifError(err);
+                        // Assume napi-ufds-watcher will just not create
+                        // the entry and move ahead:
+                        t.comment('Timeout waiting 5 mins for ' +
+                            'napi-ufds-watcher to create dclocalconfig,' +
+                            ' skipping');
                         client.unbind(function (err2) {
                             t.ifError(err2);
-                            t.end();
+                            cb();
                         });
                     }
                 } else {
                     client.unbind(function (err2) {
                         t.ifError(err2);
-                        t.end();
+                        cb();
                     });
                 }
             });
         }
         _waitForDcLocalCfg();
     });
-});
+}
 
-
+// Given that when ufds-napi-watcher is running it watches the ufds changelog
+// for new users creation and adds a dclocalconfig to such users, we're gonna
+// wait for this object to appear, delete it, and move ahead to customer
+// cleanup, but only in case we have a failure when first attempting to remove
+// the customer object.
 test('delete customer', function (t) {
-    CAPI.del('/customers/' + CUSTOMER.uuid, function (err, req, res) {
-        t.ifError(err);
-        t.equal(200, res.statusCode);
-        t.end();
+    var p = '/customers/' + CUSTOMER.uuid;
+    CAPI.del(p, function delCb(err, req, res) {
+        if (err) {
+            tryDeleteDclocalconfig(t, function delLocalCfgCb() {
+                CAPI.del(p, function delCb2(err2, req2, res2) {
+                    t.ifError(err2);
+                    t.equal(200, res2.statusCode);
+                    t.end();
+                });
+            });
+        } else {
+            t.equal(200, res.statusCode);
+            t.end();
+        }
     });
 });
 

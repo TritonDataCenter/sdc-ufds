@@ -5,7 +5,8 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2019 Joyent, Inc.
+ * Copyright 2019 University of Queensland
  */
 
 /*
@@ -22,6 +23,7 @@ var sshpk = require('sshpk');
 var ldap = require('ldapjs');
 var restify = require('restify');
 var libuuid = require('libuuid');
+var vasync = require('vasync');
 function uuid() {
     return (libuuid.create());
 }
@@ -93,7 +95,63 @@ function loadKeys(req, callback) {
             return translateKey(key, req.params.uuid);
         });
 
-        return callback(null, keys);
+        /*
+         * Also add keys which belong to members of the "administrator" role
+         * on the account, if we have any.
+         */
+        var roleFilter = '(&(objectclass=sdcaccountrole)(name=administrator))';
+        req.ufds.listRoles(req.params.uuid, roleFilter, function (err2, roles) {
+            if (err2) {
+                return callback(err2);
+            }
+
+            /*
+             * Since the "uniquemember" members (those who aren't also in
+             * "uniquememberdefault") are meant to have to take affirmative
+             * action for the role to apply (e.g. setting a Role header), we
+             * will only add those in uniquememberdefault. We don't have a way
+             * for users to take affirmative action to activate the role in the
+             * context of smartlogin.
+             */
+            var adminRole = roles[0];
+            if (!adminRole || !adminRole.uniquememberdefault) {
+                return callback(null, keys);
+            }
+
+            var members = adminRole.uniquememberdefault;
+            if (!Array.isArray(members)) {
+                members = [members];
+            }
+
+            vasync.forEachParallel({
+                func: addUserKeys,
+                inputs: members
+            }, function (err3) {
+                if (err3) {
+                    return callback(err3);
+                }
+                return callback(null, keys);
+            });
+
+            function addUserKeys(dn, ccb) {
+                /*
+                 * Note scope: one not sub, the DN might be an account rather
+                 * than a sub-user, and we don't want its sub-user's keys.
+                 */
+                req.ufds.search(dn, {
+                    scope: 'one',
+                    filter: '(objectclass=sdckey)'
+                }, function (err4, userKeys) {
+                    if (err4) {
+                        return ccb(err4);
+                    }
+                    userKeys.forEach(function (key) {
+                        keys.push(translateKey(key, req.params.uuid));
+                    });
+                    return ccb(null);
+                });
+            }
+        });
     });
 }
 

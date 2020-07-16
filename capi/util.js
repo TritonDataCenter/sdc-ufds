@@ -5,28 +5,19 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var assert = require('assert');
 var crypto = require('crypto');
-var sprintf = require('util').format;
 
-var ldap = require('ldapjs');
 var restify = require('restify');
-var libuuid = require('libuuid');
+var uuidv4 = require('uuid/v4');
 function uuid() {
-    return (libuuid.create());
+    return uuidv4();
 }
 
-
-
-///--- Globals
-
-var hidden = new ldap.Control({
-    type: '1.3.6.1.4.1.38678.1',
-    criticality: true
-});
+// --- Globals
 
 var AES_KEY = uuid().replace('-').substring(0, 16);
 
@@ -35,7 +26,7 @@ var OPERATORS_DN = 'cn=operators, ou=groups, o=smartdc';
 var ResourceNotFoundError = restify.ResourceNotFoundError;
 
 
-///--- Helpers
+// --- Helpers
 
 function _randomId(min, max) {
     if (!min) {
@@ -91,7 +82,7 @@ function _translate(entry) {
         customer_uuid: entry.uuid,
         login: entry.login,
         email_address: entry.email,
-        first_name: entry.givenname || entry.givenName,
+        first_name: entry.givenname || entry.givenName,
         last_name: entry.sn,
         company_name: entry.company || null,
         approved_for_provisioning: entry.approved_for_provisioning || false,
@@ -153,7 +144,7 @@ function _translate(entry) {
 
 
 
-///--- Exports
+// --- Exports
 
 module.exports = {
 

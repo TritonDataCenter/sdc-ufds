@@ -5,13 +5,13 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var test = require('tape');
-var libuuid = require('libuuid');
+var uuidv4 = require('uuid/v4');
 function uuid() {
-    return (libuuid.create());
+    return uuidv4();
 }
 var util = require('util'),
     sprintf = util.format;
@@ -20,7 +20,7 @@ var helper = require('./helper.js');
 
 
 
-///--- Globals
+// --- Globals
 
 var CLIENT;
 var SERVER;
@@ -34,7 +34,7 @@ var USER_DN = sprintf(DN_FMT, DUP_LOGIN);
 
 
 
-///--- Tests
+// --- Tests
 
 test('setup', function (t) {
     helper.createServer(function (err, server) {
@@ -117,7 +117,7 @@ test('authorize ok', function (t) {
 
 
 test('authorization denied', function (t) {
-    CLIENT.compare(SUFFIX, 'o', 'smartdc', function (err, matched) {
+    CLIENT.compare(SUFFIX, 'o', 'smartdc', function (err, _matched) {
         t.ok(err);
         t.equal(err.name, 'InsufficientAccessRightsError');
         t.end();
@@ -129,7 +129,7 @@ test('unbound client should not throw exceptions', function (t) {
     helper.createClient(true, function (err, unboundClient) {
         t.ifError(err, 'Unbound client error');
         unboundClient.compare(USER_DN, 'login', DUP_LOGIN,
-            function (er2, match) {
+            function (er2, _match) {
             t.ok(er2);
             t.equal(er2.name, 'InsufficientAccessRightsError');
             var opts = {
@@ -140,7 +140,7 @@ test('unbound client should not throw exceptions', function (t) {
 
             unboundClient.search('cn=changelog', opts, function (er3, res) {
                 t.ifError(er3);
-                res.on('searchEntry', function (entry) {
+                res.on('searchEntry', function (_entry) {
                     return;
                 });
 
@@ -155,9 +155,7 @@ test('unbound client should not throw exceptions', function (t) {
                     t.end();
                 });
             });
-
         });
-
     });
 });
 

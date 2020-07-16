@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 /*
@@ -14,12 +14,11 @@
  */
 
 var test = require('tape');
-var ldap = require('ldapjs');
 var util = require('util'),
     sprintf = util.format;
-var libuuid = require('libuuid');
+var uuidv4 = require('uuid/v4');
 function uuid() {
-    return (libuuid.create());
+    return uuidv4();
 }
 
 var helper = require('./helper.js');
@@ -111,16 +110,20 @@ function get(dn, cb) {
         scope: 'base',
         filter: '(objectclass=*)'
     }, function (err, res) {
+        if (err) {
+            cb(err);
+            return;
+        }
         res.on('searchEntry', function (entry) {
             obj = entry.object;
         });
 
         res.on('error', function (error) {
-            return cb(error);
+            cb(error);
         });
 
         res.on('end', function (result) {
-            return cb(null, obj);
+            cb(null, obj);
         });
     });
 }
@@ -264,7 +267,7 @@ test('add policy with dupe name', function (t) {
 
 
 test('add role with policy', function (t) {
-    var role_uuid =  uuid();
+    var role_uuid = uuid();
     var role = 'a' + role_uuid.substr(0, 7);
     GROUP_NAME = role;
     var entry = {
@@ -318,7 +321,7 @@ test('add role with dupe name', function (t) {
 var _RESOURCE_DN;
 
 test('add resource', function (t) {
-    var res_uuid =  uuid();
+    var res_uuid = uuid();
     var res = '/abcd/' + res_uuid.substr(0, 7);
     var entry = {
         name: res,
@@ -350,7 +353,7 @@ test('delete resource', function (t) {
 
 
 test('add role w/o policy', function (t) {
-    var role_uuid =  uuid();
+    var role_uuid = uuid();
     var role = 'a' + role_uuid.substr(0, 7);
     var entry = {
         name: role,
@@ -458,7 +461,7 @@ test('prepare modifications', function (t) {
         helper.get(CLIENT, _3RD_POLICY_DN, function (err2, obj) {
             t.ifError(err2);
             t.ok(obj);
-            var role_uuid =  uuid();
+            var role_uuid = uuid();
             var role = 'a' + role_uuid.substr(0, 7);
             entry = {
                 name: role,
@@ -677,7 +680,7 @@ test('delete policy with roles', function (t) {
 
 
 test('mod policy (with fake role)', function (t) {
-    var FAKE_DN = util.format(ROLE_DN_FMT, libuuid.create(), libuuid.create());
+    var FAKE_DN = util.format(ROLE_DN_FMT, uuid(), uuid());
     var change = {
         type: 'add',
         modification: {

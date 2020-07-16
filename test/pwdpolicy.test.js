@@ -5,23 +5,23 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var test = require('tape');
 var ldap = require('ldapjs');
 var util = require('util');
 var sprintf = util.format;
-var libuuid = require('libuuid');
+var uuidv4 = require('uuid/v4');
 function uuid() {
-    return (libuuid.create());
+    return uuidv4();
 }
 
 var helper = require('./helper.js');
 
 
 
-///--- Globals
+// --- Globals
 
 var CLIENT;
 var SERVER;

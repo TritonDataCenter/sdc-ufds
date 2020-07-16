@@ -5,7 +5,7 @@
 #
 
 #
-# Copyright (c) 2019, Joyent, Inc.
+# Copyright 2020 Joyent, Inc.
 #
 
 #
@@ -48,13 +48,16 @@ SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 
 CLEAN_FILES	+= node_modules cscope.files coverage
 
-NODE_PREBUILT_VERSION=v0.10.48
-# sdc-minimal-multiarch-lts 15.4.1
-NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
-# The prebuilt sdcnode version we want. See
-# "tools/mk/Makefile.node_prebuilt.targ" for details.
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_TAG=zone
+	NODE_PREBUILT_VERSION=v0.10.48
+	# sdc-minimal-multiarch-lts 15.4.1
+	NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
+	NODE_PREBUILT_TAG := zone
+else
+	NPM=npm
+	NODE=node
+	NPM_EXEC=$(shell which npm)
+	NODE_EXEC=$(shell which node)
 endif
 
 ENGBLD_USE_BUILDIMAGE	= true
@@ -65,8 +68,6 @@ TOP ?= $(error Unable to access eng.git submodule Makefiles.)
 ifeq ($(shell uname -s),SunOS)
 	include ./deps/eng/tools/mk/Makefile.node_prebuilt.defs
 	include ./deps/eng/tools/mk/Makefile.agent_prebuilt.defs
-else
-	include ./deps/eng/tools/mk/Makefile.node.defs
 endif
 include ./deps/eng/tools/mk/Makefile.smf.defs
 
@@ -167,8 +168,6 @@ include ./deps/eng/tools/mk/Makefile.deps
 ifeq ($(shell uname -s),SunOS)
 	include ./deps/eng/tools/mk/Makefile.node_prebuilt.targ
 	include ./deps/eng/tools/mk/Makefile.agent_prebuilt.targ
-else
-	include ./deps/eng/tools/mk/Makefile.node.targ
 endif
 include ./deps/eng/tools/mk/Makefile.smf.targ
 include ./deps/eng/tools/mk/Makefile.targ

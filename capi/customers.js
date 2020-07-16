@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var assert = require('assert');
@@ -14,16 +14,10 @@ var sprintf = mod_util.format;
 
 var ldap = require('ldapjs');
 var restify = require('restify');
-var libuuid = require('libuuid');
-function uuid() {
-    return (libuuid.create());
-}
-
 var util = require('./util');
-var salt = require('../lib/salt');
 
 
-///--- Globals
+// --- Globals
 
 var LIST_FILTER = '(&(login=*)(objectclass=sdcperson))';
 var ID_FILTER = '(uuid=%s)';
@@ -37,7 +31,7 @@ var Change = ldap.Change;
 
 
 
-///--- API
+// --- API
 
 module.exports = {
 

@@ -5,23 +5,14 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
-var assert = require('assert');
 var fs = require('fs');
-var http = require('http');
-var path = require('path');
 var sprintf = require('util').format;
 
-var Logger = require('bunyan');
 var UFDS = require('ufds');
-var nopt = require('nopt');
 var restify = require('restify');
-var libuuid = require('libuuid');
-function uuid() {
-    return (libuuid.create());
-}
 var once = require('once');
 
 var customers = require('./customers');

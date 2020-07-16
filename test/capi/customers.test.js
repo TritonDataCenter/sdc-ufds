@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2019, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var test = require('tape');
@@ -21,9 +21,9 @@ if (require.cache[h]) {
     delete require.cache[h];
 }
 var helper = require('../helper.js');
-var libuuid = require('libuuid');
+var uuidv4 = require('uuid/v4');
 function uuid() {
-    return (libuuid.create());
+    return uuidv4();
 }
 var vasync = require('vasync');
 

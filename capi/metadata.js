@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var assert = require('assert');
@@ -14,12 +14,7 @@ var sprintf = mod_util.format;
 
 var ldap = require('ldapjs');
 var restify = require('restify');
-var libuuid = require('libuuid');
-function uuid() {
-    return (libuuid.create());
-}
 var qs = require('querystring');
-var util = require('./util');
 
 
 

@@ -5,13 +5,13 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var test = require('tape');
-var libuuid = require('libuuid');
+var uuidv4 = require('uuid/v4');
 function uuid() {
-    return (libuuid.create());
+    return uuidv4();
 }
 var util = require('util'),
     sprintf = util.format;
@@ -20,10 +20,9 @@ if (require.cache[__dirname + '/helper.js']) {
     delete require.cache[__dirname + '/helper.js'];
 }
 var helper = require('./helper.js');
-var ldap = require('ldapjs');
 
 
-///--- Globals
+// --- Globals
 
 var CLIENT;
 var SERVER;
@@ -34,7 +33,7 @@ var USERS = {};
 var ID = uuid();
 var LOGIN = 'a' + ID.substr(0, 7);
 
-///--- Helpers
+// --- Helpers
 
 function entryToObject(entry) {
     var obj = entry.object;
@@ -136,7 +135,7 @@ function load(callback) {
 
 
 
-///--- Tests
+// --- Tests
 
 test('setup', function (t) {
     helper.createServer(function (err, server) {
@@ -183,7 +182,6 @@ test('search base objectclass=*', function (t) {
             t.equal(USERS[dn][attr], results[0].attributes[attr]);
         });
         t.end();
-
     });
 });
 

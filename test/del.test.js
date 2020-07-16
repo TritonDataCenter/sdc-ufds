@@ -5,28 +5,22 @@
  */
 
 /*
- * Copyright (c) 2014, Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  */
 
 var test = require('tape');
-var libuuid = require('libuuid');
-function uuid() {
-    return (libuuid.create());
-}
-
 var helper = require('./helper.js');
 
 
 
-///--- Globals
+// --- Globals
 
 var CLIENT;
 var SERVER;
 var SUFFIX = process.env.UFDS_SUFFIX || 'o=smartdc';
-var DN_FMT = 'login=%s, ' + SUFFIX;
 var O = SUFFIX.split('=')[1];
 
-///--- Tests
+// --- Tests
 
 test('setup', function (t) {
     helper.createServer(function (err, server) {

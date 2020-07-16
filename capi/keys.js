@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright 2019 Joyent, Inc.
+ * Copyright 2020 Joyent, Inc.
  * Copyright 2019 University of Queensland
  */
 
@@ -22,25 +22,16 @@ var sprintf = util.format;
 var sshpk = require('sshpk');
 var ldap = require('ldapjs');
 var restify = require('restify');
-var libuuid = require('libuuid');
 var vasync = require('vasync');
-function uuid() {
-    return (libuuid.create());
-}
 
 
 // --- Globals
 
 var KEY_DN = 'fingerprint=%s, %s';
 
-var HIDDEN = [new ldap.Control({
-    type: '1.3.6.1.4.1.38678.1',
-    criticality: true
-})];
-
 var Change = ldap.Change;
 
-///--- Helpers
+// --- Helpers
 
 function idToFingerprint(id) {
     var fp = '';
@@ -172,7 +163,7 @@ function loadKey(req, callback) {
 
 
 
-///--- API
+// --- API
 
 module.exports = {
 

@@ -20,7 +20,7 @@
         "dns": {
             "resolvers": ["10.99.99.11"]
         },
-        "version": 19
+        "version": 20
     },
     "changelog": {
         "bucket": "ufds_cn_changelog",
@@ -109,7 +109,9 @@
             "memberrole": { "type": "[string]" },
             "rule": { "type": "[string]" },
             "tenant": { "type": "string" },
-            "disabled": { "type": "boolean" }
+            "disabled": { "type": "boolean" },
+            "accesskeyid": { "type": "string" },
+            "accesskeysecret": { "type": "string" }
         }
     }
 }

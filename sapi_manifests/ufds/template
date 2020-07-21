@@ -15,7 +15,7 @@
             "retries": 3,
             "minTimeout": 1000
         },
-        "version": 19
+        "version": 20
     },
     "attestation": {
         "enabled": {{#UFDS_ATTESTATION}}true{{/UFDS_ATTESTATION}}{{^UFDS_ATTESTATION}}false{{/UFDS_ATTESTATION}},
@@ -109,7 +109,9 @@
             "memberrole": { "type": "[string]" },
             "rule": { "type": "[string]" },
             "tenant": { "type": "string" },
-            "disabled": { "type": "boolean" }
+            "disabled": { "type": "boolean" },
+            "accesskeyid": { "type": "string" },
+            "accesskeysecret": { "type": "string" }
         }
     }
 }

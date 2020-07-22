@@ -1,6 +1,6 @@
 {
     "name": "ufds",
-    "version": "7.2.1",
+    "version": "7.3.0",
     "repository": {
         "type": "git",
         "url": "git@github.com:joyent/sdc-ufds.git"
@@ -26,7 +26,7 @@
         "once": "1.3.0",
         "restify": "2.3.4",
         "sshpk": "1.16.1",
-        "ufds": "git+https://github.com/joyent/node-ufds.git#15aa1a7af2a5f772498579a8affe0728865379b9",
+        "ufds": "^1.7.0",
         "uuid": "~3.4.0",
         "vasync": "1.6.2"
     },

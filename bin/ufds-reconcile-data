@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (c) 2014, Joyent, Inc.
+# Copyright 2021 Joyent, Inc.
 #
 
 # vi: expandtab sw=4 ts=4
@@ -85,6 +85,10 @@ function setup_vars {
     IS_MASTER=$(json -f ${METADATA} ufds_is_master)
     if [[ "${IS_MASTER}" == "false" ]]; then
         UFDS_REMOTE_IP=$(json -f ${METADATA} ufds_remote_ip)
+        UFDS_REMOTE_PASSWORD=$(json -f ${METADATA} ufds_remote_ldap_root_pw)
+        if [[ -z "$UFDS_REMOTE_PASSWORD" ]]; then
+            UFDS_REMOTE_PASSWORD="$UFDS_LDAP_ROOT_PW"
+        fi
     fi
 
     if [[ -z "$VERSION" ]]; then
@@ -101,37 +105,76 @@ function setup_vars {
 
 
 function ldap {
-    local ip=$1; shift
-    local cmd=$1; shift
-    LDAP_RESULT=$(LDAPTLS_REQCERT=allow ${cmd} -H ldaps://${ip} -x \
+    local role=$1
+    local cmd=$2
+    local ip
+    local password
+    local cmd
+
+    shift 2
+
+    case "$role" in
+    local)
+        ip=127.0.0.1
+        password=$UFDS_LDAP_ROOT_PW
+        ;;
+    remote)
+        ip=$UFDS_REMOTE_IP
+        password=$UFDS_REMOTE_PASSWORD
+        ;;
+    *)
+        printf 'ERROR: unknown LDAP role "%s"\n' "$role" >&2
+        exit 1
+        ;;
+    esac
+
+    case "$cmd" in
+    whoami|search|add|delete)
+        fullcmd="ldap$cmd"
+        ;;
+    *)
+        printf 'ERROR: unknown LDAP command "%s"\n' "$cmd" >&2
+        exit 1
+        ;;
+    esac
+
+    if [[ $cmd == "whoami" ]]; then
+        printf '\tUFDS role "%s" has IP address "%s"\n' "$role" "$ip"
+    fi
+
+    LDAP_RESULT=$(LDAPTLS_REQCERT=allow ${fullcmd} -H ldaps://${ip} -x \
         -D ${UFDS_LDAP_ROOT_DN} \
-        -w ${UFDS_LDAP_ROOT_PW} "$@")
+        -w ${password} "$@")
     LDAP_RESULT_CODE=$?
+    return $LDAP_RESULT_CODE
 }
 
 
 function verify_a_ufds {
-    local ip=$1
-    ldap ${ip} ldapwhoami
-    if [[ ${LDAP_RESULT_CODE} != 0 ]]; then
-        fatal "ufds ${ip} unavailable"
+    local role=$1
+
+    printf 'Verifying UFDS for role "%s"...\n' "$role"
+
+    if ! ldap "$role" whoami; then
+        printf 'ERROR: failed to contact UFDS for role "%s"\n' "$role" >&2
+        exit 1
     fi
+
+    printf '\tUFDS for role "%s" is OK\n' "$role"
 }
 
 
 function verify_ufds {
-    echo "Verifying local ufds at ${UFDS_ADMIN_IP}"
-    verify_a_ufds ${UFDS_ADMIN_IP}
+    verify_a_ufds 'local'
     if [[ "${IS_MASTER}" == "false" ]]; then
-        echo "Verifying remote ufds at ${UFDS_REMOTE_IP}"
-        verify_a_ufds ${UFDS_REMOTE_IP}
+        verify_a_ufds 'remote'
     fi
 }
 
 
 # Create the root of the tree
 function reconcile_root {
-    ldap ${UFDS_ADMIN_IP} ldapsearch -LLL -s base -b "o=smartdc" \
+    ldap 'local' search -LLL -s base -b "o=smartdc" \
         'objectclass=organization'
     if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
         echo "Version doesn't exist.  Need to load...."
@@ -155,7 +198,7 @@ function reconcile_version {
     fi
 
     # Check for version
-    ldap ${UFDS_ADMIN_IP} ldapsearch -LLL -s base -b "cn=version, o=smartdc" \
+    ldap 'local' search -LLL -s base -b "cn=version, o=smartdc" \
         'objectclass=version'
 
     local update_file=/var/tmp/ufds-reconcile-version.$$
@@ -200,8 +243,8 @@ function needs_reconcile {
     fi
 
     # Expected data is missing from local or remote, depending on master.
-    local ip=${UFDS_ADMIN_IP}
-    ldap ${ip} ldapsearch -s base -b "ou=users, o=smartdc" \
+    local role='local'
+    ldap "$role" search -s base -b "ou=users, o=smartdc" \
         'objectclass=organizationalUnit'
     if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
         echo "ou=users not found in local ufds.  Need to load data..."
@@ -210,9 +253,9 @@ function needs_reconcile {
 
     # Check for datacenter information
     if [[ "${IS_MASTER}" == "false" ]]; then
-        ip=${UFDS_REMOTE_IP}
+        role='remote'
     fi
-    ldap ${ip} ldapsearch -s base \
+    ldap "$role" search -s base \
         -b "datacenter=${DATACENTER_NAME}, region=${REGION_NAME}, o=smartdc" \
         'objectclass=datacenter'
     if [[ ${LDAP_RESULT_CODE} == 32 ]]; then
@@ -255,44 +298,39 @@ function replace_in_ldif {
 
 function load_ldif {
     local ldif=$1
-    local ip=$2
+    local role=$2
+
     if [[ ! -f ${ldif} ]]; then
         fatal "LDIF file ${ldif} doesn't exist"
     fi
-    if [[ -z ${ip} ]]; then
-        fatal "No ip address passed to load_ldif"
+    if [[ -z $role ]]; then
+        fatal "No UFDS role passed to load_ldif"
     fi
 
-    ldap ${ip} ldapadd -c -f ${ldif}
+    ldap "$role" add -c -f "$ldif"
 
     # 68 is "already exists"
     if [[ $LDAP_RESULT_CODE -ne 0 ]] && [[ $LDAP_RESULT_CODE -ne 68 ]]; then
-        fatal "Failed to load ${ldif} at ip ${ip}, exiting"
+        fatal "Failed to load \"$ldif\" for role \"$role\", exiting"
     fi
 }
 
 
 function migrate_ldap_data {
     local dn=$1
-    local lo=$2
-    local re=$3
     local tmpFile="${LDIF_PREFIX}.local_ldap_backup.tmp"
 
     # Backup the tree to an ldif
-    LDAPTLS_REQCERT=allow ldapsearch -H ldaps://${lo} -x \
-        -D ${UFDS_LDAP_ROOT_DN} \
-        -w ${UFDS_LDAP_ROOT_PW} \
-        -o ldif-wrap=no \
-        -b "${dn}" >${tmpFile}
+    ldap 'local' search -o ldif-wrap=no -b "${dn}" >${tmpFile}
 
     # Purge all the entries in local
     $(dirname "${BASH_SOURCE[0]}")/ufds-find-dns "${dn}" | \
         while read l; do
-            ldap ${lo} ldapdelete "${l}"
+            ldap 'local' delete "${l}"
         done
 
     # Add all entries to remote
-    load_ldif ${tmpFile} ${re}
+    load_ldif ${tmpFile} 'remote'
 
     rm ${tmpFile}
 }
@@ -303,7 +341,7 @@ function bootstrap_local {
     replace_in_ldif ${BOOTSTRAP_LDIF_IN}
     # Since this will not error when data already exists, we simply add.  It
     # has the added benefit that new entries will be added too (on force)
-    load_ldif ${LDIF} ${UFDS_ADMIN_IP}
+    load_ldif ${LDIF} 'local'
 }
 
 
@@ -314,8 +352,7 @@ function bootstrap_local {
 function bootstrap_remote {
     echo "Reconciling (possible) remote data"
     replace_in_ldif ${BOOTSTRAP_REMOTE_LDIF_IN}
-    local ip=${UFDS_ADMIN_IP}
-    local remote=${UFDS_REMOTE_IP}
+    local reload_role='local'
 
     if [[ "${IS_MASTER}" == "false" ]]; then
         # First we need to make sure that data is only in the local ufds if it
@@ -324,18 +361,19 @@ function bootstrap_remote {
 
         # Use the first dn as a sanity check
         local dn=$(grep '^dn: ' ${LDIF} | head -1 | cut -c 5-)
-        ldap ${ip} ldapsearch -s base -b "${dn}" "objectclass=*"
+        ldap 'local' search -s base -b "${dn}" "objectclass=*"
         local in_local=${LDAP_RESULT_CODE}
-        ldap ${remote} ldapsearch -s base -b "${dn}" "objectclass=*"
+        ldap 'remote' search -s base -b "${dn}" "objectclass=*"
         local in_remote=${LDAP_RESULT_CODE}
 
         if [[ ${in_local} == 0 && ${in_remote} == 32 ]]; then
-            migrate_ldap_data "${dn}" ${ip} ${remote}
+            migrate_ldap_data "${dn}"
         fi
         # We let this load again just in case there are new/more entries
-        ip=${remote}
+        reload_role='remote'
     fi
-    load_ldif ${LDIF} ${ip}
+
+    load_ldif ${LDIF} "$reload_role"
 }
 
 

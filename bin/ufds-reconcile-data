@@ -184,7 +184,7 @@ dn: o=smartdc
 objectclass: organization
 o: smartdc
 EOF
-        load_ldif $update_file $UFDS_ADMIN_IP
+        load_ldif $update_file local
         rm $update_file
     fi
 }
@@ -211,7 +211,7 @@ o: smartdc
 objectclass: version
 version: $VERSION
 EOF
-        load_ldif $update_file $UFDS_ADMIN_IP
+        load_ldif $update_file local
         rm $update_file
     else
         CUR_VERSION=$(echo "${LDAP_RESULT}" | grep '^version: ' | \
@@ -224,7 +224,7 @@ changetype: modify
 replace: version
 version: $VERSION
 EOF
-            load_ldif $update_file $UFDS_ADMIN_IP
+            load_ldif $update_file local
             rm $update_file
         fi
     fi

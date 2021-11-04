@@ -478,7 +478,7 @@ something Joyent invented.  The OID for this control is
 '1.3.6.1.4.1.38678.1'. Here's an example search that shows all the attributes:
 
 
-    $ ./bin/ldapjs-search -u ldaps://10.99.99.21 -D cn=root -w secret -c 1.3.6.1.4.1.38678.1 -b o=smartdc "(login=*)"
+    $ ./bin/ldapjs-search -i -u ldaps://10.99.99.21 -D cn=root -w secret -c 1.3.6.1.4.1.38678.1 -b o=smartdc "(login=*)"
     [{
       "dn": "uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=operators, o=smartdc",
       "cn": "Admin",
@@ -756,7 +756,7 @@ values for development purposes, the procedure to follow would be:
     [root@headnode (coal) ~]# sdc-login ufds
     [Connected to zone 'ad83eb90-a9e0-4ba5-ab90-3fef6047ca4a' pts/2]
     Last login: Mon Aug  5 11:37:58 on pts/2
-    [root@ad83eb90-a9e0-4ba5-ab90-3fef6047ca4a (coal:ufds0) ~]# ldapjs-search -u ldaps://127.0.0.1 -D cn=root -w secret -c 1.3.6.1.4.1.38678.1 -b o=smartdc "(uuid=930896af-bf8c-48d4-885c-6573a94b1853)"|json _salt
+    [root@ad83eb90-a9e0-4ba5-ab90-3fef6047ca4a (coal:ufds0) ~]# ldapjs-search -i -u ldaps://127.0.0.1 -D cn=root -w secret -c 1.3.6.1.4.1.38678.1 -b o=smartdc "(uuid=930896af-bf8c-48d4-885c-6573a94b1853)"|json _salt
     396824f1cce568df18e09482eb60ae3e3d5fcf96
 
 2. Use `node` from the `ufds` zone to encrypt the password with the desired value:

@@ -12,7 +12,7 @@ markdown2extras: tables, code-friendly
 
 <!--
     Copyright (c) 2014, Joyent, Inc.
-    Copyrith 2022 MNX Cloud, Inc.
+    Copyright 2022 MNX Cloud, Inc.
 -->
 
 <!-- markdownlint-disable no-inline-html no-duplicate-header single-title -->

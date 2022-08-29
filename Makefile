@@ -6,6 +6,7 @@
 
 #
 # Copyright 2021 Joyent, Inc.
+# Copyright 2022 MNX Cloud, Inc.
 #
 
 #
@@ -49,7 +50,7 @@ SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 CLEAN_FILES	+= node_modules cscope.files coverage
 
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION=v0.10.48
+	NODE_PREBUILT_VERSION=v6.17.0
 	# sdc-minimal-multiarch-lts 15.4.1
 	NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
 	NODE_PREBUILT_TAG := zone

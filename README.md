@@ -6,25 +6,26 @@
 
 <!--
     Copyright (c) 2014, Joyent, Inc.
+    Copyright 2022 MNX Cloud, Inc.
 -->
 
 # SDC-UFDS
 
-This repository is part of the Joyent SmartDataCenter project (SDC).  For
+This repository is part of the Joyent Triton Data Center project.  For
 contribution guidelines, issues, and general documentation, visit the main
-[SDC](http://github.com/joyent/sdc) project page.
+[Triton](http://github.com/TritonDataCenter/triton) project page.
 
-# Overview
+## Overview
 
-UFDS is the "unified foundational directory service" built for SDC over
-[ldapjs](http://ldapjs.org) and [moray](https://github.com/joyent/moray),
+UFDS is the "unified foundational directory service" built for Triton over
+[ldapjs](http://ldapjs.org) and [moray](https://github.com/TritonDataCenter/moray),
 and is used to track accounts, credentials, and more. It is a superset of
-functionality offered by previous SDC versions employing CAPI (there is a
+functionality offered by previous Triton versions employing CAPI (there is a
 backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
 
-# Development
+## Development
 
-    git clone git@github.com:joyent/sdc-ufds.git
+    git clone git@github.com:TritonDataCenter/sdc-ufds.git
     cd sdc-ufds
     git submodule update --init
     make all
@@ -41,7 +42,7 @@ This assumes several things:
   should also install it locally, you could also replace that with
   `./node_modules/.bin/bunyan`.
 
-# Testing
+## Testing
 
 Normal tap-formatted output:
 
@@ -55,10 +56,9 @@ View generated coverage information
 
     npm run report
 
-
 Of course, if you run `make test` all these tasks will run.
 
-# Schema
+## Schema
 
 Schema for UFDS is built on a custom framework where you extend a
 `Validator` class, and simply model the attributes you want, whether

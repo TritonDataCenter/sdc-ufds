@@ -12,12 +12,16 @@ markdown2extras: tables, code-friendly
 
 <!--
     Copyright (c) 2014, Joyent, Inc.
+    Copyrith 2022 MNX Cloud, Inc.
 -->
 
+<!-- markdownlint-disable no-inline-html no-duplicate-header single-title -->
 # UFDS
 
+<!-- markdownlint-enable single-title -->
+
 UFDS is the "unified foundational directory service" built for SDC over
-[ldapjs](http://ldapjs.org) and [Moray](https://github.com/joyent/moray),
+[ldapjs](http://ldapjs.org) and [Moray](https://github.com/TritonDataCenter/moray),
 and is used to track accounts, credentials, and more. It is a superset of
 functionality offered by previous SDC versions employing CAPI (there is a
 backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
@@ -25,7 +29,7 @@ backwards compatible "shim" that offers the same API as CAPI did in SDC 6.5).
 This document does not really discuss any generic-LDAP things, but
 really just the SDC-specific uses of it.
 
-# SmartDataCenter Tree
+## SmartDataCenter Tree
 
 The directory tree is laid out as follows:
 
@@ -56,16 +60,13 @@ The directory tree is laid out as follows:
       +-ou=packages
       |  +-uuid=:uuid
 
-
 Basically main "subtrees" are about users and group information, while the
 other "subtrees" are related to headnode/datacenter configuration.
 
 Reference the files in `./schema` for an up to date list of attributes
 et al. This is just high-level information on what you can look for.
 
-
-
-## Users (sdcPerson)
+### Users (sdcPerson)
 
 The `sdcPerson` type is one of the `uuid=:uuid, ou=users, o=smartdc`
 entries, and contains all the attributes for a "user".
@@ -87,11 +88,11 @@ All the attributes starting with `pwd` are related to password policy. Unlike
 the attributes beginning with and underscore, the password policy related
 attributes are not hidden
 
-## Instance Types / Packages (sdcPackage)
+### Instance Types / Packages (sdcPackage)
 
 <div class="intro">
 Please, note we're in the process to move <code>sdcPackages</code> into their own dedicated
-API. Updated info at the new <a href="https://github.com/joyent/sdc-papi" title="PAPI">Packages API</a>
+API. Updated info at the new <a href="https://github.com/TritonDataCenter/sdc-papi" title="PAPI">Packages API</a>
 documentation.
 </div>
 
@@ -123,40 +124,37 @@ an instance type:
     overprovision_memory: 1
     objectclass: sdcPackage
 
+| Attribute              | Required                           | Explanation                                                                                                                                                                                          |
+| ---------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| uuid                   | Mandatory                          | UUID for the sdcPackage                                                                                                                                                                              |
+| owner\_uuid            | Optional                           | UUID of the owner of this sdcPackage                                                                                                                                                                 |
+| active                 | Mandatory                          | is this provisionable: true or false                                                                                                                                                                 |
+| vcpus                  | Mandatory if type == kvm           | number of cpus to show, Integer 1 - 64                                                                                                                                                               |
+| cpu\_cap               | Mandatory                          | CPU CAP,Integer 20-1000, formula: `VCPU * Bursting Ratio * OverProvision Ratio * 100 + (vCPU <= 1 ? 50: 100)`                                                                                        |
+| default                | Mandatory                          | is this the default instance type: true or false                                                                                                                                                     |
+| group                  | Mandatory                          | group of associated instance types, either: Standard, High CPU, High Memory, High Storage, High IO or the Customer's Name                                                                            |
+| description            | Mandatory                          | description of this instance type                                                                                                                                                                    |
+| max\_lwps              | Mandatory                          | max processes, Integer                                                                                                                                                                               |
+| max\_physical_memory   | Mandatory                          | max RAM in MB, Integer                                                                                                                                                                               |
+| max\_swap              | Mandatory                          | max SWAP in MB, Integer                                                                                                                                                                              |
+| name                   | Mandatory                          | API name, using this formula: `[version]-[familyname]-[RAM GB]-[type]-[flags], version is currently g3, familyname is group, type is either smartos or kvm, flags is to catch cluster computes (cc)` |
+| common\_name           | Mandatory                          | Name displayed in the Portal                                                                                                                                                                         |
+| quota                  | Mandatory                          | disk size in MB                                                                                                                                                                                      |
+| networks               | Optional                           | List of networks to associate with                                                                                                                                                                   |
+| version                | Mandatory                          | semver version number                                                                                                                                                                                |
+| parent                 | Mandatory, if created for customer | API name of the instance type this was cloned from                                                                                                                                                   |
+| traits                 | Optional                           | set of traits for provisioning, currently limited to ssd:true and storage:true by current server installation                                                                                        |
+| zfs\_io\_priority      | Mandatory                          | ZFS IO Priority, Integer 0 - 1000                                                                                                                                                                    |
+| fss                    | Mandatory                          | Typically computed value, formula: `OverProvision Ratio == 1 ? CPU\_CAP: (Guest DRAM/Host DRAM provisionable) * Host CPUs * 100`                                                                     |
+| cpu\_burst\_ratio      | Optional                           | Typically computed value, formula: `(CPU_CAP / (OverProvision Ratio * Burst Ratio))/FSS`                                                                                                             |
+| ram\_ratio             | Optional                           | Typically computed value, formula: `RAM GB/((CPU_CAP/100)\*Bursting Ratio * OverProvision Ratio)`                                                                                                    |
+| overprovision\_cpu     | Optional                           | Overprovision CPU, 1=don't overprovision, 2=overprovision                                                                                                                                            |
+| overprovision\_memory  | Optional                           | Overprovision Memory, 1=don't overprovision, 2=overprovision                                                                                                                                         |
+| overprovision\_storage | Optional                           | Overprovision Storage, 1=don't overprovision, 2=overprovision                                                                                                                                        |
+| overprovision\_network | Optional                           | Overprovision Network, 1=don't overprovision, 2=overprovision                                                                                                                                        |
+| overprovision\_io      | Optional                           | Overprovision IO, 1=don't overprovision, 2=overprovision                                                                                                                                             |
 
-
-| Attribute              | Required                           | Explanation                                                                                                                                                                                        |
-| ---------------------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| uuid                   | Mandatory                          | UUID for the sdcPackage                                                                                                                                                                            |
-| owner\_uuid            | Optional                           | UUID of the owner of this sdcPackage                                                                                                                                                               |
-| active                 | Mandatory                          | is this provisionable: true or false                                                                                                                                                               |
-| vcpus                  | Mandatory if type == kvm           | number of cpus to show, Integer 1 - 64                                                                                                                                                             |
-| cpu\_cap               | Mandatory                          | CPU CAP,Integer 20-1000, formula: VCPU * Bursting Ratio * OverProvision Ratio * 100 + (vCPU <= 1 ? 50: 100)                                                                                        |
-| default                | Mandatory                          | is this the default instance type: true or false                                                                                                                                                   |
-| group                  | Mandatory                          | group of associated instance types, either: Standard, High CPU, High Memory, High Storage, High IO or the Customer's Name                                                                          |
-| description            | Mandatory                          | description of this instance type                                                                                                                                                                  |
-| max\_lwps              | Mandatory                          | max processes, Integer                                                                                                                                                                             |
-| max\_physical_memory   | Mandatory                          | max RAM in MB, Integer                                                                                                                                                                             |
-| max\_swap              | Mandatory                          | max SWAP in MB, Integer                                                                                                                                                                            |
-| name                   | Mandatory                          | API name, using this formula: [version]-[familyname]-[RAM GB]-[type]-[flags], version is currently g3, familyname is group, type is either smartos or kvm, flags is to catch cluster computes (cc) |
-| common\_name           | Mandatory                          | Name displayed in the Portal                                                                                                                                                                       |
-| quota                  | Mandatory                          | disk size in MB                                                                                                                                                                                    |
-| networks               | Optional                           | List of networks to associate with                                                                                                                                                                 |
-| version                | Mandatory                          | semver version number                                                                                                                                                                              |
-| parent                 | Mandatory, if created for customer | API name of the instance type this was cloned from                                                                                                                                                 |
-| traits                 | Optional                           | set of traits for provisioning, currently limited to ssd:true and storage:true by current server installation                                                                                      |
-| zfs\_io\_priority      | Mandatory                          | ZFS IO Priority, Integer 0 - 1000                                                                                                                                                                  |
-| fss                    | Mandatory                          | Typically computed value, formula: OverProvision Ratio == 1 ? CPU\_CAP: (Guest DRAM/Host DRAM provisionable) * Host CPUs * 100                                                                     |
-| cpu\_burst\_ratio      | Optional                           | Typically computed value, formula: (CPU\_CAP / (OverProvision Ratio * Burst Ratio))/FSS                                                                                                            |
-| ram\_ratio             | Optional                           | Typically computed value, formula: RAM GB/((CPU\_CAP/100)\*Bursting Ratio * OverProvision Ratio)                                                                                                   |
-| overprovision\_cpu     | Optional                           | Overprovision CPU, 1=don't overprovision, 2=overprovision                                                                                                                                          |
-| overprovision\_memory  | Optional                           | Overprovision Memory, 1=don't overprovision, 2=overprovision                                                                                                                                       |
-| overprovision\_storage | Optional                           | Overprovision Storage, 1=don't overprovision, 2=overprovision                                                                                                                                      |
-| overprovision\_network | Optional                           | Overprovision Network, 1=don't overprovision, 2=overprovision                                                                                                                                      |
-| overprovision\_io      | Optional                           | Overprovision IO, 1=don't overprovision, 2=overprovision                                                                                                                                           |
-
-
-## SSH Keys (sdcKey)
+### SSH Keys (sdcKey)
 
 The `sdcKey` objectclass holds SSH keys for tenants, as well as the
 OpenSSL compatible form of the SSH key (to support signing).  While
@@ -167,7 +165,7 @@ a `name` is not specified).
 
 DN for the sdcKey object type is: `fingerprint=:fingerprint, uuid=:uuid, ou=users, o=smartdc`
 
-## Password Policy (pwdPolicy)
+### Password Policy (pwdPolicy)
 
 `pwdpolicy` is related to PCI Compliance, and is a partial implementation
 of IETF draft [Password Policy for LDAP Directories](http://tools.ietf.org/html/draft-behera-ldap-password-policy-10).
@@ -191,13 +189,12 @@ given `sdcPerson` entry. Elements of this sub-entry would have the `dn` of
 associated with this password policy entry will point to the `dn` through
 the `sdcPerson` attribute `pwdPolicySubentry`.
 
-
-## CAPI Specific Objects
+### CAPI Specific Objects
 
 These objects `objectclass` may change in future versions to remove the
 legacy `capi` prefix.
 
-### capiLimit
+#### capiLimit
 
 Holds a mapping of "limits" per dataset type in a particular
 datacenter for a given `sdcPerson`.
@@ -206,23 +203,21 @@ Stored with `dclimit=:datacenter, uuid=:uuid, ou=users, o=smartdc` as the DN.
 Refer to Cloud API `provision_limits` plugin documentation for a more detailed
 description
 
-### capiMetadata
+#### capiMetadata
 
 It's just a free-form entry (meaning you can put any attribute/value pairs in
 you want). Stored by `metadata=:appkey, ...`.
 
 Actually, SSO/Portal use it to store PCI related information
 
-
-## Email Black List
+### Email Black List
 
 The object `emailblacklist` is intended to store the list of email addresses
 disallowed to be used when a new `sdcPerson` entry is created. Both, complete
 email addresses like `foo@example.com` or wildcards, like `*@example.com` are
 valid values for the `email` attribute.
 
-
-## UFDS as Object Storage
+### UFDS as Object Storage
 
 Several of the SDC 7 applications use UFDS as their storage mechanism of choice
 among others to take advantage of the LDAP search facilities.
@@ -241,8 +236,7 @@ different applications associated with each Object type:
 | vmusage        | VMAPI              |
 | sdcreplicator  | UFDS configuration |
 
-
-# Account Users, Groups and Policies
+## Account Users, Groups and Policies
 
 Starting with version 7.1 - `cat /opt/smartdc/ufds/package.json | json version`
 into your ufds instance - an account, (a top level user, identified by the dn
@@ -256,8 +250,7 @@ Additionally, sub-users can also have their own SSH keys with the DN modified
 accordingly if you compare with top level users:
 `fingerprint=:fingerprint, uuid=:uuid, uuid=:account, ou=users, o=smartdc`
 
-
-## Sub Users (sdcAccountUser)
+### Sub Users (sdcAccountUser)
 
 An object with class `sdcAccountUser` has the same properties than a top level
 `sdcPerson` (indeed, both object classes are added to these sub users). Apart of
@@ -276,7 +269,6 @@ following additional properties:
   applications looking straight into moray's buckets.
 - Multiple `objectclass` values: `sdcAccountUser` and `sdcPerson`.
 
-
         dn: uuid=155ff4f6-f7c8-427e-bad6-5a7fbaa1bd7d, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
         account: 4bc1929f-dfc2-4c04-ae6c-0a388ee67f97
         email: a78960b9_test@joyent.com
@@ -293,15 +285,15 @@ following additional properties:
         phone: +34 626 626 626
         pwdhistory: 1392655027348#1.3.6.1.4.1.1466.115.121.1.40#40#{sha}885f65d3830a292aa46b6c656ff5212cf9e0da46
 
-## Access Policies (sdcAccountPolicy)
+### Access Policies (sdcAccountPolicy)
 
 Each account may have one or more `sdcAccountPolicy` entries. Appart of the
 aforementioned `uuid` and `account` attributes, these entries have the following
 properties:
 
 - `name` (mandatory) and `description` (optional) of the entry.
-- One or more `rule` values. These are different [Aperture](https://github.com/joyent/node-aperture)
-  sentences. Note that **when more than one sentence is present, the [conditions](https://github.com/joyent/node-aperture#conditions)
+- One or more `rule` values. These are different [Aperture](https://github.com/TritonDataCenter/node-aperture)
+  sentences. Note that **when more than one sentence is present, the [conditions](https://github.com/TritonDataCenter/node-aperture#conditions)
   expressed by these sentences will be evaluated using `OR`**.
 - One or more `memberrole` values. These will point to the DNs of the account
   roles linking to each policy. Please, note this value is **automatically added**
@@ -316,7 +308,7 @@ properties:
         rule: ["Fred can read *.js when dirname = examples and sourceip = 10.0.0.0/8","Bob can read and write timesheet if requesttime::time > 07:30:00 and requesttime::time < 18:30:00 and requesttime::day in (Mon, Tue, Wed, THu, Fri)","John, Jack and Jane can ops_* *","Pedro can delete *"]
         memberrole: group-uuid=fe461981-0615-40ff-a537-f5edfc511b13, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
 
-## Roles (sdcAccountRole)
+### Roles (sdcAccountRole)
 
 These are similar entries to the top level groups given they can also take
 multipe sdcPerson values for the attribute `uniquemember`. The following is
@@ -338,8 +330,7 @@ the complete list of attributes for entries of class `sdcAccountRole`:
         uuid: fe461981-0615-40ff-a537-f5edfc511b13
         memberpolicy: policy-uuid=7c18cb44-a22c-4836-a1f4-9215a56871b7, uuid=4bc1929f-dfc2-4c04-ae6c-0a388ee67f97, ou=users, o=smartdc
 
-
-## UFDS and CloudAPI mappings
+### UFDS and CloudAPI mappings
 
 Main difference between the way UFDS stores the information and
 the way this information is displayed to customers through CloudAPI
@@ -348,7 +339,7 @@ and `memberpolicy` attributes, the respective `members` and `policies`
 attributes in CloudAPI take the list of `login` names for the users and
 the list of `names` for the policies.
 
-# Interacting with UFDS
+## Interacting with UFDS
 
 UFDS LDAP server runs into headnode machine of the same name `ufds` and,
 by default, it listens to all interfaces on `ldaps` port (636).
@@ -361,7 +352,6 @@ merely a wrapper for the different LDAP commands with the UFDS LDAP server
 address and the default authentication options already set.
 
 `sdc-ldap` is available as part of the set of SDC 7 `headnode` set of tools.
-
 
     [root@headnode (coal) ~]# sdc-ldap search objectclass=sdcpackage name
     dn: uuid=0ea54d9d-8d4d-4959-a87e-bf47c0f61a47, ou=packages, o=smartdc
@@ -391,8 +381,7 @@ address and the default authentication options already set.
     dn: ou=pkg, o=smartdc
     name: regular_128
 
-
-## Unlock user
+### Unlock user
 
 After 6 failed login attempts, an user account will get locked due to PCI
 restrictions. While the account will be unlocked if the user follows the
@@ -420,7 +409,6 @@ and then modify the entry with:
 
     sdc-ldap modify -f /tmp/298ef9d9-512e-419b-8dc2-915b7c99c75b.ldif
 
-
 Additionally, if an user password has expired, the user will have a `pwdendtime`
 value smaller than the current time in milliseconds, and the account will be
 locked. In order to remove this lock, the procedure above can also be used to
@@ -430,8 +418,7 @@ remove the `pwdendtime` value:
     changetype: modify
     delete: pwdendtime
 
-
-## Adding emails to blacklist
+### Adding emails to blacklist
 
 Save the information into the file `/tmp/blacklist.ldif`, and add the required
 email addresses or wildcards as follow:
@@ -446,7 +433,7 @@ Then, add the modifications to the already existing `emailblacklist` with:
 
     sdc-ldap modify -f /tmp/blacklist.ldif
 
-## Searching (effectively)
+### Searching (effectively)
 
 This is really important, so read this 2x if you have to!
 
@@ -467,7 +454,7 @@ you want. When searching from the top of the tree, only use equality
 filters on indexed attributes (you can use an `and` filter, but one of
 them really should be an equality match).
 
-## Hidden attributes
+### Hidden attributes
 
 UFDS stores a bunch of attributes prefixed with `_`.  For example,
 `_mtime`, `_salt`, etc.  And, by default, UFDS will not return these
@@ -476,7 +463,6 @@ return these, you must (1) be an operator (or the actual admin), and
 (2) you must pass in the "hiddenAttributes" control, which is
 something Joyent invented.  The OID for this control is
 '1.3.6.1.4.1.38678.1'. Here's an example search that shows all the attributes:
-
 
     $ ./bin/ldapjs-search -u ldaps://10.99.99.21 -D cn=root -w secret -c 1.3.6.1.4.1.38678.1 -b o=smartdc "(login=*)"
     [{
@@ -493,11 +479,10 @@ something Joyent invented.  The OID for this control is
       "_mtime": "2011-10-25T16:45:08Z"
     }]
 
-
 Note that all the `ldapjs` binaries are part of node ldapjs module. All of them
 are in the path into the UFDS zone.
 
-# Changelog
+## Changelog
 
 UFDS supports an almost-RFC compliant LDAP changelog, which will
 always live at `cn=changelog`.  It contains all changes that have ever
@@ -535,27 +520,27 @@ identified by the DN `uuid=458d9ce8-cb25-422d-be47-683a85052a86, ou=users, o=sma
 (limits, ssh keys, sub-users, roles, policies, ...), including the account
 itself.
 
-# Aliasing the OpenLDAP CLI
+## Aliasing the OpenLDAP CLI
 
 Do this, or your life will be far far away to be happy:
 
 These are part of your headnode configuration, concretely `ufds_ldap_root_dn`
 and `ufds_ldap_root_pw`:
 
-    $ export LCREDS="-D cn=root -w secret"
+    export LCREDS="-D cn=root -w secret"
 
 UFDS admin IP is also set into that file. Pick first of `ufds_admin_ips` value:
 
-    $ export LURL=ldaps://10.99.99.18
+    export LURL=ldaps://10.99.99.18
 
 Then, alias the ldap commands as follow:
 
-    $ alias lsearch='LDAPTLS_REQCERT=allow ldapsearch -x -LLL $LCREDS -H $LURL'
-    $ alias ladd='LDAPTLS_REQCERT=allow ldapadd -x $LCREDS -H $LURL'
-    $ alias lmodify='LDAPTLS_REQCERT=allow ldapmodify -x $LCREDS -H $LURL'
-    $ alias ldelete='LDAPTLS_REQCERT=allow ldapdelete -x $LCREDS -H $LURL'
+    alias lsearch='LDAPTLS_REQCERT=allow ldapsearch -x -LLL $LCREDS -H $LURL'
+    alias ladd='LDAPTLS_REQCERT=allow ldapadd -x $LCREDS -H $LURL'
+    alias lmodify='LDAPTLS_REQCERT=allow ldapmodify -x $LCREDS -H $LURL'
+    alias ldelete='LDAPTLS_REQCERT=allow ldapdelete -x $LCREDS -H $LURL'
 
-# CAPI (SDC 6.5 Backwards Compatibility)
+## CAPI (SDC 6.5 Backwards Compatibility)
 
 To maintain backwards compatibility with SDC 6.5, there is a restify app that
 "approximates" the old CAPI interface. It is running on the same host than UFDS
@@ -575,23 +560,23 @@ But, here are some helpers for you:
 
 | Action   | Command                                                                                                          |
 | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| *create* | `capi /customers -d @/Users/mark/work/ufds/data/capi_customer.xml`                                               |
-| *update* | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -d @/Users/mark/work/ufds/data/update_customer.xml -X PUT` |
-| *get*    | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d`                                                           |
-| *list*   | `capi /customers`                                                                                                |
-| *search* | `capi /customers?email_address=%40joyent.com`                                                                    |
-| *delete* | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -X DELETE`                                                 |
+| _create_ | `capi /customers -d @/Users/mark/work/ufds/data/capi_customer.xml`                                               |
+| _update_ | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -d @/Users/mark/work/ufds/data/update_customer.xml -X PUT` |
+| _get_    | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d`                                                           |
+| _list_   | `capi /customers`                                                                                                |
+| _search_ | `capi /customers?email_address=%40joyent.com`                                                                    |
+| _delete_ | `capi /customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d -X DELETE`                                                 |
 
 ### SSH keys
 
 | Action   | Command                                                                                                                                                       |
 | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| *add*    | `/usr/bin/curl -is http://localhost:8080/customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d/keys --data-urlencode key@/Users/mark/.ssh/id_rsa.pub -d name=id_rsa` |
-| *list*   | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys`                                                                                                   |
-| *rename* | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f?name=foo -X PUT`                                                  |
-| *delete* | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f -X DELETE`                                                        |
+| _add_    | `/usr/bin/curl -is http://localhost:8080/customers/03afb9ac-925c-4e39-9ec2-ddbb2df9ef7d/keys --data-urlencode key@/Users/mark/.ssh/id_rsa.pub -d name=id_rsa` |
+| _list_   | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys`                                                                                                   |
+| _rename_ | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f?name=foo -X PUT`                                                  |
+| _delete_ | `capi /customers/9c664a75-b638-4bc6-9213-9cda22f8f2d9/keys/7bc05cd69e110c76044b03c911f2727f -X DELETE`                                                        |
 
-# Using Bcrypt to encrypt passwords
+## Using Bcrypt to encrypt passwords
 
 While UFDS can use `bcrypt` to encrypt users passwords, it's recommended to
 do not use it on those cases where any SDC 6.5 application is trying to
@@ -611,13 +596,13 @@ for the aforementioned `use_bcrypt` config flag to `true`.
 Of course, if there aren't applications trying to auth users through `capi-shim`
 the CAPI shim application should be disabled (`svcadm disable ufds-capi`).
 
-# Working with capi limits
+## Working with capi limits
 
-### Find a given user UUID by user login (let's go with mine, remember to restore!):
+### Find a given user UUID by user login (let's go with mine, remember to restore!)
 
     sdc-ldap search '(&(objectclass=sdcperson)(login=<login>))'
 
-#### Example:
+#### Example
 
     sdc-ldap search '(&(objectclass=sdcperson)(login=pedro))'
 
@@ -640,12 +625,11 @@ the CAPI shim application should be disabled (`svcadm disable ufds-capi`).
 
     sdc-ldap search -b 'uuid=<UUID>, ou=users, o=smartdc' objectclass=capilimit
 
-#### Example:
+#### Example
 
     sdc-ldap search -b 'uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc' objectclass=capilimit
 
-
-### Add a limit for a given user on a given DC
+#### Add a limit for a given user on a given DC
 
     dn: dclimit=<DC_NAME>, uuid=<UUID>, ou=users, o=smartdc
     datacenter: <DC_NAME>
@@ -653,7 +637,6 @@ the CAPI shim application should be disabled (`svcadm disable ufds-capi`).
     <IMAGE_NAME>: <VALUE>
     <IMAGE_NAME>: <VALUE>
     <IMAGE_NAME>: <VALUE>
-
 
 Save the following on a file, say `dfc6bef2-7f4a-4c24-bb74-949ff395cd72.ldif`:
 
@@ -671,17 +654,14 @@ You should see something like:
 
     adding new entry "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
 
-
-### Update existing user limit for a given DC
-
+#### Update existing user limit for a given DC
 
     dn: dclimit=<DC_NAME>, uuid=<UUID>, ou=users, o=smartdc
     changetype: modify
     replace: <IMAGE_NAME>|add: <IMAGE_NAME>|delete: <IMAGE_NAME>
     <IMAGE_NAME>: <VALUE>
 
-
-### Case one: Modifying existing limit for a given dataset/image
+#### Case one: Modifying existing limit for a given dataset/image
 
 Let's say we want to change `smartos: 5` to something higher, say 8. We need the following file:
 
@@ -698,8 +678,7 @@ And you will see the following output now:
 
     modifying entry "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
 
-
-### Case two: Adding a new property (a limit for another image/dataset):
+#### Case two: Adding a new property (a limit for another image/dataset)
 
 Now, we'll add a limit for an image not already limited for the user:
 
@@ -716,7 +695,7 @@ And we'll see the same output:
 
     modifying entry "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
 
-### Case three: We want to remove limits completely for a given image/dataset:
+#### Case three: We want to remove limits completely for a given image/dataset
 
 On this case, we're gonna remove the limit for `multiarch`:
 
@@ -734,8 +713,7 @@ And we'll see the same output:
 
     modifying entry "dclimit=coal, uuid=dfc6bef2-7f4a-4c24-bb74-949ff395cd72, ou=users, o=smartdc"
 
-
-### Remove a limit completely:
+#### Remove a limit completely
 
 If you want to remove the whole capilimit object from UFDS:
 
@@ -743,9 +721,9 @@ If you want to remove the whole capilimit object from UFDS:
 
 And, again: please, please, please, make sure you don't have EOL neither EOF whitespaces.
 
-# Development
+## Development
 
-## Manually encrypting passwords using SHA1
+### Manually encrypting passwords using SHA1
 
 In case you need to manually encrypt a password to compare with the automatically encrypted
 values for development purposes, the procedure to follow would be:
@@ -760,7 +738,6 @@ values for development purposes, the procedure to follow would be:
     396824f1cce568df18e09482eb60ae3e3d5fcf96
 
 2. Use `node` from the `ufds` zone to encrypt the password with the desired value:
-
 
     [root@ad83eb90-a9e0-4ba5-ab90-3fef6047ca4a (coal:ufds0) ~]# node
     > var crypto = require('crypto');
@@ -784,9 +761,7 @@ values for development purposes, the procedure to follow would be:
     > hash.digest('hex');
     'bf5c7ad26e7a7a7d8459075a19e8930596281410'
 
-
-
-# LogLevels
+## LogLevels
 
 The logLevel sets the verbosity of debug logging in the SMF log file.  By
 default, UFDS logs at `info` level, which means you'll get start/stop and
@@ -794,7 +769,7 @@ error messages (in addition to request logging).  If you are encountering a
 problem with UFDS, you'll almost certainly want the level to be set to
 `debug` or `trace`.  See [Troubleshooting](#Troubleshooting) below.
 
-# Troubleshooting
+## Troubleshooting
 
 If you are seeing errors/bugs with the UFDS sdc-ldap CLI, or with the
 applications talking to the UFDS server, you can turn on debug logging
@@ -804,7 +779,7 @@ First, you should check the logs files. You can get a list of all the log
 files related to the UFDS server, CAPI shim, HAproxy and, eventually, the
 UFDS Replicator by running:
 
-    $ `svcs -L *ufds*`
+    `svcs -L *ufds*`
 
 Reviewing those files and looking for any indication of errors should give
 you an idea of what it's going wrong.  Note that UFDS logs some amount
@@ -813,7 +788,7 @@ is an error sent to the client (including if the error is user initiated). If
 you cannot determine the problem of the error from the default logs, turn on
 debug logging.
 
-## Debug Logging in SMF
+### Debug Logging in SMF
 
 Log messages can be traced using `bunyan -p ufds` as explained into
 [Bunyan DTrace Examples](https://github.com/trentm/node-bunyan#dtrace-examples)

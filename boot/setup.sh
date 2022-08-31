@@ -36,6 +36,10 @@ echo "Generating SSL Certificate"
     -keyout /opt/smartdc/ufds/ssl/key.pem -out /opt/smartdc/ufds/ssl/cert.pem \
     -days 3650
 
+# Ensure the UFDS SMF services running as nobody can read the cert.
+# See TRITON-2306
+chmod go+r /data/tls/key.pem
+
 # Gather metadata needed for setup
 UFDS_ADMIN_IP=127.0.0.1
 UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)

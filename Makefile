@@ -35,8 +35,7 @@ ISTANBUL	:= ./node_modules/.bin/istanbul
 DOC_FILES	 = index.md ufds-replicator.md
 JS_FILES	:= $(shell ls *.js) \
                    $(shell find lib capi schema test -name '*.js')
-JSL_CONF_NODE	 = tools/jsl.node.conf
-JSL_FILES_NODE   = $(JS_FILES)
+ESLINT_FILES     = $(JS_FILES)
 JSSTYLE_FILES	 = $(JS_FILES)
 JSSTYLE_FLAGS    = -f tools/jsstyle.conf
 SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
@@ -50,10 +49,10 @@ SMF_MANIFESTS_IN	 = smf/manifests/ufds-master.xml.in \
 CLEAN_FILES	+= node_modules cscope.files coverage
 
 ifeq ($(shell uname -s),SunOS)
-	NODE_PREBUILT_VERSION=v6.17.0
-	# sdc-minimal-multiarch-lts 15.4.1
-	NODE_PREBUILT_IMAGE=18b094b0-eb01-11e5-80c1-175dac7ddf02
-	NODE_PREBUILT_TAG := zone
+	NODE_PREBUILT_VERSION=v6.17.1
+	# minimal-64-lts@21.4.0
+	NODE_PREBUILT_IMAGE=a7199134-7e94-11ec-be67-db6f482136c2
+	NODE_PREBUILT_TAG := zone64
 else
 	NPM=npm
 	NODE=node
@@ -65,6 +64,8 @@ ENGBLD_USE_BUILDIMAGE	= true
 ENGBLD_REQUIRE		:= $(shell git submodule update --init deps/eng)
 include ./deps/eng/tools/mk/Makefile.defs
 TOP ?= $(error Unable to access eng.git submodule Makefiles.)
+
+BUILD_PLATFORM  = 20210826T002459Z
 
 ifeq ($(shell uname -s),SunOS)
 	include ./deps/eng/tools/mk/Makefile.node_prebuilt.defs
@@ -82,11 +83,12 @@ ROOT                    := $(shell pwd)
 RELEASE_TARBALL         := $(NAME)-pkg-$(STAMP).tar.gz
 RELSTAGEDIR                  := /tmp/$(NAME)-$(STAMP)
 
-BASE_IMAGE_UUID = 04a48d7d-6bb5-4e83-8c3b-e60a99e0f48f
+# triton-origin-x86_64-21.4.0
+BASE_IMAGE_UUID = 502eeef2-8267-489f-b19c-a206906f57ef
 BUILDIMAGE_NAME = $(NAME)
 BUILDIMAGE_DESC	= SDC UFDS
 BUILDIMAGE_DO_PKGSRC_UPGRADE = true
-BUILDIMAGE_PKGSRC = postgresql91-client-9.1.24
+BUILDIMAGE_PKGSRC = haproxy postgresql96-client-9.6.24nb1
 AGENTS		= amon config registrar
 
 #
@@ -98,25 +100,11 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all: haproxy $(SMF_MANIFESTS) | $(ISTANBUL) $(REPO_DEPS) sdc-scripts
+all:  $(SMF_MANIFESTS) | $(ISTANBUL) $(REPO_DEPS) sdc-scripts
 	$(NPM) install
 
 $(ISTANBUL): | $(NPM_EXEC)
 	$(NPM) install
-
-# Build HAProxy when in SunOS
-.PHONY: haproxy
-ifeq ($(shell uname -s),SunOS)
-haproxy:
-	@echo "Building HAproxy"
-	cd deps/haproxy && /opt/local/bin/gmake TARGET=solaris
-else
-haproxy:
-	@echo "HAproxy building only in SunOS"
-endif
-
-
-CLEAN_FILES += deps/haproxy/haproxy
 
 .PHONY: test
 test: $(ISTANBUL)
@@ -137,11 +125,10 @@ release: all docs
 	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/ufds/etc
 	@mkdir -p $(RELSTAGEDIR)/root/opt/smartdc/ufds/ssl
 	cp -r   $(ROOT)/build \
-								$(ROOT)/capi \
-								$(ROOT)/capi.js \
-								$(ROOT)/replicator.js \
-								$(ROOT)/data \
-		$(ROOT)/deps/haproxy \
+		$(ROOT)/capi \
+		$(ROOT)/capi.js \
+		$(ROOT)/replicator.js \
+		$(ROOT)/data \
 		$(ROOT)/bin \
 		$(ROOT)/lib \
 		$(ROOT)/main.js \

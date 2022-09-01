@@ -1,6 +1,6 @@
 {
     "name": "ufds",
-    "version": "7.3.2",
+    "version": "7.4.0",
     "repository": {
         "type": "git",
         "url": "git@github.com:TritonDataCenter/sdc-ufds.git"

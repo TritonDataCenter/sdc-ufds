@@ -11,7 +11,7 @@
 
 # SDC-UFDS
 
-This repository is part of the Joyent Triton Data Center project.  For
+This repository is part of the Triton Data Center project.  For
 contribution guidelines, issues, and general documentation, visit the main
 [Triton](http://github.com/TritonDataCenter/triton) project page.
 

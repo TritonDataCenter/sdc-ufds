@@ -44,7 +44,7 @@ chown -R nobody:nobody /opt/smartdc/ufds
 CERT_DIR=/opt/smartdc/ufds/ssl
 
 if [[ -d /zones/$(zonename)/data ]]; then
-    LEGACY_SYMLINK="$CERT_FILE"
+    LEGACY_SYMLINK="$CERT_DIR"
     CERT_DIR=/data/tls
 
     if ! [[ -d /data ]]; then

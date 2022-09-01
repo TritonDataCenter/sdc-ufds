@@ -8,6 +8,7 @@
 
 #
 # Copyright (c) 2014, Joyent, Inc.
+# Copyright 2022 MNX Cloud, Inc.
 #
 
 export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
@@ -31,10 +32,46 @@ mkdir -p /var/smartdc/ufds
 mkdir -p /opt/smartdc/ufds/ssl
 chown -R nobody:nobody /opt/smartdc/ufds
 
-echo "Generating SSL Certificate"
-/opt/local/bin/openssl req -x509 -nodes -subj '/CN=*' -newkey rsa:2048 \
-    -keyout /opt/smartdc/ufds/ssl/key.pem -out /opt/smartdc/ufds/ssl/cert.pem \
-    -days 3650
+# Prior to TRITON-2179, UFDS did not have a delegated dataset to store a
+# persistent TLS certificate. A new one would be generated with every
+# reprovision. Because creating the delegated dataset is handled by
+# `sdcadm experimental update-other`, we may or may not have a delegated
+# dataset even now. If not, we need to continue with the pre TRITON-2179
+# behavior. If the dataset does exist, and a cert does not already exist,
+# create one and set up a compat symlink (the sapi template still uses the
+# "legacy" location). If the cert does exist, we simply create the compat
+# symlink.
+CERT_DIR=/opt/smartdc/ufds/ssl
+
+if [[ -d /zones/$(zonename)/data ]]; then
+    LEGACY_SYMLINK="$CERT_DIR"
+    CERT_DIR=/data/tls
+
+    if ! [[ -d /data ]]; then
+        # Mount our delegate dataset at '/data'.
+        zfs set mountpoint=/data "zones/$(zonename)/data"
+    fi
+
+    if ! [[ -d $CERT_DIR ]]; then
+        mkdir "$CERT_DIR"
+    fi
+
+    for f in key cert; do
+        ln -s "${CERT_DIR}/${f}.pem" "${LEGACY_SYMLINK}/${f}.pem"
+    done
+fi
+
+if ! [[ -f "${CERT_DIR}/cert.pem" ]] || ! [[ -f "${CERT_DIR}/key.pem" ]]; then
+    echo "Generating TLS Certificate"
+    /opt/local/bin/openssl req -x509 -nodes -subj '/CN=*' -newkey rsa:2048 \
+        -keyout "${CERT_DIR}/key.pem" -out "${CERT_DIR}/cert.pem" \
+        -days 3650
+    # Ensure the UFDS SMF services running as nobody can read the cert.
+    # See TRITON-2306
+    chmod go+r "${CERT_DIR}/cert.pem" "${CERT_DIR}/key.pem"
+else
+    echo "TLS certificate already exists."
+fi
 
 # Gather metadata needed for setup
 UFDS_ADMIN_IP=127.0.0.1

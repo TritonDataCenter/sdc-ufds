@@ -41,32 +41,34 @@ chown -R nobody:nobody /opt/smartdc/ufds
 # create one and set up a compat symlink (the sapi template still uses the
 # "legacy" location). If the cert does exist, we simply create the compat
 # symlink.
-CERT_FILE=/opt/smartdc/ufds/ssl/cert.pem
+CERT_DIR=/opt/smartdc/ufds/ssl
 
 if [[ -d /zones/$(zonename)/data ]]; then
     LEGACY_SYMLINK="$CERT_FILE"
-    CERT_FILE=/data/tls/cert.pem
+    CERT_DIR=/data/tls
 
     if ! [[ -d /data ]]; then
         # Mount our delegate dataset at '/data'.
         zfs set mountpoint=/data "zones/$(zonename)/data"
     fi
 
-    if ! [[ -d /data/tls ]]; then
-        mkdir /data/tls
+    if ! [[ -d $CERT_DIR ]]; then
+        mkdir "$CERT_DIR"
     fi
 
-    ln -s "$CERT_FILE" "$LEGACY_SYMLINK"
+    for f in key cert; do
+        ln -s "${CERT_DIR}/${f}.pem" "${LEGACY_SYMLINK}/${f}.pem"
+    done
 fi
 
-if ! [[ -f "$CERT_FILE" ]]; then
+if ! [[ -f "${CERT_DIR}/cert.pem" ]] || ! [[ -f "${CERT_DIR}/key.pem" ]]; then
     echo "Generating TLS Certificate"
     /opt/local/bin/openssl req -x509 -nodes -subj '/CN=*' -newkey rsa:2048 \
-        -keyout /opt/smartdc/ufds/ssl/key.pem -out "$CERT_FILE" \
+        -keyout "${CERT_DIR}/key.pem" -out "${CERT_DIR}/cert.pem" \
         -days 3650
     # Ensure the UFDS SMF services running as nobody can read the cert.
     # See TRITON-2306
-    chmod go+r "$CERT_FILE"
+    chmod go+r "${CERT_DIR}/cert.pem" "${CERT_DIR}/key.pem"
 else
     echo "TLS certificate already exists."
 fi

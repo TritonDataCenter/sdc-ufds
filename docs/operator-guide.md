@@ -228,7 +228,7 @@ load_sdc_config
     done
     ```
 
-2. Update madtom and marlin-dashboard.
+2. Update madtom and marlin-dashboard. This only applies to MantaV1.
 
     ```sh
     mdash=$(sdc-sapi /services?name=marlin-dashboard\&include_master=true | json -Ha uuid)
@@ -240,18 +240,19 @@ load_sdc_config
     sdc-sapi /services/$madtom -X PUT -d "$json"
     ```
 
-### Locate any reshard zone in the DC and update its metadata
+3. Locate any reshard zone in the DC and update its metadata. This only applies
+   to MantaV2.
 
-The reshard service is experimental and you should not have one unless you were
-explicitly instructed to create one by Triton support.
+   The reshard service is experimental and you should not have one unless you
+   were explicitly instructed to create one by Triton support.
 
-There should only be one reshard zone in each region:
+   There should only be one reshard zone in each region:
 
-```sh
-reshard=$(manta-adm show -Ho zonename reshard)
-json=$(printf '{"action":"update","metadata":{"UFDS_ROOT_PW": "%s"}}' "${ufds_ldap_root_pw}"
-sdc-sapi /instances/$reshard -X PUT -d "$json"
-```
+    ```sh
+    reshard=$(manta-adm show -Ho zonename reshard)
+    json=$(printf '{"action":"update","metadata":{"UFDS_ROOT_PW": "%s"}}' "${ufds_ldap_root_pw}"
+    sdc-sapi /instances/$reshard -X PUT -d "$json"
+    ```
 
 ### End the data center maintenance
 

@@ -203,6 +203,14 @@ processing services or 3rd party LDAP bridges.
 
 Manta will not always be deployed. If there is no Manta, skip these steps.
 
+Before beginning, load the config into your current shell. This sets the
+variable `ufds_ldap_root_pw` which will be used in each of these commands.
+
+```sh
+. /lib/sdc/config.sh
+load_sdc_config
+```
+
 1. Update Manta webapi and authcache for each data center:
 
     ```sh
@@ -216,16 +224,20 @@ Manta will not always be deployed. If there is no Manta, skip these steps.
 
     for m in "${mahi[@]}"; do
       sapiadm update "$m" metadata.UFDS_ROOT_PW="${ufds_ldap_root_pw}"
-    manta-oneach -z "$m" reboot
+      manta-oneach -z "$m" reboot
     done
     ```
 
 2. Update madtom and marlin-dashboard.
 
     ```sh
-    mdash=$(sdc-sapi /services?name=marlin-dashboard\&include_master=true | json -Ha uuid) json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}") sdc-sapi /services/$mdash -X PUT -d "$json"
+    mdash=$(sdc-sapi /services?name=marlin-dashboard\&include_master=true | json -Ha uuid)
+    json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}")
+    sdc-sapi /services/$mdash -X PUT -d "$json"
 
-    madtom=$(sdc-sapi /services?name=madtom\&include_master=true | json -Ha uuid) json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}") sdc-sapi /services/$madtom -X PUT -d "$json"
+    madtom=$(sdc-sapi /services?name=madtom\&include_master=true | json -Ha uuid)
+    json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}")
+    sdc-sapi /services/$madtom -X PUT -d "$json"
     ```
 
 ### Locate any reshard zone in the DC and update its metadata
@@ -236,8 +248,9 @@ explicitly instructed to create one by Triton support.
 There should only be one reshard zone in each region:
 
 ```sh
-reshard=manta-adm show -Ho zonename reshard
-sdc-sapi /instances/$reshard -X PUT -d'{"action":"update","metadata":{"UFDS_ROOT_PW": "${ufds_ldap_root_pw}"}}'
+reshard=$(manta-adm show -Ho zonename reshard)
+json=$(printf '{"action":"update","metadata":{"UFDS_ROOT_PW": "%s"}}' "${ufds_ldap_root_pw}"
+sdc-sapi /instances/$reshard -X PUT -d "$json"
 ```
 
 ### End the data center maintenance

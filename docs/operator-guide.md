@@ -244,7 +244,8 @@ load_sdc_config
     Authcache instances will automatically be up to date after the instance is
     rebooted in the previous step.
 
-2. Update madtom and marlin-dashboard. This only applies to MantaV1.
+2. Update madtom and marlin-dashboard. MantaV2 installations will not have
+   marlin-dashboard.
 
     ```sh
     mdash=$(sdc-sapi /services?name=marlin-dashboard\&include_master=true | json -Ha uuid)

@@ -203,7 +203,7 @@ processing services or 3rd party LDAP bridges.
 Manta will not always be deployed. If there is no Manta, skip these steps.
 
 Before beginning, load the config into your current shell. This sets the
-variable `ufds_ldap_root_pw` which will be used in each of these commands.
+variable `CONFIG_ufds_ldap_root_pw` which will be used in each of these commands.
 
 ```sh
 . /lib/sdc/config.sh
@@ -248,11 +248,11 @@ load_sdc_config
 
     ```sh
     mdash=$(sdc-sapi /services?name=marlin-dashboard\&include_master=true | json -Ha uuid)
-    json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}")
+    json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${CONFIG_ufds_ldap_root_pw}")
     sdc-sapi /services/$mdash -X PUT -d "$json"
 
     madtom=$(sdc-sapi /services?name=madtom\&include_master=true | json -Ha uuid)
-    json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${ufds_ldap_root_pw}")
+    json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${CONFIG_ufds_ldap_root_pw}")
     sdc-sapi /services/$madtom -X PUT -d "$json"
     ```
 
@@ -266,7 +266,7 @@ load_sdc_config
 
     ```sh
     reshard=$(manta-adm show -Ho zonename reshard)
-    json=$(printf '{"action":"update","metadata":{"UFDS_ROOT_PW": "%s"}}' "${ufds_ldap_root_pw}"
+    json=$(printf '{"action":"update","metadata":{"UFDS_ROOT_PW": "%s"}}' "${CONFIG_ufds_ldap_root_pw}"
     sdc-sapi /instances/$reshard -X PUT -d "$json"
     ```
 

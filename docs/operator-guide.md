@@ -79,10 +79,9 @@ sdcadm dc-maint status
 5. Reboot `cloudapi`, `mahi`, `adminui`, `fwapi`, and `imgapi` to ensure that the new password takes effect.
 
     ```sh
-    hn=$(sysinfo | json UUID)
-    hn2=$(sdc-server lookup traits.triton=headnode)
-    # check that the csv of HN and secondary HN uuids look correct (expects 3 of them) echo $hn $hn2 | tr""","
-    sdc-oneachnode -n $(echo $hn $hn2 | tr""",") 'for uuid in $(sdcadm insts cloudapi adminui mahi fwapi imgapi | grep -v INSTANCE | awk '{print $1}'); do echo "restarting $uuid"; vmadm reboot $uuid; done'
+    for inst in $(sdcadm insts -Ho instance cloudapi adminui mahi fwapi imgapi); do
+      sdc-vmadm reboot "$inst"
+    done
     ```
 
 6. Restart the `ufds-capi` service in the `ufds` zone.
@@ -213,20 +212,37 @@ load_sdc_config
 
 1. Update Manta webapi and authcache for each data center:
 
+    Webapi
+
     ```sh
     webapi=( $(manta-adm show -Ho zonename webapi) )
 
     for api in "${webapi[@]}"; do
-      sapiadm update "$api" metadata.UFDS_ROOT_PW="${ufds_ldap_root_pw}"
+      sapiadm update "$api" metadata.UFDS_ROOT_PW="${CONFIG_ufds_ldap_root_pw}"
     done
+    ```
 
+    Check that all webapi instances have the correct passowrd. It may take a
+    few moments for config-agent to update the config so you may need to check
+    several times before all instances are up to date.
+
+    ```sh
+    manta-oneach -s webapi 'json -f /opt/smartdc/muskie/etc/config.json ufds.bindPassword'
+    ```
+
+    Authcache
+
+    ```sh
     mahi=( $(manta-adm show -Ho zonename authcache) )
 
     for m in "${mahi[@]}"; do
-      sapiadm update "$m" metadata.UFDS_ROOT_PW="${ufds_ldap_root_pw}"
+      sapiadm update "$m" metadata.UFDS_ROOT_PW="${CONFIG_ufds_ldap_root_pw}"
       manta-oneach -z "$m" reboot
     done
     ```
+
+    Authcache instances will automatically be up to date after the instance is
+    rebooted in the previous step.
 
 2. Update madtom and marlin-dashboard. This only applies to MantaV1.
 

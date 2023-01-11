@@ -248,13 +248,11 @@ load_sdc_config
    marlin-dashboard.
 
     ```sh
-    mdash=$(sdc-sapi /services?name=marlin-dashboard\&include_master=true | json -Ha uuid)
-    json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${CONFIG_ufds_ldap_root_pw}")
-    sdc-sapi /services/$mdash -X PUT -d "$json"
+    mdash=$(manta-adm show -Ho zonename marlin-dashboard)
+    sapiadm update "$mdash" metadata.UFDS_ROOT_PW="${CONFIG_ufds_ldap_root_pw}"
 
-    madtom=$(sdc-sapi /services?name=madtom\&include_master=true | json -Ha uuid)
-    json=$(printf '{"metadata":{"UFDS_ROOT_PW":"%s"}}' "${CONFIG_ufds_ldap_root_pw}")
-    sdc-sapi /services/$madtom -X PUT -d "$json"
+    madtom=$(manta-adm show -Ho zonename madtom)
+    sapiadm update "$madtom" metadata.UFDS_ROOT_PW="${CONFIG_ufds_ldap_root_pw}"
     ```
 
 3. Locate any reshard zone in the DC and update its metadata. This only applies
@@ -267,8 +265,7 @@ load_sdc_config
 
     ```sh
     reshard=$(manta-adm show -Ho zonename reshard)
-    json=$(printf '{"action":"update","metadata":{"UFDS_ROOT_PW": "%s"}}' "${CONFIG_ufds_ldap_root_pw}"
-    sdc-sapi /instances/$reshard -X PUT -d "$json"
+    sapiadm update "$reshard" metadata.UFDS_ROOT_PW="${CONFIG_ufds_ldap_root_pw}"
     ```
 
 ### End the data center maintenance

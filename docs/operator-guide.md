@@ -108,7 +108,7 @@ sdcadm dc-maint status
 
 3. Check that that the `ufds-master` log doesn't have any connection errors. Connection errors indicate that some consumers still have the old password.
 
-### On the UFDS primary
+### On the UFDS primary datacenter headnode
 
 1. Run `sdc-usbkey mount`.
 
@@ -154,7 +154,7 @@ Note: Any other 2nd or 3rd party applications that connect directly to UFDS
 should also be updated at this time. This may include things like billing
 processing services or 3rd party LDAP bridges.
 
-### On each replica data center
+### On each replica datacenter headnode
 
 1. Run `sdc-usbkey mount`.
 

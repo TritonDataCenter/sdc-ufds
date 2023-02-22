@@ -7,6 +7,7 @@
 
 #
 # Copyright 2021 Joyent, Inc.
+# Copyright 2023 MNX Cloud, Inc.
 #
 
 # vi: expandtab sw=4 ts=4
@@ -36,6 +37,7 @@ fi
 
 #---- globals, config
 
+# shellcheck disable=SC1091
 source /opt/smartdc/boot/lib/util.sh
 PATH=/opt/smartdc/ufds/build/node/bin:/opt/smartdc/ufds/node_modules/.bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/usr/sbin
 role=ufds
@@ -50,7 +52,7 @@ X=0
 #---- functions
 
 function fatal {
-    echo "$(basename $0): error: $1"
+    echo "$(basename "$0"): error: $1"
     exit 1
 }
 
@@ -59,33 +61,32 @@ function setup_vars {
     #From util.sh
     download_metadata
 
-    UFDS_ADMIN_IP=127.0.0.1
-    UFDS_LDAP_ROOT_DN=$(json -f ${METADATA} ufds_ldap_root_dn)
-    UFDS_LDAP_ROOT_PW=$(json -f ${METADATA} ufds_ldap_root_pw)
+    UFDS_LDAP_ROOT_DN="$(json -f "${METADATA:?}" ufds_ldap_root_dn)"
+    UFDS_LDAP_ROOT_PW="$(json -f "${METADATA}" ufds_ldap_root_pw)"
 
-    UFDS_ADMIN_UUID=$(json -f ${METADATA} ufds_admin_uuid)
-    UFDS_ADMIN_LOGIN=$(json -f ${METADATA} ufds_admin_login)
-    UFDS_ADMIN_PW=$(json -f ${METADATA} ufds_admin_pw)
-    UFDS_ADMIN_EMAIL=$(json -f ${METADATA} ufds_admin_email)
+    UFDS_ADMIN_UUID="$(json -f "${METADATA}" ufds_admin_uuid)"
+    UFDS_ADMIN_LOGIN="$(json -f "${METADATA}" ufds_admin_login)"
+    UFDS_ADMIN_PW="$(json -f "${METADATA}" ufds_admin_pw)"
+    UFDS_ADMIN_EMAIL="$(json -f "${METADATA}" ufds_admin_email)"
 
-    REGION_NAME=$(json -f ${METADATA} region_name)
-    DATACENTER_NAME=$(json -f ${METADATA} datacenter_name)
-    DATACENTER_COMPANY_NAME=$(json -f ${METADATA} datacenter_company_name)
-    DATACENTER_LOCATION=$(json -f ${METADATA} datacenter_location)
+    REGION_NAME="$(json -f "${METADATA}" region_name)"
+    DATACENTER_NAME="$(json -f "${METADATA}" datacenter_name)"
+    DATACENTER_COMPANY_NAME="$(json -f "${METADATA}" datacenter_company_name)"
+    DATACENTER_LOCATION="$(json -f "${METADATA}" datacenter_location)"
 
-    UFDS_ADMIN_KEY_FINGERPRINT=$(json -f ${METADATA} ufds_admin_key_fingerprint)
-    UFDS_ADMIN_KEY_OPENSSH=$(json -f ${METADATA} ufds_admin_key_openssh)
+    UFDS_ADMIN_KEY_FINGERPRINT="$(json -f "${METADATA}" ufds_admin_key_fingerprint)"
+    UFDS_ADMIN_KEY_OPENSSH="$(json -f "${METADATA}" ufds_admin_key_openssh)"
 
-    ADMIN_NETWORK=$(json -f ${METADATA} admin_network)
-    ADMIN_NETMASK=$(json -f ${METADATA} admin_netmask)
-    BINDER_ADMIN_IPS=$(json -f ${METADATA} binder_admin_ips)
+    ADMIN_NETWORK="$(json -f "${METADATA}" admin_network)"
+    ADMIN_NETMASK="$(json -f "${METADATA}" admin_netmask)"
+    BINDER_ADMIN_IPS="$(json -f "${METADATA}" binder_admin_ips)"
 
-    VERSION=$(json -f /opt/smartdc/ufds/etc/config.json moray.version)
+    VERSION="$(json -f /opt/smartdc/ufds/etc/config.json moray.version)"
 
-    IS_MASTER=$(json -f ${METADATA} ufds_is_master)
+    IS_MASTER="$(json -f "${METADATA}" ufds_is_master)"
     if [[ "${IS_MASTER}" == "false" ]]; then
-        UFDS_REMOTE_IP=$(json -f ${METADATA} ufds_remote_ip)
-        UFDS_REMOTE_PASSWORD=$(json -f ${METADATA} ufds_remote_ldap_root_pw)
+        UFDS_REMOTE_IP="$(json -f "${METADATA}" ufds_remote_ip)"
+        UFDS_REMOTE_PASSWORD="$(json -f "${METADATA}" ufds_remote_ldap_root_pw)"
         if [[ -z "$UFDS_REMOTE_PASSWORD" ]]; then
             UFDS_REMOTE_PASSWORD="$UFDS_LDAP_ROOT_PW"
         fi
@@ -105,8 +106,8 @@ function setup_vars {
 
 
 function ldap {
-    local role=$1
-    local cmd=$2
+    local role="$1"
+    local cmd="$2"
     local ip
     local password
     local cmd
@@ -116,11 +117,11 @@ function ldap {
     case "$role" in
     local)
         ip=127.0.0.1
-        password=$UFDS_LDAP_ROOT_PW
+        password="$UFDS_LDAP_ROOT_PW"
         ;;
     remote)
-        ip=$UFDS_REMOTE_IP
-        password=$UFDS_REMOTE_PASSWORD
+        ip="$UFDS_REMOTE_IP"
+        password="$UFDS_REMOTE_PASSWORD"
         ;;
     *)
         printf 'ERROR: unknown LDAP role "%s"\n' "$role" >&2
@@ -142,16 +143,16 @@ function ldap {
         printf '\tUFDS role "%s" has IP address "%s"\n' "$role" "$ip"
     fi
 
-    LDAP_RESULT=$(LDAPTLS_REQCERT=allow ${fullcmd} -H ldaps://${ip} -x \
-        -D ${UFDS_LDAP_ROOT_DN} \
-        -w ${password} "$@")
+    LDAP_RESULT="$(LDAPTLS_REQCERT=allow ${fullcmd} -H "ldaps://${ip}" -x \
+        -D "${UFDS_LDAP_ROOT_DN}" \
+        -w "${password}" "$@")"
     LDAP_RESULT_CODE=$?
     return $LDAP_RESULT_CODE
 }
 
 
 function verify_a_ufds {
-    local role=$1
+    local role="$1"
 
     printf 'Verifying UFDS for role "%s"...\n' "$role"
 
@@ -271,34 +272,37 @@ function needs_reconcile {
 
 
 function replace_in_ldif {
-    local file=$1
+    local file="$1"
     if [[ ! -f ${file} ]]; then
         fatal "Tried to replace in ${file}, but it doesn't exist."
     fi
 
-    local filename=$(basename ${file})
+    local filename
+    filename="$(basename "${file}")"
     LDIF="${LDIF_PREFIX}.${filename}.${X}"
-    let "X += 1"
-    cp ${file} ${LDIF}
-    gsed -i -e "s|UFDS_ADMIN_UUID|$UFDS_ADMIN_UUID|" $LDIF
-    gsed -i -e "s|UFDS_ADMIN_LOGIN|$UFDS_ADMIN_LOGIN|" $LDIF
-    gsed -i -e "s|UFDS_ADMIN_PW|$UFDS_ADMIN_PW|" $LDIF
-    gsed -i -e "s|UFDS_ADMIN_EMAIL|$UFDS_ADMIN_EMAIL|" $LDIF
-    gsed -i -e "s|REGION_NAME|$REGION_NAME|" $LDIF
-    gsed -i -e "s|DATACENTER_NAME|$DATACENTER_NAME|" $LDIF
-    gsed -i -e "s|DATACENTER_COMPANY_NAME|$DATACENTER_COMPANY_NAME|" $LDIF
-    gsed -i -e "s|DATACENTER_LOCATION|$DATACENTER_LOCATION|" $LDIF
-    gsed -i -e "s|UFDS_ADMIN_KEY_FINGERPRINT|$UFDS_ADMIN_KEY_FINGERPRINT|" $LDIF
-    gsed -i -e "s|UFDS_ADMIN_KEY_OPENSSH|$UFDS_ADMIN_KEY_OPENSSH|" $LDIF
-    gsed -i -e "s|ADMIN_NETWORK|$ADMIN_NETWORK|" $LDIF
-    gsed -i -e "s|ADMIN_NETMASK|$ADMIN_NETMASK|" $LDIF
-    gsed -i -e "s|BINDER_ADMIN_IPS|$BINDER_ADMIN_IPS|" $LDIF
+    (( X += 1 ))
+    cp "${file}" "${LDIF}"
+    gsed -i -e "s|UFDS_ADMIN_UUID|$UFDS_ADMIN_UUID|" "$LDIF"
+    gsed -i -e "s|UFDS_ADMIN_LOGIN|$UFDS_ADMIN_LOGIN|" "$LDIF"
+    # Since we're using pipes for the regex delimiter, we need to protect
+    # the expression if the admin password contains one or more pipes.
+    gsed -i -e "s|UFDS_ADMIN_PW|${UFDS_ADMIN_PW//|/\|}|" "$LDIF"
+    gsed -i -e "s|UFDS_ADMIN_EMAIL|$UFDS_ADMIN_EMAIL|" "$LDIF"
+    gsed -i -e "s|REGION_NAME|$REGION_NAME|" "$LDIF"
+    gsed -i -e "s|DATACENTER_NAME|$DATACENTER_NAME|" "$LDIF"
+    gsed -i -e "s|DATACENTER_COMPANY_NAME|$DATACENTER_COMPANY_NAME|" "$LDIF"
+    gsed -i -e "s|DATACENTER_LOCATION|$DATACENTER_LOCATION|" "$LDIF"
+    gsed -i -e "s|UFDS_ADMIN_KEY_FINGERPRINT|$UFDS_ADMIN_KEY_FINGERPRINT|" "$LDIF"
+    gsed -i -e "s|UFDS_ADMIN_KEY_OPENSSH|$UFDS_ADMIN_KEY_OPENSSH|" "$LDIF"
+    gsed -i -e "s|ADMIN_NETWORK|$ADMIN_NETWORK|" "$LDIF"
+    gsed -i -e "s|ADMIN_NETMASK|$ADMIN_NETMASK|" "$LDIF"
+    gsed -i -e "s|BINDER_ADMIN_IPS|$BINDER_ADMIN_IPS|" "$LDIF"
 }
 
 
 function load_ldif {
-    local ldif=$1
-    local role=$2
+    local ldif="$1"
+    local role="$2"
 
     if [[ ! -f ${ldif} ]]; then
         fatal "LDIF file ${ldif} doesn't exist"
@@ -310,7 +314,7 @@ function load_ldif {
     ldap "$role" add -c -f "$ldif"
 
     # 68 is "already exists"
-    if [[ $LDAP_RESULT_CODE -ne 0 ]] && [[ $LDAP_RESULT_CODE -ne 68 ]]; then
+    if (( LDAP_RESULT_CODE != 0 )) && (( LDAP_RESULT_CODE != 68 )); then
         fatal "Failed to load \"$ldif\" for role \"$role\", exiting"
     fi
 }
@@ -324,24 +328,24 @@ function migrate_ldap_data {
     ldap 'local' search -o ldif-wrap=no -b "${dn}" >${tmpFile}
 
     # Purge all the entries in local
-    $(dirname "${BASH_SOURCE[0]}")/ufds-find-dns "${dn}" | \
-        while read l; do
+    "$(dirname "${BASH_SOURCE[0]}")/ufds-find-dns" "${dn}" | \
+        while read -r l; do
             ldap 'local' delete "${l}"
         done
 
     # Add all entries to remote
-    load_ldif ${tmpFile} 'remote'
+    load_ldif "${tmpFile}" 'remote'
 
-    rm ${tmpFile}
+    rm ${tmpFile:?}
 }
 
 
 function bootstrap_local {
     echo "Reconciling local data"
-    replace_in_ldif ${BOOTSTRAP_LDIF_IN}
+    replace_in_ldif "${BOOTSTRAP_LDIF_IN}"
     # Since this will not error when data already exists, we simply add.  It
     # has the added benefit that new entries will be added too (on force)
-    load_ldif ${LDIF} 'local'
+    load_ldif "${LDIF}" 'local'
 }
 
 
@@ -351,20 +355,24 @@ function bootstrap_local {
 # could work is by dumping the tree and checking each entry individually.
 function bootstrap_remote {
     echo "Reconciling (possible) remote data"
-    replace_in_ldif ${BOOTSTRAP_REMOTE_LDIF_IN}
+    replace_in_ldif "${BOOTSTRAP_REMOTE_LDIF_IN}"
     local reload_role='local'
 
     if [[ "${IS_MASTER}" == "false" ]]; then
+        local dn
+        local in_local
+        local in_remote
+
         # First we need to make sure that data is only in the local ufds if it
         # is already in the remote ufds.  Otherwise, we need to remove from the
         # local ufds before adding to the remote ufds.
 
         # Use the first dn as a sanity check
-        local dn=$(grep '^dn: ' ${LDIF} | head -1 | cut -c 5-)
+        dn=$(grep '^dn: ' "${LDIF}" | head -1 | cut -c 5-)
         ldap 'local' search -s base -b "${dn}" "objectclass=*"
-        local in_local=${LDAP_RESULT_CODE}
+        in_local=${LDAP_RESULT_CODE}
         ldap 'remote' search -s base -b "${dn}" "objectclass=*"
-        local in_remote=${LDAP_RESULT_CODE}
+        in_remote=${LDAP_RESULT_CODE}
 
         if [[ ${in_local} == 0 && ${in_remote} == 32 ]]; then
             migrate_ldap_data "${dn}"
@@ -373,7 +381,7 @@ function bootstrap_remote {
         reload_role='remote'
     fi
 
-    load_ldif ${LDIF} "$reload_role"
+    load_ldif "${LDIF}" "$reload_role"
 }
 
 

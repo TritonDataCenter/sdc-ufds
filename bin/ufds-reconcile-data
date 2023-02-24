@@ -67,6 +67,7 @@ function setup_vars {
     UFDS_ADMIN_UUID="$(json -f "${METADATA}" ufds_admin_uuid)"
     UFDS_ADMIN_LOGIN="$(json -f "${METADATA}" ufds_admin_login)"
     UFDS_ADMIN_PW="$(json -f "${METADATA}" ufds_admin_pw)"
+    B64_UFDS_ADMIN_PW="$(printf '%s' "$UFDS_ADMIN_PW" | base64)"
     UFDS_ADMIN_EMAIL="$(json -f "${METADATA}" ufds_admin_email)"
 
     REGION_NAME="$(json -f "${METADATA}" region_name)"
@@ -284,9 +285,9 @@ function replace_in_ldif {
     cp "${file}" "${LDIF}"
     gsed -i -e "s|UFDS_ADMIN_UUID|$UFDS_ADMIN_UUID|" "$LDIF"
     gsed -i -e "s|UFDS_ADMIN_LOGIN|$UFDS_ADMIN_LOGIN|" "$LDIF"
-    # Since we're using pipes for the regex delimiter, we need to protect
-    # the expression if the admin password contains one or more pipes.
-    gsed -i -e "s|UFDS_ADMIN_PW|${UFDS_ADMIN_PW//|/\|}|" "$LDIF"
+    # The password is base64 encoded in the ldif in case it contains any
+    # special characters.
+    gsed -i -e "s|UFDS_ADMIN_PW|$B64_UFDS_ADMIN_PW|" "$LDIF"
     gsed -i -e "s|UFDS_ADMIN_EMAIL|$UFDS_ADMIN_EMAIL|" "$LDIF"
     gsed -i -e "s|REGION_NAME|$REGION_NAME|" "$LDIF"
     gsed -i -e "s|DATACENTER_NAME|$DATACENTER_NAME|" "$LDIF"

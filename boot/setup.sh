@@ -8,7 +8,7 @@
 
 #
 # Copyright (c) 2014, Joyent, Inc.
-# Copyright 2022 MNX Cloud, Inc.
+# Copyright 2024 MNX Cloud, Inc.
 #
 
 export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
@@ -43,7 +43,7 @@ chown -R nobody:nobody /opt/smartdc/ufds
 # symlink.
 CERT_DIR=/opt/smartdc/ufds/ssl
 
-if [[ -d /zones/$(zonename)/data ]]; then
+if [[ -d /data ]] || [[ -d /zones/$(zonename)/data ]]; then
     LEGACY_SYMLINK="$CERT_DIR"
     CERT_DIR=/data/tls
 

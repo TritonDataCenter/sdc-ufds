@@ -7,6 +7,7 @@
 <!--
     Copyright (c) 2014, Joyent, Inc.
     Copyright 2022 MNX Cloud, Inc.
+    Copyright 2025 Edgecast Cloud LLC.
 -->
 
 # SDC-UFDS
@@ -35,7 +36,7 @@ This assumes several things:
 
 - You've got a moray instance running exactly how it's specified on the
   config file `etc/config.coal.json`.
-- Your node version is greater than 0.8.
+- Your node version is greater than v6.7.1
 - You want to see debug output. If you don't, remove the `-d 2`, but it's
   strongly recommended while hacking.
 - You do have bunyan module installed globally. Given the `make all` command

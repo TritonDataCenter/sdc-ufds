@@ -1,6 +1,6 @@
 {
     "name": "ufds",
-    "version": "7.4.1",
+    "version": "7.5.0",
     "repository": {
         "type": "git",
         "url": "git@github.com:TritonDataCenter/sdc-ufds.git"
@@ -26,7 +26,7 @@
         "once": "1.3.0",
         "restify": "2.3.4",
         "sshpk": "1.16.1",
-        "ufds": "^1.7.0",
+        "ufds": "git+https://github.com/TritonDataCenter/node-ufds.git#590843baadf69e365c0f7fba06afcf445b86051f",
         "uuid": "~3.4.0",
         "vasync": "1.6.2"
     },

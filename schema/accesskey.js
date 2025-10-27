@@ -13,6 +13,7 @@ const util = require('util');
 
 const ldap = require('ldapjs');
 const accesskey = require('ufds/lib/accesskey');
+const { DEFAULT_PREFIX, DEFAULT_BYTE_LENGTH } = accesskey;
 
 const Validator = require('../lib/schema/validator');
 
@@ -38,20 +39,32 @@ function AccessKey() {
         name: 'accesskey',
         required: {
             accesskeyid: 1,
-            accesskeysecret: 1
-        },
-        optional: {
+            accesskeysecret: 1,
+            status: 1,
             created: 1,
             updated: 1,
+        },
+        optional: {
             description: 1,
-            status: 1
         },
         strict: true
     });
 }
 util.inherits(AccessKey, Validator);
 
-
+/**
+ * AccessKeys created before v7.5.0 will be missing required properties, have an
+ * invalid accesskeysecret, and are unable to be used for authentication.
+ * These AccessKeys weren't yet used anywhere within Triton but the undocumented
+ * CloudAPI endpoints existed and its possible that some installations may have
+ * some of these older entries. node-ufds and cloud-api will return
+ * such keys as 'Inactive' but will need to be manually deleted from Moray as
+ * UFDS's validation prevents updating or deleting these records:
+ *
+ * delobject ufds_o_smartdc \
+ *   "accesskeyid=$ACCESSKEYID, uuid=$USER_UUID, ou=users, o=smartdc"
+ *
+ */
 AccessKey.prototype.validate =
 function validate(entry, config, changes, callback) {
     const errors = [];
@@ -71,7 +84,8 @@ function validate(entry, config, changes, callback) {
         errors.push('accesskeyid: ' + id + ' is invalid');
     }
 
-    if (!KEY_RE.test(key) || !accesskey.validate('tdc_', 32, key)) {
+    if (!KEY_RE.test(key) ||
+        !accesskey.validate(DEFAULT_PREFIX, DEFAULT_BYTE_LENGTH, key)) {
         errors.push('accesskeysecret is invalid');
     }
 

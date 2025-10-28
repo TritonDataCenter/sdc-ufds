@@ -78,13 +78,15 @@ function validate(entry, config, changes, callback) {
     const id = entry.attributes.accesskeyid[0];
     const key = entry.attributes.accesskeysecret[0];
 
-    if (!ID_RE.test(id) ||
+    if (!id ||
+        !ID_RE.test(id) ||
         id.length < 16 ||
         id.length > 128) {
         errors.push('accesskeyid: ' + id + ' is invalid');
     }
 
-    if (!KEY_RE.test(key) ||
+    if (!key ||
+        !KEY_RE.test(key) ||
         !accesskey.validate(DEFAULT_PREFIX, DEFAULT_BYTE_LENGTH, key)) {
         errors.push('accesskeysecret is invalid');
     }
@@ -94,7 +96,8 @@ function validate(entry, config, changes, callback) {
         errors.push('status must be one of: ' + STATUS_VALUES.join(', '));
     }
 
-    if (entry.attributes.description && entry.attributes.description[0] &&
+    if (entry.attributes.description &&
+        entry.attributes.description[0] &&
         entry.attributes.description[0].length > 150) {
         errors.push('description must be 150 characters in length or less');
     }

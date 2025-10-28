@@ -26,7 +26,7 @@
         "once": "1.3.0",
         "restify": "2.3.4",
         "sshpk": "1.16.1",
-        "ufds": "git+https://github.com/TritonDataCenter/node-ufds.git#3e0ffc47e75e67428f3b5658c9e9d1e98ca4cb48",
+        "ufds": "git+https://github.com/TritonDataCenter/node-ufds.git#d0beab12485a5af90e5e96adb9b1a2d5168ae7b1",
         "uuid": "~3.4.0",
         "vasync": "1.6.2"
     },

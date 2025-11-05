@@ -46,6 +46,12 @@ function AccessKey() {
         },
         optional: {
             description: 1,
+            // STS temporary credential fields
+            sessiontoken: 1,
+            expiration: 1,
+            principaluuid: 1,
+            assumedrole: 1,
+            credentialtype: 1
         },
         strict: true
     });
@@ -100,6 +106,34 @@ function validate(entry, config, changes, callback) {
         entry.attributes.description[0] &&
         entry.attributes.description[0].length > 150) {
         errors.push('description must be 150 characters in length or less');
+    }
+
+    // Validate STS fields for temporary credentials
+    var credentialType = entry.attributes.credentialtype ? 
+        entry.attributes.credentialtype[0] : 'permanent';
+    
+    if (credentialType === 'temporary') {
+        // Session token is required for temporary credentials
+        if (!entry.attributes.sessiontoken || !entry.attributes.sessiontoken[0]) {
+            errors.push('sessiontoken is required for temporary credentials');
+        }
+        
+        // Expiration is required for temporary credentials
+        if (!entry.attributes.expiration || !entry.attributes.expiration[0]) {
+            errors.push('expiration is required for temporary credentials');
+        } else {
+            var exp = new Date(entry.attributes.expiration[0]);
+            if (isNaN(exp.getTime())) {
+                errors.push('expiration must be a valid ISO timestamp');
+            } else if (exp <= new Date()) {
+                errors.push('expiration must be in the future');
+            }
+        }
+        
+        // Principal UUID is required for temporary credentials
+        if (!entry.attributes.principaluuid || !entry.attributes.principaluuid[0]) {
+            errors.push('principaluuid is required for temporary credentials');
+        }
     }
 
     if (changes && changes.some(function (c) {

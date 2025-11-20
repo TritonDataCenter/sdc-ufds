@@ -106,7 +106,7 @@ function validate(entry, config, changes, callback) {
         return (READONLY_ATTRS.indexOf(c._modification.type) !== -1);
     })) {
         errors.push(READONLY_ATTRS.join(', ') +
-            'attributes can not be modified');
+            ' attributes can not be modified');
     }
 
     if (errors.length) {

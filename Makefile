@@ -96,7 +96,7 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all:  $(SMF_MANIFESTS) | $(REPO_DEPS) sdc-scripts
+all:  $(SMF_MANIFESTS) | $(NPM_EXEC) $(REPO_DEPS) sdc-scripts
 	$(NPM) install
 
 .PHONY: test

@@ -58,7 +58,7 @@ function AccessKey() {
 }
 util.inherits(AccessKey, Validator);
 
-/**
+/*
  * AccessKeys created before v7.5.0 will be missing required properties, have an
  * invalid accesskeysecret, and are unable to be used for authentication.
  * These AccessKeys weren't yet used anywhere within Triton but the undocumented
@@ -71,10 +71,12 @@ util.inherits(AccessKey, Validator);
  *   "accesskeyid=$ACCESSKEYID, uuid=$USER_UUID, ou=users, o=smartdc"
  *
  */
-/**
+
+/*
  * @param {Object} entry - The LDAP entry being validated
  * @param {Object} config - UFDS configuration
- * @param {Array|null} changes - Modifications (set for modify ops, null for add/del)
+ * @param {Array|null} changes - Modifications (set for modify ops, null
+ * for add/del)
  * @param {Function} callback - Callback function
  * @param {string} [operation] - Operation type: 'add', 'modify', or 'del'
  */
@@ -128,7 +130,8 @@ function validate(entry, config, changes, callback, operation) {
 
     if (credentialType === 'temporary') {
         // Session token is required for temporary credentials
-        if (!entry.attributes.sessiontoken || !entry.attributes.sessiontoken[0]) {
+        if (!entry.attributes.sessiontoken ||
+            !entry.attributes.sessiontoken[0]) {
             errors.push('sessiontoken is required for temporary credentials');
         }
 
@@ -145,7 +148,8 @@ function validate(entry, config, changes, callback, operation) {
         }
 
         // Principal UUID is required for temporary credentials
-        if (!entry.attributes.principaluuid || !entry.attributes.principaluuid[0]) {
+        if (!entry.attributes.principaluuid ||
+            !entry.attributes.principaluuid[0]) {
             errors.push('principaluuid is required for temporary credentials');
         }
     }

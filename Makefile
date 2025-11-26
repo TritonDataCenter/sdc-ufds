@@ -96,8 +96,8 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all:  $(SMF_MANIFESTS) | $(NPM_EXEC) $(REPO_DEPS) sdc-scripts
-	$(NPM) install
+all: $(SMF_MANIFESTS) | $(NPM_EXEC) $(REPO_DEPS) sdc-scripts
+	$(NPM) ci --include=dev
 
 .PHONY: test
 test:
@@ -125,6 +125,7 @@ release: all docs
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \
 		$(ROOT)/package.json \
+		$(ROOT)/package-lock.json \
 		$(ROOT)/schema \
 		$(ROOT)/sapi_manifests \
 		$(ROOT)/smf \

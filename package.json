@@ -8,7 +8,7 @@
     "private": true,
     "main": "./main.js",
     "engines": {
-        "node": ">=0.10"
+        "node": ">=6.7.1"
     },
     "dependencies": {
         "aperture": "git+https://github.com/TritonDataCenter/node-aperture.git#516f54924f9b3c997cca674e92937250801bd037",
@@ -18,15 +18,15 @@
         "async": "0.1.22",
         "backoff": "2.4.1",
         "bcrypt": "1.0.3",
-        "bunyan": "0.22.1",
+        "bunyan": "^1.8.15",
         "crc": "0.2.0",
-        "ldapjs": "git+https://github.com/ldapjs/node-ldapjs.git#0509dd44c0eb6dad7235df7838bdb05ea31cde14",
+        "ldapjs": "1.0.2",
         "moray": "git+https://github.com/TritonDataCenter/node-moray.git#v1.0.3",
         "nopt": "2.1.1",
         "once": "1.3.0",
-        "restify": "2.3.4",
+        "restify": "4.3.3",
         "sshpk": "1.16.1",
-        "ufds": "git+https://github.com/TritonDataCenter/node-ufds.git#c1da5c06a8222c7c57b09da20cb220c3635cb08c",
+        "ufds": "1.9.0",
         "uuid": "~3.4.0",
         "vasync": "1.6.2"
     },

@@ -8,7 +8,7 @@
  * Copyright 2025 Edgecast Cloud LLC.
  */
 
-/**
+/*
  * @file accesskey.test.js
  * @brief Tests for accesskey schema validation including STS temporary
  *        credential fields.
@@ -70,9 +70,9 @@ var config = {
 function cloneObj(obj) {
     // No structuredClone until Node v17
     if (typeof (structuredClone) === 'function') {
-        return structuredClone(obj);
+        return (structuredClone(obj));
     }
-    return JSON.parse(JSON.stringify(obj));
+    return (JSON.parse(JSON.stringify(obj)));
 }
 
 // Test data
@@ -113,7 +113,7 @@ var temporaryEntry = {
 };
 
 
-/**
+/*
  * @test validate permanent accesskey
  * @brief Verifies that a permanent (non-expiring) accesskey passes validation.
  */
@@ -125,7 +125,7 @@ test('validate permanent accesskey', function (t) {
 });
 
 
-/**
+/*
  * @test validate temporary accesskey with all STS fields
  * @brief Verifies that a temporary credential with all required STS
  *        fields passes validation.
@@ -138,7 +138,7 @@ test('validate temporary accesskey with all STS fields', function (t) {
 });
 
 
-/**
+/*
  * @test temporary accesskey missing sessiontoken
  * @brief Verifies that temporary credentials fail validation without
  *        a sessiontoken.
@@ -146,7 +146,7 @@ test('validate temporary accesskey with all STS fields', function (t) {
 test('temporary accesskey missing sessiontoken', function (t) {
     var invalidEntry = cloneObj(temporaryEntry);
     delete invalidEntry.attributes.sessiontoken;
-    
+
     accesskey.validate(invalidEntry, config, undefined, function (err) {
         t.ok(err, 'should fail without sessiontoken');
         t.equal(err.name, 'ConstraintViolationError');
@@ -156,7 +156,7 @@ test('temporary accesskey missing sessiontoken', function (t) {
 });
 
 
-/**
+/*
  * @test temporary accesskey missing expiration
  * @brief Verifies that temporary credentials fail validation without
  *        an expiration timestamp.
@@ -164,7 +164,7 @@ test('temporary accesskey missing sessiontoken', function (t) {
 test('temporary accesskey missing expiration', function (t) {
     var invalidEntry = cloneObj(temporaryEntry);
     delete invalidEntry.attributes.expiration;
-    
+
     accesskey.validate(invalidEntry, config, undefined, function (err) {
         t.ok(err, 'should fail without expiration');
         t.equal(err.name, 'ConstraintViolationError');
@@ -174,7 +174,7 @@ test('temporary accesskey missing expiration', function (t) {
 });
 
 
-/**
+/*
  * @test temporary accesskey missing principaluuid
  * @brief Verifies that temporary credentials fail validation without
  *        a principaluuid.
@@ -182,7 +182,7 @@ test('temporary accesskey missing expiration', function (t) {
 test('temporary accesskey missing principaluuid', function (t) {
     var invalidEntry = cloneObj(temporaryEntry);
     delete invalidEntry.attributes.principaluuid;
-    
+
     accesskey.validate(invalidEntry, config, undefined, function (err) {
         t.ok(err, 'should fail without principaluuid');
         t.equal(err.name, 'ConstraintViolationError');
@@ -192,7 +192,7 @@ test('temporary accesskey missing principaluuid', function (t) {
 });
 
 
-/**
+/*
  * @test temporary accesskey with expired timestamp
  * @brief Verifies that temporary credentials cannot be created with
  *        an expiration time in the past.
@@ -201,7 +201,7 @@ test('temporary accesskey with expired timestamp', function (t) {
     var invalidEntry = cloneObj(temporaryEntry);
     var past = new Date(Date.now() - 3600000).toISOString(); // -1 hour
     invalidEntry.attributes.expiration = [past];
-    
+
     accesskey.validate(invalidEntry, config, undefined, function (err) {
         t.ok(err, 'should fail with past expiration');
         t.equal(err.name, 'ConstraintViolationError');
@@ -211,14 +211,14 @@ test('temporary accesskey with expired timestamp', function (t) {
 });
 
 
-/**
+/*
  * @test temporary accesskey with invalid expiration format
  * @brief Verifies that expiration must be a valid ISO 8601 timestamp.
  */
 test('temporary accesskey with invalid expiration format', function (t) {
     var invalidEntry = cloneObj(temporaryEntry);
     invalidEntry.attributes.expiration = ['not-a-valid-timestamp'];
-    
+
     accesskey.validate(invalidEntry, config, undefined, function (err) {
         t.ok(err, 'should fail with invalid expiration');
         t.equal(err.name, 'ConstraintViolationError');

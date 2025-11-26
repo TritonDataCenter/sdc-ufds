@@ -71,12 +71,26 @@ util.inherits(AccessKey, Validator);
  *   "accesskeyid=$ACCESSKEYID, uuid=$USER_UUID, ou=users, o=smartdc"
  *
  */
+/**
+ * @param {Object} entry - The LDAP entry being validated
+ * @param {Object} config - UFDS configuration
+ * @param {Array|null} changes - Modifications (set for modify ops, null for add/del)
+ * @param {Function} callback - Callback function
+ * @param {string} [operation] - Operation type: 'add', 'modify', or 'del'
+ */
 AccessKey.prototype.validate =
-function validate(entry, config, changes, callback) {
+function validate(entry, config, changes, callback, operation) {
     const errors = [];
 
     // Skip validation when importing legacy entries:
     if (!config.ufds_is_master) {
+        callback();
+        return;
+    }
+
+    // Skip validation for delete operations - we need to allow deleting
+    // expired credentials for cleanup purposes
+    if (operation === 'del') {
         callback();
         return;
     }
@@ -109,15 +123,15 @@ function validate(entry, config, changes, callback) {
     }
 
     // Validate STS fields for temporary credentials
-    var credentialType = entry.attributes.credentialtype ? 
+    var credentialType = entry.attributes.credentialtype ?
         entry.attributes.credentialtype[0] : 'permanent';
-    
+
     if (credentialType === 'temporary') {
         // Session token is required for temporary credentials
         if (!entry.attributes.sessiontoken || !entry.attributes.sessiontoken[0]) {
             errors.push('sessiontoken is required for temporary credentials');
         }
-        
+
         // Expiration is required for temporary credentials
         if (!entry.attributes.expiration || !entry.attributes.expiration[0]) {
             errors.push('expiration is required for temporary credentials');
@@ -129,7 +143,7 @@ function validate(entry, config, changes, callback) {
                 errors.push('expiration must be in the future');
             }
         }
-        
+
         // Principal UUID is required for temporary credentials
         if (!entry.attributes.principaluuid || !entry.attributes.principaluuid[0]) {
             errors.push('principaluuid is required for temporary credentials');

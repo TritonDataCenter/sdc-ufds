@@ -9,6 +9,7 @@
 #
 # Copyright (c) 2014, Joyent, Inc.
 # Copyright 2024 MNX Cloud, Inc.
+# Copyright 2025 Edgecast Cloud LLC.
 #
 
 export PS4='[\D{%FT%TZ}] ${BASH_SOURCE}:${LINENO}: ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'

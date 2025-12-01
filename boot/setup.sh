@@ -208,6 +208,13 @@ sdc_log_rotation_add ufds-capi /var/svc/log/*ufds-capi*.log 1g
 sdc_log_rotation_add ufds-replicator /var/svc/log/*ufds-replicator*.log 1g
 sdc_log_rotation_setup_end
 
+# Setup crontab for expired credentials cleanup 
+echo "Setting up crontab for expired credentials cleanup"
+crontab -l 2>/dev/null | grep -v cleanup-expired-creds > /tmp/crontab.$$ || true
+echo "0 */12 * * * /opt/smartdc/$role/bin/cleanup-expired-creds -c /opt/smartdc/$role/etc/config.json >> /var/log/ufds-cleanup.log 2>&1" >> /tmp/crontab.$$
+crontab /tmp/crontab.$$
+rm -f /tmp/crontab.$$
+
 # Add build/node/bin and node_modules/.bin to PATH
 echo "" >>/root/.profile
 echo "export PATH=/opt/smartdc/$role/build/node/bin:/opt/smartdc/$role/node_modules/.bin:\$PATH" >>/root/.profile

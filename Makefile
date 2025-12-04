@@ -7,6 +7,7 @@
 #
 # Copyright 2021 Joyent, Inc.
 # Copyright 2023 MNX Cloud, Inc.
+# Copyright 2025 Edgecast Cloud LLC.
 #
 
 #
@@ -23,11 +24,6 @@
 # included Makefiles (in eng.git) so that other teams can use them too.
 #
 NAME		:= ufds
-
-#
-# Tools
-#
-ISTANBUL	:= ./node_modules/.bin/istanbul
 
 #
 # Files
@@ -100,16 +96,11 @@ PATH	:= $(NODE_INSTALL)/bin:/opt/local/bin:${PATH}
 # Repo-specific targets
 #
 .PHONY: all
-all:  $(SMF_MANIFESTS) | $(ISTANBUL) $(REPO_DEPS) sdc-scripts
-	$(NPM) install
-
-$(ISTANBUL): | $(NPM_EXEC)
-	$(NPM) install
+all: $(SMF_MANIFESTS) | $(NPM_EXEC) $(REPO_DEPS) sdc-scripts
+	$(NPM) ci --include=dev
 
 .PHONY: test
-test: $(ISTANBUL)
-	# CAPI-461: disable istanbul
-	#$(ISTANBUL) cover --print none test/test.js
+test:
 	node test/test.js
 
 .PHONY: pkg
@@ -134,6 +125,7 @@ release: all docs
 		$(ROOT)/main.js \
 		$(ROOT)/node_modules \
 		$(ROOT)/package.json \
+		$(ROOT)/package-lock.json \
 		$(ROOT)/schema \
 		$(ROOT)/sapi_manifests \
 		$(ROOT)/smf \

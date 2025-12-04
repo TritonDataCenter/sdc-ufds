@@ -73,6 +73,15 @@ util.inherits(AccessKey, Validator);
  */
 
 /*
+ * Validate an access key entry.
+ *
+ * The operation parameter is passed down from lib/schema/index.js through
+ * lib/schema/validator.js to allow operation-specific validation logic.
+ * This is needed on the case of temporary credentials, as they require that
+ * expiration be in the future for add/modify operations, but on delete we must
+ * allow  expired credentials to be removed, as they are no longer useful.
+ * Without knowing the operation type, we couldn't distinguish these cases.
+ *
  * @param {Object} entry - The LDAP entry being validated
  * @param {Object} config - UFDS configuration
  * @param {Array|null} changes - Modifications (set for modify ops, null
@@ -86,13 +95,6 @@ function validate(entry, config, changes, callback, operation) {
 
     // Skip validation when importing legacy entries:
     if (!config.ufds_is_master) {
-        callback();
-        return;
-    }
-
-    // Skip validation for delete operations - we need to allow deleting
-    // expired credentials for cleanup purposes
-    if (operation === 'del') {
         callback();
         return;
     }
@@ -142,7 +144,9 @@ function validate(entry, config, changes, callback, operation) {
             var exp = new Date(entry.attributes.expiration[0]);
             if (isNaN(exp.getTime())) {
                 errors.push('expiration must be a valid ISO timestamp');
-            } else if (exp <= new Date()) {
+            } else if (operation !== 'del' && exp <= new Date()) {
+                // On delete, skip this check: we need to delete expired
+                // credentials, not reject them for being expired.
                 errors.push('expiration must be in the future');
             }
         }

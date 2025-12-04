@@ -121,7 +121,7 @@ if (parsed.help) {
 }
 
 var configPath = parsed.config ||
-    path.normalize(__dirname + '/../etc/config.coal.json');
+    path.normalize(__dirname + '/../etc/config.json');
 
 if (!fs.existsSync(configPath)) {
     console.error('Config file not found: %s', configPath);

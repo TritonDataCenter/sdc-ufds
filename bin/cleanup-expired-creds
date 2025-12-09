@@ -1,4 +1,4 @@
-#!/opt/local/bin/env node
+#!/opt/smartdc/ufds/build/node/bin/node
 // -*- mode: js -*-
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public

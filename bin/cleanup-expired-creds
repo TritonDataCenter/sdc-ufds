@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/opt/local/bin/env node
 // -*- mode: js -*-
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public

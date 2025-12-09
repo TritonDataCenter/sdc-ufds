@@ -10,7 +10,7 @@
 
 /*
  * @file accesskeys.test.js
- * @brief Tests for accesskey schema validation including STS temporary
+ * @summary Tests for accesskey schema validation including STS temporary
  *        credential fields.
  *
  * @section overview Overview
@@ -208,8 +208,8 @@ test('validate accesskey (update accesskey status)', function (t) {
     })
 });
 
-const readonlyAttrMsg = 'accesskeyid, accesskeysecret, created attributes can ' +
-    'not be modified';
+const readonlyAttrMsg = 'accesskeyid, accesskeysecret, ' +
+      'created attributes can ' + 'not be modified';
 
 test('validate accesskey (update readonly created attr)', function (t) {
     const changes = [
@@ -248,7 +248,8 @@ test('validate accesskey (update readonly accesskeysecret attr)', function (t) {
  * Temporary Access Key Tests
  */
 
-test('validate accesskey (add valid temporary key with expiration)', function (t) {
+test('validate accesskey (add valid temporary key with expiration)',
+     function (t) {
     accesskey.validate(tempKeyEntry, config, undefined, function (err) {
         t.notOk(err);
         t.end();
@@ -288,7 +289,8 @@ test('validate accesskey (temporary key missing principaluuid)', function (t) {
     })
 });
 
-test('validate accesskey (add temporary key with past expiration)', function (t) {
+test('validate accesskey (add temporary key with past expiration)',
+     function (t) {
     const invalidEntry = cloneObj(tempKeyEntry);
     invalidEntry.attributes.expiration = [new Date('2020-01-01').toISOString()];
     accesskey.validate(invalidEntry, config, undefined, function (err) {
@@ -298,7 +300,8 @@ test('validate accesskey (add temporary key with past expiration)', function (t)
     })
 });
 
-test('validate accesskey (add temporary key with invalid expiration format)', function (t) {
+test('validate accesskey (add temporary key with invalid expiration format)',
+     function (t) {
     const invalidEntry = cloneObj(tempKeyEntry);
     invalidEntry.attributes.expiration = ['not-a-valid-date'];
     accesskey.validate(invalidEntry, config, undefined, function (err) {
@@ -320,7 +323,8 @@ test('validate accesskey (update expiration on temporary key)', function (t) {
         rdnSpaced:true,
         length:4
     };
-    changedTempEntry.attributes.expiration = [new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()];
+    changedTempEntry.attributes.expiration =
+        [new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()];
     changedTempEntry.attributes.updated = ['1763670000000'];
     changedTempEntry.attributes._parent = [
         'uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc'
@@ -336,7 +340,8 @@ test('validate accesskey (update expiration on temporary key)', function (t) {
     })
 });
 
-test('validate accesskey (update temporary key status to Inactive)', function (t) {
+test('validate accesskey (update temporary key status to Inactive)',
+     function (t) {
     const changedTempEntry = cloneObj(tempKeyEntry);
     changedTempEntry.dn = {
         rdns:[
@@ -364,7 +369,8 @@ test('validate accesskey (update temporary key status to Inactive)', function (t
     })
 });
 
-test('validate accesskey (update temporary key status to Expired)', function (t) {
+test('validate accesskey (update temporary key status to Expired)',
+     function (t) {
     const changedTempEntry = cloneObj(tempKeyEntry);
     changedTempEntry.dn = {
         rdns:[
@@ -424,7 +430,8 @@ test('validate accesskey (update temporary key description)', function (t) {
  * Temporary Key Readonly Attribute Tests
  */
 
-test('validate accesskey (temporary key - cannot modify accesskeyid)', function (t) {
+test('validate accesskey (temporary key - cannot modify accesskeyid)',
+     function (t) {
     const changedTempEntry = cloneObj(tempKeyEntry);
     changedTempEntry.dn = {
         rdns:[
@@ -450,7 +457,8 @@ test('validate accesskey (temporary key - cannot modify accesskeyid)', function 
     })
 });
 
-test('validate accesskey (temporary key - cannot modify accesskeysecret)', function (t) {
+test('validate accesskey (temporary key - cannot modify accesskeysecret)',
+     function (t) {
     const changedTempEntry = cloneObj(tempKeyEntry);
     changedTempEntry.dn = {
         rdns:[
@@ -476,7 +484,8 @@ test('validate accesskey (temporary key - cannot modify accesskeysecret)', funct
     })
 });
 
-test('validate accesskey (temporary key - cannot modify created)', function (t) {
+test('validate accesskey (temporary key - cannot modify created)',
+     function (t) {
     const changedTempEntry = cloneObj(tempKeyEntry);
     changedTempEntry.dn = {
         rdns:[
@@ -502,7 +511,8 @@ test('validate accesskey (temporary key - cannot modify created)', function (t) 
     })
 });
 
-test('validate accesskey (temporary key - can modify mutable fields together)', function (t) {
+test('validate accesskey (temporary key - can modify mutable fields together)',
+     function (t) {
     const changedTempEntry = cloneObj(tempKeyEntry);
     changedTempEntry.dn = {
         rdns:[
@@ -516,7 +526,8 @@ test('validate accesskey (temporary key - can modify mutable fields together)', 
     };
     changedTempEntry.attributes.status = ['Inactive'];
     changedTempEntry.attributes.description = ['Updated description'];
-    changedTempEntry.attributes.expiration = [new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()];
+    changedTempEntry.attributes.expiration =
+             [new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()];
     changedTempEntry.attributes.updated = ['1763670000000'];
     changedTempEntry.attributes._parent = [
         'uuid=930896af-bf8c-48d4-885c-6573a94b1853, ou=users, o=smartdc'

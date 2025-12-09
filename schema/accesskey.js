@@ -21,7 +21,7 @@ const ID_RE = /^\w+$/;
 const KEY_RE = /^[A-Za-z0-9_-]+$/;
 
 const READONLY_ATTRS = [
-    'acceskeyid',
+    'accesskeyid',
     'accesskeysecret',
     'created'
 ];

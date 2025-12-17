@@ -36,7 +36,8 @@ This assumes several things:
 
 - You've got a moray instance running exactly how it's specified on the
   config file `etc/config.coal.json`.
-- Your node version is greater than v6.7.1
+- Your node version is equal to the version specified in the 
+  `NODE_PREBUILT_VERSION` variable of the Makefile.
 - You want to see debug output. If you don't, remove the `-d 2`, but it's
   strongly recommended while hacking.
 - You do have bunyan module installed globally. Given the `make all` command

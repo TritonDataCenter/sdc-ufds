@@ -81,3 +81,13 @@ use the _optional_ block to describe optional attributes.  If _strict_
 is false, then _optional_ is pretty much irrelevant, as anything
 goes (_required_ attributes however, must be present). The default for
 strictness is _false_.
+
+## Documentation
+
+For detailed documentation on specific topics, see the `docs/` directory:
+
+- [Temporary Credentials (STS)](docs/temporary-credentials.md) - Detailed
+  information about temporary access keys, validation rules, and automated
+  cleanup process
+- [Operator Guide](docs/operator-guide.md) - Operations and maintenance guide
+- [UFDS Replicator](docs/ufds-replicator.md) - Replication system documentation

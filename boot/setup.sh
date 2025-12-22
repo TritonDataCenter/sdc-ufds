@@ -212,7 +212,7 @@ sdc_log_rotation_setup_end
 # Setup crontab for expired credentials cleanup 
 echo "Setting up crontab for expired credentials cleanup"
 crontab -l 2>/dev/null | grep -v cleanup-expired-creds > /tmp/crontab.$$ || true
-echo "0 */12 * * * /opt/smartdc/$role/bin/cleanup-expired-creds -c /opt/smartdc/$role/etc/config.json >> /var/log/ufds-cleanup.log 2>&1" >> /tmp/crontab.$$
+echo "0 */8 * * * /opt/smartdc/$role/bin/cleanup-expired-creds -c /opt/smartdc/$role/etc/config.json >> /var/log/ufds-cleanup.log 2>&1" >> /tmp/crontab.$$
 crontab /tmp/crontab.$$
 rm -f /tmp/crontab.$$
 

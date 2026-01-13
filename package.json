@@ -17,7 +17,7 @@
         "assert-plus": "0.1.2",
         "async": "0.1.22",
         "backoff": "2.4.1",
-        "bcrypt": "1.0.3",
+        "bcrypt": "6.0.0",
         "bunyan": "^1.8.15",
         "crc": "0.2.0",
         "ldapjs": "git+https://github.com/ldapjs/node-ldapjs.git#0509dd44c0eb6dad7235df7838bdb05ea31cde14",

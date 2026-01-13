@@ -31,7 +31,7 @@
         "vasync": "1.6.2"
     },
     "devDependencies": {
-        "faucet": "0.0.1",
+        "faucet": "0.0.4",
         "tape": "4.10.1"
     },
     "scripts": {

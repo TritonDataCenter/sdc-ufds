@@ -24,7 +24,7 @@
         "moray": "git+https://github.com/TritonDataCenter/node-moray.git#v1.0.3",
         "nopt": "2.1.1",
         "once": "1.3.0",
-        "restify": "4.3.3",
+        "restify": "11.1.0",
         "sshpk": "1.16.1",
         "ufds": "^1.9.1",
         "uuid": "~3.4.0",

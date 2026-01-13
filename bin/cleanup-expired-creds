@@ -1,0 +1,161 @@
+#!/opt/smartdc/ufds/build/node/bin/node
+// -*- mode: js -*-
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
+/*
+ * Copyright 2026 Edgecast Cloud LLC.
+ */
+
+/*
+ * Tool to manually run cleanup of expired temporary credentials.
+ *
+ * Usage:
+ *   ./bin/cleanup-expired-creds [-c config] [-d] [-h]
+ *
+ * Options:
+ *   -c, --config   Path to config file (default: etc/config.coal.json)
+ *   -d, --debug    Enable debug logging
+ *   -h, --help     Show this help
+ */
+
+var fs = require('fs');
+var path = require('path');
+var util = require('util');
+
+var bunyan = require('bunyan');
+var ldapjs = require('ldapjs');
+var nopt = require('nopt');
+
+var cleanup = require('../lib/cleanup-expired-credentials');
+
+///--- Globals
+
+var opts = {
+    'config': String,
+    'debug': Boolean,
+    'help': Boolean
+};
+
+var shortOpts = {
+    'c': ['--config'],
+    'd': ['--debug'],
+    'h': ['--help']
+};
+
+///--- Internal Functions
+
+function usage(code, message) {
+    var msg = (message ? message + '\n' : '') +
+        'usage: ' + path.basename(process.argv[1]) +
+        ' [-c config_file] [-d] [-h]\n\n' +
+        'Options:\n' +
+        '  -c, --config   Path to config file (default: etc/config.coal.json)\n' +
+        '  -d, --debug    Enable debug logging\n' +
+        '  -h, --help     Show this help message';
+
+    if (code === 0) {
+        console.log(msg);
+    } else {
+        console.error(msg);
+    }
+
+    process.exit(code);
+}
+
+function loadConfig(configPath) {
+    try {
+        var content = fs.readFileSync(configPath, 'utf8');
+        return JSON.parse(content);
+    } catch (e) {
+        console.error('Unable to load config file %s: %s', configPath, e.message);
+        process.exit(1);
+    }
+}
+
+function createClient(config, log, callback) {
+    var proto = (config.port === 636) ? 'ldaps' : 'ldap';
+    var host = config.host || '127.0.0.1';
+    var port = config.port || 1389;
+    var url = util.format('%s://%s:%s', proto, host, port);
+
+    log.debug({url: url}, 'Connecting to UFDS');
+
+    var client = ldapjs.createClient({
+        connectTimeout: 5000,
+        log: log,
+        url: url,
+        tlsOptions: {
+            rejectUnauthorized: false
+        }
+    });
+
+    client.once('error', function (err) {
+        return callback(err);
+    });
+
+    client.once('connect', function () {
+        var dn = config.rootDN || 'cn=root';
+        var pw = config.rootPassword || 'secret';
+
+        log.debug({dn: dn}, 'Binding to UFDS');
+
+        client.bind(dn, pw, function (err) {
+            if (err) {
+                return callback(err);
+            }
+            return callback(null, client);
+        });
+    });
+}
+
+///--- Mainline
+
+var parsed = nopt(opts, shortOpts, process.argv, 2);
+
+if (parsed.help) {
+    usage(0);
+}
+
+var configPath = parsed.config ||
+    path.normalize(__dirname + '/../etc/config.json');
+
+if (!fs.existsSync(configPath)) {
+    console.error('Config file not found: %s', configPath);
+    process.exit(1);
+}
+
+var config = loadConfig(configPath);
+
+var log = bunyan.createLogger({
+    name: 'cleanup-expired-creds',
+    level: parsed.debug ? 'debug' : 'info',
+    stream: process.stderr,
+    serializers: bunyan.stdSerializers
+});
+
+log.info({config: configPath}, 'Starting expired credentials cleanup');
+
+createClient(config, log, function (err, client) {
+    if (err) {
+        log.fatal(err, 'Failed to connect to UFDS');
+        process.exit(1);
+    }
+
+    log.info('Connected to UFDS, running cleanup...');
+
+    cleanup.cleanupExpiredCredentials(client, log, function (cleanupErr) {
+        if (cleanupErr) {
+            log.error(cleanupErr, 'Cleanup failed');
+            client.unbind();
+            process.exit(1);
+        }
+
+        log.info('Cleanup completed successfully');
+        client.unbind();
+        process.exit(0);
+    });
+});

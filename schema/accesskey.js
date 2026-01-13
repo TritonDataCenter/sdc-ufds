@@ -6,15 +6,31 @@
 
 /*
  * Copyright 2020 Joyent, Inc.
+ * Copyright 2026 Edgecast Cloud LLC.
  */
 
 const util = require('util');
 
 const ldap = require('ldapjs');
+const accesskey = require('ufds/lib/accesskey');
+const { DEFAULT_PREFIX, DEFAULT_BYTE_LENGTH } = accesskey;
 
 const Validator = require('../lib/schema/validator');
 
-var ID_RE = /^\w+$/;
+const ID_RE = /^\w+$/;
+const KEY_RE = /^[A-Za-z0-9_-]+$/;
+
+const READONLY_ATTRS = [
+    'accesskeyid',
+    'accesskeysecret',
+    'created'
+];
+
+const STATUS_VALUES = [
+    'Active',
+    'Inactive',
+    'Expired'
+]
 
 // --- API
 
@@ -23,21 +39,59 @@ function AccessKey() {
         name: 'accesskey',
         required: {
             accesskeyid: 1,
-            accesskeysecret: 1
+            accesskeysecret: 1,
+            status: 1,
+            created: 1,
+            updated: 1,
         },
         optional: {
-            created: 1
+            description: 1,
+            // STS temporary credential fields
+            sessiontoken: 1,
+            expiration: 1,
+            principaluuid: 1,
+            assumedrole: 1,
+            credentialtype: 1
         },
         strict: true
     });
 }
 util.inherits(AccessKey, Validator);
 
+/*
+ * AccessKeys created before v7.5.0 will be missing required properties, have an
+ * invalid accesskeysecret, and are unable to be used for authentication.
+ * These AccessKeys weren't yet used anywhere within Triton but the undocumented
+ * CloudAPI endpoints existed and its possible that some installations may have
+ * some of these older entries. node-ufds and cloud-api will return
+ * such keys as 'Inactive' but will need to be manually deleted from Moray as
+ * UFDS's validation prevents updating or deleting these records:
+ *
+ * delobject ufds_o_smartdc \
+ *   "accesskeyid=$ACCESSKEYID, uuid=$USER_UUID, ou=users, o=smartdc"
+ *
+ */
 
+/*
+ * Validate an access key entry.
+ *
+ * The operation parameter is passed down from lib/schema/index.js through
+ * lib/schema/validator.js to allow operation-specific validation logic.
+ * This is needed on the case of temporary credentials, as they require that
+ * expiration be in the future for add/modify operations, but on delete we must
+ * allow  expired credentials to be removed, as they are no longer useful.
+ * Without knowing the operation type, we couldn't distinguish these cases.
+ *
+ * @param {Object} entry - The LDAP entry being validated
+ * @param {Object} config - UFDS configuration
+ * @param {Array|null} changes - Modifications (set for modify ops, null
+ * for add/del)
+ * @param {Function} callback - Callback function
+ * @param {string} [operation] - Operation type: 'add', 'modify', or 'del'
+ */
 AccessKey.prototype.validate =
-function validate(entry, config, changes, callback) {
-    var attrs = entry.attributes;
-    var errors = [];
+function validate(entry, config, changes, callback, operation) {
+    const errors = [];
 
     // Skip validation when importing legacy entries:
     if (!config.ufds_is_master) {
@@ -45,21 +99,71 @@ function validate(entry, config, changes, callback) {
         return;
     }
 
-    const id = attrs.accesskeyid[0];
+    const id = entry.attributes.accesskeyid[0];
+    const key = entry.attributes.accesskeysecret[0];
 
-    if (!ID_RE.test(id) ||
+    if (!id ||
+        !ID_RE.test(id) ||
         id.length < 16 ||
         id.length > 128) {
         errors.push('accesskeyid: ' + id + ' is invalid');
     }
 
-    if (changes && changes.some(function (c) {
-        const fixedAttrs = ['acceskeyid', 'accesskeysecret', 'created'];
-        return (fixedAttrs.indexOf(c._modification.type) !== -1);
-    })) {
-        errors.push('only status can be modified');
+    if (!key ||
+        !KEY_RE.test(key) ||
+        !accesskey.validate(DEFAULT_PREFIX, DEFAULT_BYTE_LENGTH, key)) {
+        errors.push('accesskeysecret is invalid');
     }
 
+    if (entry.attributes.status &&
+        STATUS_VALUES.indexOf(entry.attributes.status[0]) === -1) {
+        errors.push('status must be one of: ' + STATUS_VALUES.join(', '));
+    }
+
+    if (entry.attributes.description &&
+        entry.attributes.description[0] &&
+        entry.attributes.description[0].length > 150) {
+        errors.push('description must be 150 characters in length or less');
+    }
+
+    // Validate STS fields for temporary credentials
+    var credentialType = entry.attributes.credentialtype ?
+        entry.attributes.credentialtype[0] : 'permanent';
+
+    if (credentialType === 'temporary') {
+        // Session token is required for temporary credentials
+        if (!entry.attributes.sessiontoken ||
+            !entry.attributes.sessiontoken[0]) {
+            errors.push('sessiontoken is required for temporary credentials');
+        }
+
+        // Expiration is required for temporary credentials
+        if (!entry.attributes.expiration || !entry.attributes.expiration[0]) {
+            errors.push('expiration is required for temporary credentials');
+        } else {
+            var exp = new Date(entry.attributes.expiration[0]);
+            if (isNaN(exp.getTime())) {
+                errors.push('expiration must be a valid ISO timestamp');
+            } else if (operation !== 'del' && exp <= new Date()) {
+                // On delete, skip this check: we need to delete expired
+                // credentials, not reject them for being expired.
+                errors.push('expiration must be in the future');
+            }
+        }
+
+        // Principal UUID is required for temporary credentials
+        if (!entry.attributes.principaluuid ||
+            !entry.attributes.principaluuid[0]) {
+            errors.push('principaluuid is required for temporary credentials');
+        }
+    }
+
+    if (changes && changes.some(function (c) {
+        return (READONLY_ATTRS.indexOf(c._modification.type) !== -1);
+    })) {
+        errors.push(READONLY_ATTRS.join(', ') +
+            ' attributes can not be modified');
+    }
 
     if (errors.length) {
         callback(new ldap.ConstraintViolationError(errors.join('\n')));

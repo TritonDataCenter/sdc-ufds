@@ -7,6 +7,7 @@
 <!--
     Copyright (c) 2014, Joyent, Inc.
     Copyright 2022 MNX Cloud, Inc.
+    Copyright 2026 Edgecast Cloud LLC.
 -->
 
 # SDC-UFDS
@@ -35,7 +36,8 @@ This assumes several things:
 
 - You've got a moray instance running exactly how it's specified on the
   config file `etc/config.coal.json`.
-- Your node version is greater than 0.8.
+- Your node version is equal to the version specified in the 
+  `NODE_PREBUILT_VERSION` variable of the Makefile.
 - You want to see debug output. If you don't, remove the `-d 2`, but it's
   strongly recommended while hacking.
 - You do have bunyan module installed globally. Given the `make all` command
@@ -79,3 +81,13 @@ use the _optional_ block to describe optional attributes.  If _strict_
 is false, then _optional_ is pretty much irrelevant, as anything
 goes (_required_ attributes however, must be present). The default for
 strictness is _false_.
+
+## Documentation
+
+For detailed documentation on specific topics, see the `docs/` directory:
+
+- [Temporary Credentials (STS)](docs/temporary-credentials.md) - Detailed
+  information about temporary access keys, validation rules, and automated
+  cleanup process
+- [Operator Guide](docs/operator-guide.md) - Operations and maintenance guide
+- [UFDS Replicator](docs/ufds-replicator.md) - Replication system documentation

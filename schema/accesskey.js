@@ -51,7 +51,9 @@ function AccessKey() {
             expiration: 1,
             principaluuid: 1,
             assumedrole: 1,
-            credentialtype: 1
+            credentialtype: 1,
+            // Per-bucket access key scoping (JSON)
+            accesskeyscope: 1
         },
         strict: true
     });
@@ -155,6 +157,89 @@ function validate(entry, config, changes, callback, operation) {
         if (!entry.attributes.principaluuid ||
             !entry.attributes.principaluuid[0]) {
             errors.push('principaluuid is required for temporary credentials');
+        }
+    }
+
+    /**
+     * Validate accesskeyscope if present.
+     *
+     * The scope is an optional JSON string that restricts
+     * the access key to specific buckets. When absent or
+     * null the key has unrestricted access (the default).
+     *
+     * Expected JSON structure:
+     *   {
+     *     "version": 1,
+     *     "permissions": [
+     *       { "bucket": "<name>", "level": "<level>" }
+     *     ]
+     *   }
+     *
+     * Invariants:
+     *   - version must be exactly 1
+     *   - permissions must be an array with 1..1000 entries
+     *   - each entry must have a string bucket (1-63 chars)
+     *     and a level of 'read', 'readwrite', or 'full'
+     *
+     * Time complexity:  O(n) where n = permissions.length
+     * Space complexity: O(1) beyond the parsed object
+     */
+    if (entry.attributes.accesskeyscope &&
+        entry.attributes.accesskeyscope[0]) {
+        var scopeRaw = entry.attributes.accesskeyscope[0];
+        var scope;
+        try {
+            scope = JSON.parse(scopeRaw);
+        } catch (e) {
+            errors.push('accesskeyscope: invalid JSON format');
+            scope = null;
+        }
+
+        if (scope !== null) {
+            if (scope.version !== 1) {
+                errors.push(
+                    'accesskeyscope: version must be 1');
+            }
+
+            if (!Array.isArray(scope.permissions)) {
+                errors.push(
+                    'accesskeyscope: permissions must be' +
+                    ' an array');
+            } else {
+                var VALID_LEVELS = [
+                    'read', 'readwrite', 'full'
+                ];
+                var MAX_PERMISSIONS = 1000;
+
+                if (scope.permissions.length > MAX_PERMISSIONS) {
+                    errors.push(
+                        'accesskeyscope: permissions' +
+                        ' array exceeds maximum of ' +
+                        MAX_PERMISSIONS + ' entries');
+                }
+
+                for (var i = 0;
+                    i < scope.permissions.length; i++) {
+                    var perm = scope.permissions[i];
+                    var pfx = 'accesskeyscope:' +
+                        ' permissions[' + i + ']';
+
+                    if (typeof perm.bucket !== 'string' ||
+                        perm.bucket.length < 1 ||
+                        perm.bucket.length > 63) {
+                        errors.push(pfx +
+                            '.bucket must be a string' +
+                            ' (1-63 characters)');
+                    }
+
+                    if (VALID_LEVELS.indexOf(perm.level) ===
+                        -1) {
+                        errors.push(pfx +
+                            '.level must be one of: ' +
+                            VALID_LEVELS.join(', '));
+                    }
+                }
+            }
         }
     }
 

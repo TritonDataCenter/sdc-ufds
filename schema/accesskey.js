@@ -9,26 +9,26 @@
  * Copyright 2026 Edgecast Cloud LLC.
  */
 
-const util = require("util");
+const util = require('util');
 
-const ldap = require("ldapjs");
-const accesskey = require("ufds/lib/accesskey");
+const ldap = require('ldapjs');
+const accesskey = require('ufds/lib/accesskey');
 const { DEFAULT_PREFIX, DEFAULT_BYTE_LENGTH } = accesskey;
 
-const Validator = require("../lib/schema/validator");
+const Validator = require('../lib/schema/validator');
 
 const ID_RE = /^\w+$/;
 const KEY_RE = /^[A-Za-z0-9_-]+$/;
 
-const READONLY_ATTRS = ["accesskeyid", "accesskeysecret", "created"];
+const READONLY_ATTRS = ['accesskeyid', 'accesskeysecret', 'created'];
 
-const STATUS_VALUES = ["Active", "Inactive", "Expired"];
+const STATUS_VALUES = ['Active', 'Inactive', 'Expired'];
 
 // --- API
 
 function AccessKey() {
     Validator.call(this, {
-        name: "accesskey",
+        name: 'accesskey',
         required: {
             accesskeyid: 1,
             accesskeysecret: 1,
@@ -62,7 +62,7 @@ util.inherits(AccessKey, Validator);
  * UFDS's validation prevents updating or deleting these records:
  *
  * delobject ufds_o_smartdc \
- *   "accesskeyid=$ACCESSKEYID, uuid=$USER_UUID, ou=users, o=smartdc"
+ *   'accesskeyid=$ACCESSKEYID, uuid=$USER_UUID, ou=users, o=smartdc'
  *
  */
 
@@ -88,8 +88,7 @@ AccessKey.prototype.validate = function validate(
     config,
     changes,
     callback,
-    operation
-) {
+    operation) {
     const errors = [];
 
     // Skip validation when importing legacy entries:
@@ -102,73 +101,68 @@ AccessKey.prototype.validate = function validate(
     const key = entry.attributes.accesskeysecret[0];
 
     if (!id || !ID_RE.test(id) || id.length < 16 || id.length > 128) {
-        errors.push("accesskeyid: " + id + " is invalid");
+        errors.push('accesskeyid: ' + id + ' is invalid');
     }
 
     if (
         !key ||
         !KEY_RE.test(key) ||
-        !accesskey.validate(DEFAULT_PREFIX, DEFAULT_BYTE_LENGTH, key)
-    ) {
-        errors.push("accesskeysecret is invalid");
+        !accesskey.validate(DEFAULT_PREFIX, DEFAULT_BYTE_LENGTH, key)) {
+        errors.push('accesskeysecret is invalid');
     }
 
     if (
         entry.attributes.status &&
-        STATUS_VALUES.indexOf(entry.attributes.status[0]) === -1
-    ) {
-        errors.push("status must be one of: " + STATUS_VALUES.join(", "));
+        STATUS_VALUES.indexOf(entry.attributes.status[0]) === -1) {
+        errors.push('status must be one of: ' + STATUS_VALUES.join(', '));
     }
 
     if (
         entry.attributes.description &&
         entry.attributes.description[0] &&
-        entry.attributes.description[0].length > 150
-    ) {
-        errors.push("description must be 150 characters in length or less");
+        entry.attributes.description[0].length > 150) {
+        errors.push('description must be 150 characters in length or less');
     }
 
     // Validate STS fields for temporary credentials
     var credentialType = entry.attributes.credentialtype
         ? entry.attributes.credentialtype[0]
-        : "permanent";
+        : 'permanent';
 
-    if (credentialType === "temporary") {
+    if (credentialType === 'temporary') {
         // Session token is required for temporary credentials
         if (
             !entry.attributes.sessiontoken ||
-            !entry.attributes.sessiontoken[0]
-        ) {
-            errors.push("sessiontoken is required for temporary credentials");
+            !entry.attributes.sessiontoken[0]) {
+            errors.push('sessiontoken is required for temporary credentials');
         }
 
         // Expiration is required for temporary credentials
         if (!entry.attributes.expiration || !entry.attributes.expiration[0]) {
-            errors.push("expiration is required for temporary credentials");
+            errors.push('expiration is required for temporary credentials');
         } else {
             var exp = new Date(entry.attributes.expiration[0]);
             if (isNaN(exp.getTime())) {
-                errors.push("expiration must be a valid ISO timestamp");
-            } else if (operation !== "del" && exp <= new Date()) {
+                errors.push('expiration must be a valid ISO timestamp');
+            } else if (operation !== 'del' && exp <= new Date()) {
                 // On delete, skip this check: we need to delete expired
                 // credentials, not reject them for being expired.
-                errors.push("expiration must be in the future");
+                errors.push('expiration must be in the future');
             }
         }
 
         // Principal UUID is required for temporary credentials
         if (
             !entry.attributes.principaluuid ||
-            !entry.attributes.principaluuid[0]
-        ) {
-            errors.push("principaluuid is required for temporary credentials");
+            !entry.attributes.principaluuid[0]) {
+            errors.push('principaluuid is required for temporary credentials');
         }
     }
 
     /*
      * Validate a scope bucket pattern against S3 naming
      * rules.  Allows a trailing `*` wildcard for pattern
-     * matching (e.g. "logs-*").  The bare pattern "*" is
+     * matching (e.g. 'logs-*').  The bare pattern '*' is
      * also allowed (matches all buckets).
      *
      * Valid chars: lowercase letters, numbers, hyphens,
@@ -198,9 +192,9 @@ AccessKey.prototype.validate = function validate(
      *
      * Expected JSON structure:
      *   {
-     *     "version": 1,
-     *     "permissions": [
-     *       { "bucket": "<name>", "level": "<level>" }
+     *     'version': 1,
+     *     'permissions': [
+     *       { 'bucket': '<name>', 'level': '<level>' }
      *     ]
      *   }
      *
@@ -219,56 +213,56 @@ AccessKey.prototype.validate = function validate(
         try {
             scope = JSON.parse(scopeRaw);
         } catch (e) {
-            errors.push("accesskeyscope: invalid JSON format");
+            errors.push('accesskeyscope: invalid JSON format');
             scope = null;
         }
 
         if (scope !== null) {
             if (scope.version !== 1) {
-                errors.push("accesskeyscope: version must be 1");
+                errors.push('accesskeyscope: version must be 1');
             }
 
             if (!Array.isArray(scope.permissions)) {
                 errors.push(
-                    "accesskeyscope: permissions must be" +
-                        " an array");
+                    'accesskeyscope: permissions must be' +
+                        ' an array');
             } else {
-                var VALID_LEVELS = ["read", "readwrite", "full"];
+                var VALID_LEVELS = ['read', 'readwrite', 'full'];
                 var MAX_PERMISSIONS = 1000;
 
                 if (scope.permissions.length > MAX_PERMISSIONS) {
                     errors.push(
-                        "accesskeyscope: permissions" +
-                            " array exceeds maximum of " +
+                        'accesskeyscope: permissions' +
+                            ' array exceeds maximum of ' +
                             MAX_PERMISSIONS +
-                            " entries");
+                            ' entries');
                 }
 
                 for (var i = 0; i < scope.permissions.length; i++) {
                     var perm = scope.permissions[i];
-                    var pfx = "accesskeyscope:" + " permissions[" + i + "]";
+                    var pfx = 'accesskeyscope:' + ' permissions[' + i + ']';
 
-                    if (typeof perm.bucket !== "string" ||
+                    if (typeof (perm.bucket) !== 'string' ||
                         perm.bucket.length < 1 ||
                         perm.bucket.length > 63) {
                         errors.push(
                             pfx +
-                                ".bucket must be a string" +
-                                " (1-63 characters)");
+                                '.bucket must be a string' +
+                                ' (1-63 characters)');
                     } else if (!isValidScopeBucketPattern(perm.bucket)) {
                         errors.push(
                             pfx +
-                                ".bucket must contain only" +
-                                " lowercase letters, numbers," +
-                                " hyphens, and periods" +
-                                " (trailing * wildcard allowed)");
+                                '.bucket must contain only' +
+                                ' lowercase letters, numbers,' +
+                                ' hyphens, and periods' +
+                                ' (trailing * wildcard allowed)');
                     }
 
                     if (VALID_LEVELS.indexOf(perm.level) === -1) {
                         errors.push(
                             pfx +
-                                ".level must be one of: " +
-                                VALID_LEVELS.join(", "));
+                                '.level must be one of: ' +
+                                VALID_LEVELS.join(', '));
                     }
                 }
 
@@ -278,8 +272,8 @@ AccessKey.prototype.validate = function validate(
                     var b = scope.permissions[j].bucket;
                     if (b && seen[b]) {
                         errors.push(
-                            "accesskeyscope: duplicate" +
-                                " bucket pattern '" + b + "'");
+                            'accesskeyscope: duplicate' +
+                                ' bucket pattern \'' + b + '\'');
                         break;
                     }
                     seen[b] = true;
@@ -292,15 +286,14 @@ AccessKey.prototype.validate = function validate(
         changes &&
         changes.some(function (c) {
             return READONLY_ATTRS.indexOf(c._modification.type) !== -1;
-        })
-    ) {
+        })) {
         errors.push(
-            READONLY_ATTRS.join(", ") +
-                " attributes can not be modified");
+            READONLY_ATTRS.join(', ') +
+                ' attributes can not be modified');
     }
 
     if (errors.length) {
-        callback(new ldap.ConstraintViolationError(errors.join("\n")));
+        callback(new ldap.ConstraintViolationError(errors.join('\n')));
         return;
     }
 

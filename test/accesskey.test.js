@@ -226,3 +226,302 @@ test('temporary accesskey with invalid expiration format', function (t) {
         t.end();
     });
 });
+
+
+// ============================================================
+// Per-bucket access key scope validation
+// (must match node-mahi/lib/scope-schema.js contract)
+// ============================================================
+
+var VALID_SCOPE = JSON.stringify({
+    version: 1,
+    permissions: [
+        { bucket: 'app-data', level: 'readwrite' },
+        { bucket: 'logs-*', level: 'read' }
+    ]
+});
+
+
+test('scope: valid scope accepted', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [VALID_SCOPE];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err, 'valid scope should pass');
+        t.end();
+    });
+});
+
+
+test('scope: absent scope accepted (unrestricted)',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    /* no accesskeyscope attribute at all */
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'missing scope = unrestricted, should pass');
+        t.end();
+    });
+});
+
+
+test('scope: invalid JSON rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = ['{bad json'];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'invalid JSON should fail');
+        t.ok(err.message.indexOf('invalid JSON') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: wrong version rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 2,
+        permissions: [
+            { bucket: 'b', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'version 2 should fail');
+        t.ok(err.message.indexOf('version') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: permissions must be array', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: 'not-an-array'
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'non-array permissions should fail');
+        t.ok(err.message.indexOf('array') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: bucket too short rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: '', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'empty bucket name should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: bucket too long rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    /* 64 chars exceeds 63 max */
+    var longName = '';
+    for (var i = 0; i < 64; i++) {
+        longName += 'a';
+    }
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: longName, level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, '64-char bucket name should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: invalid bucket chars rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'UPPERCASE', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'uppercase bucket name should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: trailing wildcard accepted', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'logs-*', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err, 'trailing wildcard should pass');
+        t.end();
+    });
+});
+
+
+test('scope: bare wildcard * accepted', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: '*', level: 'full' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err, 'bare * should pass');
+        t.end();
+    });
+});
+
+
+test('scope: leading wildcard rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: '*-logs', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'leading wildcard should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: middle wildcard rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'pre-*-suf', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'middle wildcard should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: invalid level rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'b', level: 'admin' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'invalid level should fail');
+        t.ok(err.message.indexOf('level') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: all three levels accepted', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'a', level: 'read' },
+            { bucket: 'b', level: 'readwrite' },
+            { bucket: 'c', level: 'full' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'read, readwrite, full should all pass');
+        t.end();
+    });
+});
+
+
+test('scope: duplicate bucket pattern rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'dup', level: 'read' },
+            { bucket: 'dup', level: 'full' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'duplicate bucket should fail');
+        t.ok(err.message.indexOf('duplicate') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: max 1000 entries enforced', function (t) {
+    var entry = cloneObj(permanentEntry);
+    var perms = [];
+    for (var i = 0; i < 1001; i++) {
+        perms.push({
+            bucket: 'b-' + i,
+            level: 'read'
+        });
+    }
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: perms
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, '1001 entries should fail');
+        t.ok(err.message.indexOf('maximum') !== -1 ||
+            err.message.indexOf('1000') !== -1);
+        t.end();
+    });
+});

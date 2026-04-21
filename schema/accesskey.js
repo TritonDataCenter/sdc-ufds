@@ -160,6 +160,20 @@ AccessKey.prototype.validate = function validate(
     }
 
     /*
+     * SCOPE CONTRACT: The constants and validation
+     * rules below must match node-mahi/lib/scope-schema.js
+     * which is the canonical source of truth for:
+     *   - VALID_LEVELS: ['read', 'readwrite', 'full']
+     *   - MAX_PERMISSIONS: 1000
+     *   - Bucket pattern rules: [a-z0-9][a-z0-9.\-]*
+     *     with optional trailing wildcard
+     *   - SCOPE_VERSION: 1
+     *
+     * If you change any of these values, update
+     * scope-schema.js in node-mahi as well.
+     */
+
+    /*
      * Validate a scope bucket pattern against S3 naming
      * rules.  Allows a trailing `*` wildcard for pattern
      * matching (e.g. 'logs-*').  The bare pattern '*' is
@@ -249,7 +263,9 @@ AccessKey.prototype.validate = function validate(
                     'accesskeyscope: permissions must be' +
                         ' an array');
             } else {
+                /* Must match node-mahi scope-schema.js */
                 var VALID_LEVELS = ['read', 'readwrite', 'full'];
+                /* Must match node-mahi scope-schema.js */
                 var MAX_PERMISSIONS = 1000;
 
                 if (scope.permissions.length > MAX_PERMISSIONS) {

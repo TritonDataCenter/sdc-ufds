@@ -165,22 +165,44 @@ AccessKey.prototype.validate = function validate(
      * matching (e.g. 'logs-*').  The bare pattern '*' is
      * also allowed (matches all buckets).
      *
-     * Valid chars: lowercase letters, numbers, hyphens,
-     * periods (per AWS bucket naming spec).
+     * Wildcard grammar:
+     *   '*'        — matches all buckets
+     *   'prefix*'  — trailing wildcard, matches prefix
+     *   'prefix-*' — trailing wildcard, matches prefix-
+     *   'exact'    — exact match, no wildcards
+     *
+     * Non-trailing wildcards are rejected:
+     *   '*-logs'   — INVALID (leading wildcard)
+     *   'pre-*-x'  — INVALID (middle wildcard)
+     *
+     * Valid chars (excluding wildcard): lowercase letters,
+     * numbers, hyphens, periods (per AWS bucket naming).
      */
     function isValidScopeBucketPattern(pattern) {
         if (pattern === '*') {
-            return true;
+            return (true);
         }
-        // Strip trailing wildcard for validation
+
+        /*
+         * Reject non-trailing wildcards: if '*' appears
+         * anywhere except the last character, the pattern
+         * is invalid.
+         */
+        var starPos = pattern.indexOf('*');
+        if (starPos !== -1 &&
+            starPos !== pattern.length - 1) {
+            return (false);
+        }
+
+        /* Strip trailing wildcard for base validation */
         var name = pattern;
         if (name.charAt(name.length - 1) === '*') {
             name = name.substring(0, name.length - 1);
         }
         if (name.length === 0) {
-            return false;
+            return (false);
         }
-        return /^[a-z0-9][a-z0-9.\-]*$/.test(name);
+        return (/^[a-z0-9][a-z0-9.\-]*$/.test(name));
     }
 
     /**
@@ -254,8 +276,9 @@ AccessKey.prototype.validate = function validate(
                             pfx +
                                 '.bucket must contain only' +
                                 ' lowercase letters, numbers,' +
-                                ' hyphens, and periods' +
-                                ' (trailing * wildcard allowed)');
+                                ' hyphens, and periods;' +
+                                ' wildcard (*) only allowed' +
+                                ' as last character');
                     }
 
                     if (VALID_LEVELS.indexOf(perm.level) === -1) {

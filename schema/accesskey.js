@@ -20,10 +20,13 @@ const Validator = require('../lib/schema/validator');
 const ID_RE = /^\w+$/;
 const KEY_RE = /^[A-Za-z0-9_-]+$/;
 
-const READONLY_ATTRS = ['accesskeyid', 'accesskeysecret', 'created'];
+const READONLY_ATTRS = ['accesskeyid',
+                        'accesskeysecret',
+                        'created'];
 
-const STATUS_VALUES = ['Active', 'Inactive', 'Expired'];
-
+const STATUS_VALUES = ['Active',
+                       'Inactive',
+                       'Expired'];
 // --- API
 
 function AccessKey() {
@@ -203,8 +206,7 @@ AccessKey.prototype.validate = function validate(
          * is invalid.
          */
         var starPos = pattern.indexOf('*');
-        if (starPos !== -1 &&
-            starPos !== pattern.length - 1) {
+        if (starPos !== -1 && starPos !== pattern.length - 1) {
             return (false);
         }
 
@@ -249,7 +251,7 @@ AccessKey.prototype.validate = function validate(
         try {
             scope = JSON.parse(scopeRaw);
         } catch (e) {
-            errors.push('accesskeyscope: invalid JSON format');
+            errors.push('accesskeyscope: invalid JSON format: ' + e.message);
             scope = null;
         }
 
@@ -259,9 +261,7 @@ AccessKey.prototype.validate = function validate(
             }
 
             if (!Array.isArray(scope.permissions)) {
-                errors.push(
-                    'accesskeyscope: permissions must be' +
-                        ' an array');
+                errors.push('accesskeyscope: permissions must be an array');
             } else {
                 /* Must match node-mahi scope-schema.js */
                 var VALID_LEVELS = ['read', 'readwrite', 'full'];
@@ -273,18 +273,18 @@ AccessKey.prototype.validate = function validate(
                         'accesskeyscope: permissions' +
                             ' array exceeds maximum of ' +
                             MAX_PERMISSIONS +
-                            ' entries');
+                            ' entries'
+                    );
                 }
 
                 for (var i = 0; i < scope.permissions.length; i++) {
                     var perm = scope.permissions[i];
                     var pfx = 'accesskeyscope:' + ' permissions[' + i + ']';
 
-                    if (typeof (perm.bucket) !== 'string' ||
+                    if (typeof perm.bucket !== 'string' ||
                         perm.bucket.length < 1 ||
                         perm.bucket.length > 63) {
-                        errors.push(
-                            pfx +
+                        errors.push(pfx +
                                 '.bucket must be a string' +
                                 ' (1-63 characters)');
                     } else if (!isValidScopeBucketPattern(perm.bucket)) {
@@ -312,7 +312,7 @@ AccessKey.prototype.validate = function validate(
                     if (b && seen[b]) {
                         errors.push(
                             'accesskeyscope: duplicate' +
-                                ' bucket pattern \'' + b + '\'');
+                                ' bucket pattern ' + b + '');
                         break;
                     }
                     seen[b] = true;
@@ -321,14 +321,12 @@ AccessKey.prototype.validate = function validate(
         }
     }
 
-    if (
-        changes &&
+    if (changes &&
         changes.some(function (c) {
             return READONLY_ATTRS.indexOf(c._modification.type) !== -1;
         })) {
-        errors.push(
-            READONLY_ATTRS.join(', ') +
-                ' attributes can not be modified');
+        errors.push(READONLY_ATTRS.join(', ') +
+                    ' attributes can not be modified');
     }
 
     if (errors.length) {

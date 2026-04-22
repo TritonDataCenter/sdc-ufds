@@ -13,7 +13,7 @@
  * @brief Tests for accesskey schema validation including STS temporary
  *        credential fields.
  *
- * @section overview Overview
+ * @section Overview
  *
  * This test suite validates the accesskey schema which supports two types
  * of credentials:
@@ -24,6 +24,9 @@
  * 2. **Temporary credentials (STS)**: Short-lived credentials issued by the
  *    Security Token Service. These expire after a configured duration and
  *    require additional fields.
+ *
+ * 3. **Bucket Scoped credentials**: Permanent credentials which have
+ *    a restricted set of permissions to a predefined list of buckets.
  *
  * @section sts_fields STS Temporary Credential Fields
  *

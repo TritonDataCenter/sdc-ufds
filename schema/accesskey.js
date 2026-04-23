@@ -273,15 +273,14 @@ AccessKey.prototype.validate = function validate(
                         'accesskeyscope: permissions' +
                             ' array exceeds maximum of ' +
                             MAX_PERMISSIONS +
-                            ' entries'
-                    );
+                            ' entries');
                 }
 
                 for (var i = 0; i < scope.permissions.length; i++) {
                     var perm = scope.permissions[i];
                     var pfx = 'accesskeyscope:' + ' permissions[' + i + ']';
 
-                    if (typeof perm.bucket !== 'string' ||
+                  if (typeof (perm.bucket) !== 'string' ||
                         perm.bucket.length < 1 ||
                         perm.bucket.length > 63) {
                         errors.push(pfx +

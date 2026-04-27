@@ -50,12 +50,13 @@ var VALID_LEVELS = ['read', 'readwrite', 'full'];
 var MAX_PERMISSIONS = 1000;
 
 /*
- * Maximum raw byte length for accesskeyscope
- * before JSON.parse.  Prevents parsing arbitrarily
- * large payloads on the LDAP write path.  256 KiB
- * is generous for 1000 permission entries.
+ * Maximum raw string length (characters) for
+ * accesskeyscope before JSON.parse.  Prevents
+ * parsing arbitrarily large payloads on the LDAP
+ * write path.  256K characters is generous for
+ * 1000 permission entries (scope data is ASCII).
  */
-var MAX_SCOPE_BYTES = 256 * 1024;
+var MAX_SCOPE_CHARS = 256 * 1024;
 
 
 /*
@@ -67,7 +68,7 @@ var MAX_SCOPE_BYTES = 256 * 1024;
  * bucketLabelRegexStr.
  */
 var BUCKET_LABEL_RE_STR =
-    '([a-z0-9]([a-z0-9-]*[a-z0-9])?)';
+    '(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)';
 
 /*
  * Full bucket name regex: one or more labels
@@ -77,7 +78,7 @@ var BUCKET_LABEL_RE_STR =
  * Matches manta-buckets-api bucketRegex.
  */
 var BUCKET_NAME_RE = new RegExp(
-    '^(' + BUCKET_LABEL_RE_STR + '\\.)*' +
+    '^(?:' + BUCKET_LABEL_RE_STR + '\\.)*' +
     BUCKET_LABEL_RE_STR + '$');
 
 /*
@@ -102,6 +103,7 @@ var RESEMBLES_IP_RE =
 var SCOPE_PREFIX_RE = /^[a-z0-9][a-z0-9.\-]*$/;
 
 var MIN_BUCKET_NAME_LENGTH = 3;
+var MAX_BUCKET_NAME_LENGTH = 63;
 
 
 /*
@@ -362,15 +364,15 @@ AccessKey.prototype.validate = function validate(
     if (entry.attributes.accesskeyscope && entry.attributes.accesskeyscope[0]) {
         var scopeRaw = entry.attributes.accesskeyscope[0];
 
-        if (scopeRaw.length > MAX_SCOPE_BYTES) {
+        if (scopeRaw.length > MAX_SCOPE_CHARS) {
             errors.push(
                 'accesskeyscope: raw value exceeds' +
                     ' maximum size of ' +
-                    MAX_SCOPE_BYTES + ' bytes');
+                    MAX_SCOPE_CHARS + ' bytes');
         }
 
         var scope;
-        if (scopeRaw.length <= MAX_SCOPE_BYTES) {
+        if (scopeRaw.length <= MAX_SCOPE_CHARS) {
             try {
                 scope = JSON.parse(scopeRaw);
             } catch (e) {
@@ -433,11 +435,12 @@ AccessKey.prototype.validate = function validate(
                                 perm.bucket.length <
                                 1 ||
                                 perm.bucket.length >
-                                63) {
+                                MAX_BUCKET_NAME_LENGTH) {
                                 errors.push(pfx +
                                     '.bucket must' +
                                     ' be a string' +
-                                    ' (1-63' +
+                                    ' (1-' +
+                                    MAX_BUCKET_NAME_LENGTH +
                                     ' characters)');
                             } else {
                                 var bucketErr =

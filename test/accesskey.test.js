@@ -806,3 +806,195 @@ test('scope: wildcard prefix single char accepted',
         t.end();
     });
 });
+
+
+// ============================================================
+// #1: Multi-label bucket at exactly 3 chars
+// ============================================================
+
+test('scope: multi-label name at 3 chars accepted',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'a.b', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'a.b (3 chars, two labels) should pass');
+        t.end();
+    });
+});
+
+
+// ============================================================
+// #5: Scope on temporaryEntry
+// ============================================================
+
+test('scope: valid scope on temporary credential',
+    function (t) {
+    var entry = cloneObj(temporaryEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'tmp-data', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'scope on temporary credential should pass');
+        t.end();
+    });
+});
+
+
+test('scope: invalid scope on temporary credential',
+    function (t) {
+    var entry = cloneObj(temporaryEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'INVALID', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err,
+            'bad scope on temporary cred should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+// ============================================================
+// #6: Version field absent
+// ============================================================
+
+test('scope: missing version field rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        permissions: [
+            { bucket: 'abc', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'missing version should fail');
+        t.ok(err.message.indexOf('version') !== -1,
+            'should mention version');
+        t.end();
+    });
+});
+
+
+// ============================================================
+// #7: Extra fields in scope JSON
+// ============================================================
+
+test('scope: extra fields in scope accepted',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'abc', level: 'read' }
+        ],
+        admin: true,
+        extra: 'ignored'
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'extra fields should be ignored');
+        t.end();
+    });
+});
+
+
+// ============================================================
+// #8: null/undefined/missing bucket or level
+// ============================================================
+
+test('scope: null bucket rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: null, level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'null bucket should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: missing bucket key rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'missing bucket key should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: null level rejected', function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'abc', level: null }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'null level should fail');
+        t.ok(err.message.indexOf('level') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: missing level key rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'abc' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'missing level key should fail');
+        t.ok(err.message.indexOf('level') !== -1);
+        t.end();
+    });
+});

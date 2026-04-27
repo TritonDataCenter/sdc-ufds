@@ -135,11 +135,12 @@ var MIN_BUCKET_NAME_LENGTH = 3;
  *
  * @param {string} pattern - The bucket pattern to
  *   validate.
- * @returns {boolean} True if the pattern is valid.
+ * @returns {string|null} Null if valid, or a string
+ *   describing the failure reason.
  */
-function isValidScopeBucketPattern(pattern) {
+function validateScopeBucketPattern(pattern) {
     if (pattern === '*') {
-        return (true);
+        return (null);
     }
 
     /*
@@ -150,7 +151,8 @@ function isValidScopeBucketPattern(pattern) {
     var starPos = pattern.indexOf('*');
     if (starPos !== -1 &&
         starPos !== pattern.length - 1) {
-        return (false);
+        return ('wildcard (*) only allowed' +
+            ' as last character');
     }
 
     var isWildcard = pattern.charAt(
@@ -164,9 +166,15 @@ function isValidScopeBucketPattern(pattern) {
         var prefix = pattern.substring(
             0, pattern.length - 1);
         if (prefix.length === 0) {
-            return (false);
+            return ('wildcard prefix must not' +
+                ' be empty');
         }
-        return (SCOPE_PREFIX_RE.test(prefix));
+        if (!SCOPE_PREFIX_RE.test(prefix)) {
+            return ('prefix must contain only' +
+                ' lowercase letters, numbers,' +
+                ' hyphens, and periods');
+        }
+        return (null);
     }
 
     /*
@@ -174,12 +182,21 @@ function isValidScopeBucketPattern(pattern) {
      * rules matching manta-buckets-api.
      */
     if (pattern.length < MIN_BUCKET_NAME_LENGTH) {
-        return (false);
+        return ('bucket name must be at least ' +
+            MIN_BUCKET_NAME_LENGTH + ' characters');
     }
     if (RESEMBLES_IP_RE.test(pattern)) {
-        return (false);
+        return ('bucket name must not resemble' +
+            ' an IP address');
     }
-    return (BUCKET_NAME_RE.test(pattern));
+    if (!BUCKET_NAME_RE.test(pattern)) {
+        return ('bucket name must be dot-separated' +
+            ' labels of lowercase letters,' +
+            ' numbers, and hyphens; labels' +
+            ' must not start or end with' +
+            ' a hyphen');
+    }
+    return (null);
 }
 
 
@@ -422,21 +439,16 @@ AccessKey.prototype.validate = function validate(
                                     ' be a string' +
                                     ' (1-63' +
                                     ' characters)');
-                            } else if (
-                                !isValidScopeBucketPattern(
-                                perm.bucket)) {
-                                errors.push(pfx +
-                                    '.bucket must' +
-                                    ' contain only' +
-                                    ' lowercase' +
-                                    ' letters,' +
-                                    ' numbers,' +
-                                    ' hyphens, and' +
-                                    ' periods;' +
-                                    ' wildcard (*)' +
-                                    ' only allowed' +
-                                    ' as last' +
-                                    ' character');
+                            } else {
+                                var bucketErr =
+                                    validateScopeBucketPattern(
+                                    perm.bucket);
+                                if (bucketErr) {
+                                    errors.push(
+                                        pfx +
+                                        '.bucket: ' +
+                                        bucketErr);
+                                }
                             }
 
                             if (VALID_LEVELS.indexOf(

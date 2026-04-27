@@ -372,7 +372,9 @@ test('scope: invalid bucket chars rejected',
     accesskey.validate(entry, config, undefined,
         function (err) {
         t.ok(err, 'uppercase bucket name should fail');
-        t.ok(err.message.indexOf('bucket') !== -1);
+        t.ok(
+            err.message.indexOf('dot-separated') !== -1,
+            'should mention label format');
         t.end();
     });
 });
@@ -424,7 +426,9 @@ test('scope: leading wildcard rejected', function (t) {
     accesskey.validate(entry, config, undefined,
         function (err) {
         t.ok(err, 'leading wildcard should fail');
-        t.ok(err.message.indexOf('bucket') !== -1);
+        t.ok(
+            err.message.indexOf('last character') !== -1,
+            'should mention wildcard position');
         t.end();
     });
 });
@@ -442,7 +446,9 @@ test('scope: middle wildcard rejected', function (t) {
     accesskey.validate(entry, config, undefined,
         function (err) {
         t.ok(err, 'middle wildcard should fail');
-        t.ok(err.message.indexOf('bucket') !== -1);
+        t.ok(
+            err.message.indexOf('last character') !== -1,
+            'should mention wildcard position');
         t.end();
     });
 });
@@ -615,7 +621,8 @@ test('scope: exact name under 3 chars rejected',
     accesskey.validate(entry, config, undefined,
         function (err) {
         t.ok(err, '2-char exact name should fail');
-        t.ok(err.message.indexOf('bucket') !== -1);
+        t.ok(err.message.indexOf('at least 3') !== -1,
+            'should mention minimum length');
         t.end();
     });
 });
@@ -653,7 +660,9 @@ test('scope: exact name consecutive periods rejected',
         function (err) {
         t.ok(err,
             'consecutive periods should fail');
-        t.ok(err.message.indexOf('bucket') !== -1);
+        t.ok(
+            err.message.indexOf('dot-separated') !== -1,
+            'should mention label format');
         t.end();
     });
 });
@@ -672,7 +681,9 @@ test('scope: exact name trailing period rejected',
     accesskey.validate(entry, config, undefined,
         function (err) {
         t.ok(err, 'trailing period should fail');
-        t.ok(err.message.indexOf('bucket') !== -1);
+        t.ok(
+            err.message.indexOf('dot-separated') !== -1,
+            'should mention label format');
         t.end();
     });
 });
@@ -691,7 +702,9 @@ test('scope: exact name trailing hyphen rejected',
     accesskey.validate(entry, config, undefined,
         function (err) {
         t.ok(err, 'trailing hyphen should fail');
-        t.ok(err.message.indexOf('bucket') !== -1);
+        t.ok(
+            err.message.indexOf('dot-separated') !== -1,
+            'should mention label format');
         t.end();
     });
 });
@@ -710,7 +723,9 @@ test('scope: exact name resembling IP rejected',
     accesskey.validate(entry, config, undefined,
         function (err) {
         t.ok(err, 'IP-like bucket name should fail');
-        t.ok(err.message.indexOf('bucket') !== -1);
+        t.ok(
+            err.message.indexOf('IP address') !== -1,
+            'should mention IP address');
         t.end();
     });
 });

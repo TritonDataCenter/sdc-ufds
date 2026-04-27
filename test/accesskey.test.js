@@ -506,6 +506,48 @@ test('scope: duplicate bucket pattern rejected',
 });
 
 
+test('scope: empty permissions array rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: []
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err,
+            'empty permissions array should fail');
+        t.ok(err.message.indexOf('at least one') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: exactly 1000 entries accepted',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    var perms = [];
+    for (var i = 0; i < 1000; i++) {
+        perms.push({
+            bucket: 'b-' + i,
+            level: 'read'
+        });
+    }
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: perms
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'exactly 1000 entries should pass');
+        t.end();
+    });
+});
+
+
 test('scope: max 1000 entries enforced', function (t) {
     var entry = cloneObj(permanentEntry);
     var perms = [];
@@ -525,6 +567,31 @@ test('scope: max 1000 entries enforced', function (t) {
         t.ok(err, '1001 entries should fail');
         t.ok(err.message.indexOf('maximum') !== -1 ||
             err.message.indexOf('1000') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: oversized raw value rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    /*
+     * Create a string larger than 256 KiB.
+     * Use a repeated character padded into a
+     * valid-looking JSON wrapper.
+     */
+    var big = '{"version":1,"permissions":[';
+    var pad = '{"bucket":"a","level":"read"},';
+    while (big.length < (256 * 1024 + 1)) {
+        big += pad;
+    }
+    big += '{"bucket":"z","level":"read"}]}';
+    entry.attributes.accesskeyscope = [big];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'oversized scope should fail');
+        t.ok(err.message.indexOf('maximum size') !== -1);
         t.end();
     });
 });

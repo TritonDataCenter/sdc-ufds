@@ -245,76 +245,152 @@ AccessKey.prototype.validate = function validate(
      *   - no duplicate bucket patterns
      *
      */
+    /*
+     * Maximum raw byte length for accesskeyscope
+     * before JSON.parse.  Prevents parsing
+     * arbitrarily large payloads on the LDAP
+     * write path.  256 KiB is generous for 1000
+     * permission entries.
+     */
+    var MAX_SCOPE_BYTES = 256 * 1024;
+
     if (entry.attributes.accesskeyscope && entry.attributes.accesskeyscope[0]) {
         var scopeRaw = entry.attributes.accesskeyscope[0];
-        var scope;
-        try {
-            scope = JSON.parse(scopeRaw);
-        } catch (e) {
-            errors.push('accesskeyscope: invalid JSON format: ' + e.message);
-            scope = null;
+
+        if (scopeRaw.length > MAX_SCOPE_BYTES) {
+            errors.push(
+                'accesskeyscope: raw value exceeds' +
+                    ' maximum size of ' +
+                    MAX_SCOPE_BYTES + ' bytes');
         }
 
-        if (scope !== null) {
-            if (scope.version !== 1) {
-                errors.push('accesskeyscope: version must be 1');
+        var scope;
+        if (scopeRaw.length <= MAX_SCOPE_BYTES) {
+            try {
+                scope = JSON.parse(scopeRaw);
+            } catch (e) {
+                errors.push(
+                    'accesskeyscope: invalid JSON' +
+                        ' format: ' + e.message);
+                scope = null;
             }
 
-            if (!Array.isArray(scope.permissions)) {
-                errors.push('accesskeyscope: permissions must be an array');
-            } else {
-                /* Must match node-mahi scope-schema.js */
-                var VALID_LEVELS = ['read', 'readwrite', 'full'];
-                /* Must match node-mahi scope-schema.js */
-                var MAX_PERMISSIONS = 1000;
+            if (scope !== null) {
+                if (scope.version !== 1) {
+                    errors.push(
+                        'accesskeyscope: version' +
+                            ' must be 1');
+                }
 
-                if (scope.permissions.length > MAX_PERMISSIONS) {
+                if (!Array.isArray(
+                    scope.permissions)) {
                     errors.push(
                         'accesskeyscope: permissions' +
-                            ' array exceeds maximum of ' +
+                            ' must be an array');
+                } else {
+                    /* Must match scope-schema.js */
+                    var VALID_LEVELS = [
+                        'read',
+                        'readwrite',
+                        'full'
+                    ];
+                    /* Must match scope-schema.js */
+                    var MAX_PERMISSIONS = 1000;
+
+                    if (scope.permissions.length ===
+                        0) {
+                        errors.push(
+                            'accesskeyscope:' +
+                            ' permissions array' +
+                            ' must contain at' +
+                            ' least one entry');
+                    } else if (
+                        scope.permissions.length >
+                        MAX_PERMISSIONS) {
+                        errors.push(
+                            'accesskeyscope:' +
+                            ' permissions array' +
+                            ' exceeds maximum' +
+                            ' of ' +
                             MAX_PERMISSIONS +
                             ' entries');
-                }
+                    } else {
+                        /*
+                         * Per-entry validation:
+                         * only runs when array
+                         * size is in bounds
+                         * [1, MAX_PERMISSIONS].
+                         */
+                        for (var i = 0;
+                            i <
+                            scope.permissions.length;
+                            i++) {
+                            var perm =
+                                scope.permissions[i];
+                            var pfx =
+                                'accesskeyscope:' +
+                                ' permissions[' +
+                                i + ']';
 
-                for (var i = 0; i < scope.permissions.length; i++) {
-                    var perm = scope.permissions[i];
-                    var pfx = 'accesskeyscope:' + ' permissions[' + i + ']';
+                            if (typeof (perm.bucket)
+                                !== 'string' ||
+                                perm.bucket.length <
+                                1 ||
+                                perm.bucket.length >
+                                63) {
+                                errors.push(pfx +
+                                    '.bucket must' +
+                                    ' be a string' +
+                                    ' (1-63' +
+                                    ' characters)');
+                            } else if (
+                                !isValidScopeBucketPattern(
+                                perm.bucket)) {
+                                errors.push(pfx +
+                                    '.bucket must' +
+                                    ' contain only' +
+                                    ' lowercase' +
+                                    ' letters,' +
+                                    ' numbers,' +
+                                    ' hyphens, and' +
+                                    ' periods;' +
+                                    ' wildcard (*)' +
+                                    ' only allowed' +
+                                    ' as last' +
+                                    ' character');
+                            }
 
-                  if (typeof (perm.bucket) !== 'string' ||
-                        perm.bucket.length < 1 ||
-                        perm.bucket.length > 63) {
-                        errors.push(pfx +
-                                '.bucket must be a string' +
-                                ' (1-63 characters)');
-                    } else if (!isValidScopeBucketPattern(perm.bucket)) {
-                        errors.push(
-                            pfx +
-                                '.bucket must contain only' +
-                                ' lowercase letters, numbers,' +
-                                ' hyphens, and periods;' +
-                                ' wildcard (*) only allowed' +
-                                ' as last character');
+                            if (VALID_LEVELS.indexOf(
+                                perm.level) === -1) {
+                                errors.push(pfx +
+                                    '.level must' +
+                                    ' be one of: ' +
+                                    VALID_LEVELS
+                                    .join(', '));
+                            }
+                        }
+
+                        /* Duplicate bucket check */
+                        var seen = {};
+                        for (var j = 0;
+                            j <
+                            scope.permissions.length;
+                            j++) {
+                            var b = scope
+                                .permissions[j]
+                                .bucket;
+                            if (b && seen[b]) {
+                                errors.push(
+                                    'accesskeyscope' +
+                                    ': duplicate' +
+                                    ' bucket' +
+                                    ' pattern ' +
+                                    b);
+                                break;
+                            }
+                            seen[b] = true;
+                        }
                     }
-
-                    if (VALID_LEVELS.indexOf(perm.level) === -1) {
-                        errors.push(
-                            pfx +
-                                '.level must be one of: ' +
-                                VALID_LEVELS.join(', '));
-                    }
-                }
-
-                // M2: Check for duplicate bucket patterns
-                var seen = {};
-                for (var j = 0; j < scope.permissions.length; j++) {
-                    var b = scope.permissions[j].bucket;
-                    if (b && seen[b]) {
-                        errors.push(
-                            'accesskeyscope: duplicate' +
-                                ' bucket pattern ' + b + '');
-                        break;
-                    }
-                    seen[b] = true;
                 }
             }
         }

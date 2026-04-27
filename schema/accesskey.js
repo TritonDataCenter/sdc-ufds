@@ -368,7 +368,7 @@ AccessKey.prototype.validate = function validate(
             errors.push(
                 'accesskeyscope: raw value exceeds' +
                     ' maximum size of ' +
-                    MAX_SCOPE_CHARS + ' bytes');
+                    MAX_SCOPE_CHARS + ' characters');
         }
 
         var scope;

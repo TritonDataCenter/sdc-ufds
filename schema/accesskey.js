@@ -34,8 +34,9 @@ const STATUS_VALUES = ['Active',
  * is the canonical source of truth for:
  *   - VALID_LEVELS: ['read', 'readwrite', 'full']
  *   - MAX_PERMISSIONS: 1000
- *   - Bucket pattern rules: [a-z0-9][a-z0-9.\-]*
- *     with optional trailing wildcard
+ *   - Exact bucket names: full S3 naming rules
+ *     (label structure, no IP lookalikes)
+ *   - Wildcard prefixes: [a-z0-9][a-z0-9.\-]*
  *   - SCOPE_VERSION: 1
  *
  * If you change any of these values, update
@@ -58,23 +59,79 @@ var MAX_SCOPE_BYTES = 256 * 1024;
 
 
 /*
- * Validate a scope bucket pattern against S3 naming
- * rules.  Allows a trailing `*` wildcard for pattern
- * matching (e.g. 'logs-*').  The bare pattern '*' is
- * also allowed (matches all buckets).
+ * Bucket label regex: a label is a sequence of
+ * lowercase letters, numbers, and hyphens that does
+ * not start or end with a hyphen.
+ *
+ * Matches manta-buckets-api/lib/buckets/common.js
+ * bucketLabelRegexStr.
+ */
+var BUCKET_LABEL_RE_STR =
+    '([a-z0-9]([a-z0-9-]*[a-z0-9])?)';
+
+/*
+ * Full bucket name regex: one or more labels
+ * separated by single periods.  No leading/trailing
+ * periods, no consecutive periods.
+ *
+ * Matches manta-buckets-api bucketRegex.
+ */
+var BUCKET_NAME_RE = new RegExp(
+    '^(' + BUCKET_LABEL_RE_STR + '\\.)*' +
+    BUCKET_LABEL_RE_STR + '$');
+
+/*
+ * IP-address lookalike regex: four groups of 1-3
+ * digits separated by periods.  S3 rejects these
+ * even if they are not valid IP addresses.
+ *
+ * Matches manta-buckets-api resemblesIpRegex.
+ */
+var RESEMBLES_IP_RE =
+    /^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$/;
+
+/*
+ * Loose prefix regex for wildcard scope patterns.
+ * Only the prefix portion (before the trailing '*')
+ * is validated.  We allow a trailing period or
+ * hyphen here because 'logs-*' and 'us.east.*'
+ * are legitimate prefix patterns even though
+ * 'logs-' and 'us.east.' are not valid bucket
+ * names on their own.
+ */
+var SCOPE_PREFIX_RE = /^[a-z0-9][a-z0-9.\-]*$/;
+
+var MIN_BUCKET_NAME_LENGTH = 3;
+
+
+/*
+ * Validate a scope bucket pattern.
+ *
+ * For exact names (no wildcard) the full S3 bucket
+ * naming rules are enforced, matching the validation
+ * in manta-buckets-api isValidBucketName:
+ *   - 3-63 characters
+ *   - labels separated by periods
+ *   - each label starts/ends with alnum
+ *   - no consecutive periods
+ *   - no leading/trailing period or hyphen
+ *   - must not resemble an IP address
+ *
+ * For wildcard patterns (trailing '*') only a
+ * loose prefix check is applied since the prefix
+ * does not need to be a complete bucket name.
+ *
+ * The bare pattern '*' matches all buckets.
  *
  * Wildcard grammar:
  *   '*'        — matches all buckets
- *   'prefix*'  — trailing wildcard, matches prefix
- *   'prefix-*' — trailing wildcard, matches prefix-
+ *   'prefix*'  — trailing wildcard
+ *   'prefix-*' — trailing wildcard
  *   'exact'    — exact match, no wildcards
  *
  * Non-trailing wildcards are rejected:
  *   '*-logs'   — INVALID (leading wildcard)
  *   'pre-*-x'  — INVALID (middle wildcard)
- *
- * Valid chars (excluding wildcard): lowercase letters,
- * numbers, hyphens, periods (per AWS bucket naming).
  *
  * @param {string} pattern - The bucket pattern to
  *   validate.
@@ -96,15 +153,33 @@ function isValidScopeBucketPattern(pattern) {
         return (false);
     }
 
-    /* Strip trailing wildcard for base validation */
-    var name = pattern;
-    if (name.charAt(name.length - 1) === '*') {
-        name = name.substring(0, name.length - 1);
+    var isWildcard = pattern.charAt(
+        pattern.length - 1) === '*';
+
+    if (isWildcard) {
+        /*
+         * Wildcard pattern: validate the prefix
+         * portion only with loose rules.
+         */
+        var prefix = pattern.substring(
+            0, pattern.length - 1);
+        if (prefix.length === 0) {
+            return (false);
+        }
+        return (SCOPE_PREFIX_RE.test(prefix));
     }
-    if (name.length === 0) {
+
+    /*
+     * Exact name: enforce full S3 bucket naming
+     * rules matching manta-buckets-api.
+     */
+    if (pattern.length < MIN_BUCKET_NAME_LENGTH) {
         return (false);
     }
-    return (/^[a-z0-9][a-z0-9.\-]*$/.test(name));
+    if (RESEMBLES_IP_RE.test(pattern)) {
+        return (false);
+    }
+    return (BUCKET_NAME_RE.test(pattern));
 }
 
 

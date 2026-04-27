@@ -289,7 +289,7 @@ test('scope: wrong version rejected', function (t) {
     entry.attributes.accesskeyscope = [JSON.stringify({
         version: 2,
         permissions: [
-            { bucket: 'b', level: 'read' }
+            { bucket: 'bkt', level: 'read' }
         ]
     })];
 
@@ -453,7 +453,7 @@ test('scope: invalid level rejected', function (t) {
     entry.attributes.accesskeyscope = [JSON.stringify({
         version: 1,
         permissions: [
-            { bucket: 'b', level: 'admin' }
+            { bucket: 'bkt', level: 'admin' }
         ]
     })];
 
@@ -471,9 +471,9 @@ test('scope: all three levels accepted', function (t) {
     entry.attributes.accesskeyscope = [JSON.stringify({
         version: 1,
         permissions: [
-            { bucket: 'a', level: 'read' },
-            { bucket: 'b', level: 'readwrite' },
-            { bucket: 'c', level: 'full' }
+            { bucket: 'aaa', level: 'read' },
+            { bucket: 'bbb', level: 'readwrite' },
+            { bucket: 'ccc', level: 'full' }
         ]
     })];
 
@@ -592,6 +592,202 @@ test('scope: oversized raw value rejected',
         function (err) {
         t.ok(err, 'oversized scope should fail');
         t.ok(err.message.indexOf('maximum size') !== -1);
+        t.end();
+    });
+});
+
+
+// ============================================================
+// Exact bucket name: S3 naming enforcement
+// (must match manta-buckets-api isValidBucketName)
+// ============================================================
+
+test('scope: exact name under 3 chars rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'ab', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, '2-char exact name should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: exact name with 3 chars accepted',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'abc', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err, '3-char exact name should pass');
+        t.end();
+    });
+});
+
+
+test('scope: exact name consecutive periods rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'my..bucket', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err,
+            'consecutive periods should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: exact name trailing period rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'mybucket.', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'trailing period should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: exact name trailing hyphen rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'mybucket-', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'trailing hyphen should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: exact name resembling IP rejected',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: '192.168.1.1', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.ok(err, 'IP-like bucket name should fail');
+        t.ok(err.message.indexOf('bucket') !== -1);
+        t.end();
+    });
+});
+
+
+test('scope: exact name with labels accepted',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'my.bucket.name',
+              level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'dotted label bucket should pass');
+        t.end();
+    });
+});
+
+
+test('scope: wildcard prefix allows trailing hyphen',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'logs-*', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'trailing hyphen in prefix should pass');
+        t.end();
+    });
+});
+
+
+test('scope: wildcard prefix allows trailing period',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'us.east.*', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'trailing period in prefix should pass');
+        t.end();
+    });
+});
+
+
+test('scope: wildcard prefix single char accepted',
+    function (t) {
+    var entry = cloneObj(permanentEntry);
+    entry.attributes.accesskeyscope = [JSON.stringify({
+        version: 1,
+        permissions: [
+            { bucket: 'a*', level: 'read' }
+        ]
+    })];
+
+    accesskey.validate(entry, config, undefined,
+        function (err) {
+        t.notOk(err,
+            'single char wildcard prefix should pass');
         t.end();
     });
 });

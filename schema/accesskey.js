@@ -27,6 +27,87 @@ const READONLY_ATTRS = ['accesskeyid',
 const STATUS_VALUES = ['Active',
                        'Inactive',
                        'Expired'];
+
+/*
+ * SCOPE CONTRACT: The constants and validation rules
+ * below must match node-mahi/lib/scope-schema.js which
+ * is the canonical source of truth for:
+ *   - VALID_LEVELS: ['read', 'readwrite', 'full']
+ *   - MAX_PERMISSIONS: 1000
+ *   - Bucket pattern rules: [a-z0-9][a-z0-9.\-]*
+ *     with optional trailing wildcard
+ *   - SCOPE_VERSION: 1
+ *
+ * If you change any of these values, update
+ * scope-schema.js in node-mahi as well.
+ */
+
+/* Must match node-mahi scope-schema.js */
+var VALID_LEVELS = ['read', 'readwrite', 'full'];
+
+/* Must match node-mahi scope-schema.js */
+var MAX_PERMISSIONS = 1000;
+
+/*
+ * Maximum raw byte length for accesskeyscope
+ * before JSON.parse.  Prevents parsing arbitrarily
+ * large payloads on the LDAP write path.  256 KiB
+ * is generous for 1000 permission entries.
+ */
+var MAX_SCOPE_BYTES = 256 * 1024;
+
+
+/*
+ * Validate a scope bucket pattern against S3 naming
+ * rules.  Allows a trailing `*` wildcard for pattern
+ * matching (e.g. 'logs-*').  The bare pattern '*' is
+ * also allowed (matches all buckets).
+ *
+ * Wildcard grammar:
+ *   '*'        — matches all buckets
+ *   'prefix*'  — trailing wildcard, matches prefix
+ *   'prefix-*' — trailing wildcard, matches prefix-
+ *   'exact'    — exact match, no wildcards
+ *
+ * Non-trailing wildcards are rejected:
+ *   '*-logs'   — INVALID (leading wildcard)
+ *   'pre-*-x'  — INVALID (middle wildcard)
+ *
+ * Valid chars (excluding wildcard): lowercase letters,
+ * numbers, hyphens, periods (per AWS bucket naming).
+ *
+ * @param {string} pattern - The bucket pattern to
+ *   validate.
+ * @returns {boolean} True if the pattern is valid.
+ */
+function isValidScopeBucketPattern(pattern) {
+    if (pattern === '*') {
+        return (true);
+    }
+
+    /*
+     * Reject non-trailing wildcards: if '*' appears
+     * anywhere except the last character, the pattern
+     * is invalid.
+     */
+    var starPos = pattern.indexOf('*');
+    if (starPos !== -1 &&
+        starPos !== pattern.length - 1) {
+        return (false);
+    }
+
+    /* Strip trailing wildcard for base validation */
+    var name = pattern;
+    if (name.charAt(name.length - 1) === '*') {
+        name = name.substring(0, name.length - 1);
+    }
+    if (name.length === 0) {
+        return (false);
+    }
+    return (/^[a-z0-9][a-z0-9.\-]*$/.test(name));
+}
+
+
 // --- API
 
 function AccessKey() {
@@ -162,65 +243,6 @@ AccessKey.prototype.validate = function validate(
         }
     }
 
-    /*
-     * SCOPE CONTRACT: The constants and validation
-     * rules below must match node-mahi/lib/scope-schema.js
-     * which is the canonical source of truth for:
-     *   - VALID_LEVELS: ['read', 'readwrite', 'full']
-     *   - MAX_PERMISSIONS: 1000
-     *   - Bucket pattern rules: [a-z0-9][a-z0-9.\-]*
-     *     with optional trailing wildcard
-     *   - SCOPE_VERSION: 1
-     *
-     * If you change any of these values, update
-     * scope-schema.js in node-mahi as well.
-     */
-
-    /*
-     * Validate a scope bucket pattern against S3 naming
-     * rules.  Allows a trailing `*` wildcard for pattern
-     * matching (e.g. 'logs-*').  The bare pattern '*' is
-     * also allowed (matches all buckets).
-     *
-     * Wildcard grammar:
-     *   '*'        — matches all buckets
-     *   'prefix*'  — trailing wildcard, matches prefix
-     *   'prefix-*' — trailing wildcard, matches prefix-
-     *   'exact'    — exact match, no wildcards
-     *
-     * Non-trailing wildcards are rejected:
-     *   '*-logs'   — INVALID (leading wildcard)
-     *   'pre-*-x'  — INVALID (middle wildcard)
-     *
-     * Valid chars (excluding wildcard): lowercase letters,
-     * numbers, hyphens, periods (per AWS bucket naming).
-     */
-    function isValidScopeBucketPattern(pattern) {
-        if (pattern === '*') {
-            return (true);
-        }
-
-        /*
-         * Reject non-trailing wildcards: if '*' appears
-         * anywhere except the last character, the pattern
-         * is invalid.
-         */
-        var starPos = pattern.indexOf('*');
-        if (starPos !== -1 && starPos !== pattern.length - 1) {
-            return (false);
-        }
-
-        /* Strip trailing wildcard for base validation */
-        var name = pattern;
-        if (name.charAt(name.length - 1) === '*') {
-            name = name.substring(0, name.length - 1);
-        }
-        if (name.length === 0) {
-            return (false);
-        }
-        return (/^[a-z0-9][a-z0-9.\-]*$/.test(name));
-    }
-
     /**
      * Validate accesskeyscope if present.
      *
@@ -245,15 +267,6 @@ AccessKey.prototype.validate = function validate(
      *   - no duplicate bucket patterns
      *
      */
-    /*
-     * Maximum raw byte length for accesskeyscope
-     * before JSON.parse.  Prevents parsing
-     * arbitrarily large payloads on the LDAP
-     * write path.  256 KiB is generous for 1000
-     * permission entries.
-     */
-    var MAX_SCOPE_BYTES = 256 * 1024;
-
     if (entry.attributes.accesskeyscope && entry.attributes.accesskeyscope[0]) {
         var scopeRaw = entry.attributes.accesskeyscope[0];
 
@@ -288,15 +301,6 @@ AccessKey.prototype.validate = function validate(
                         'accesskeyscope: permissions' +
                             ' must be an array');
                 } else {
-                    /* Must match scope-schema.js */
-                    var VALID_LEVELS = [
-                        'read',
-                        'readwrite',
-                        'full'
-                    ];
-                    /* Must match scope-schema.js */
-                    var MAX_PERMISSIONS = 1000;
-
                     if (scope.permissions.length ===
                         0) {
                         errors.push(

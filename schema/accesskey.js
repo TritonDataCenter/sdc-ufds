@@ -173,19 +173,16 @@ function validateScopeBucketPattern(pattern) {
      */
     if (pattern.length < MIN_BUCKET_NAME_LENGTH) {
         return (
-            'bucket name must be at least ' +
-            MIN_BUCKET_NAME_LENGTH +
+            'bucket name must be at least ' + MIN_BUCKET_NAME_LENGTH +
             ' characters');
     }
     if (RESEMBLES_IP_RE.test(pattern)) {
-        return 'bucket name must not resemble' + ' an IP address';
+        return 'bucket name must not resemble an IP address';
     }
     if (!BUCKET_NAME_RE.test(pattern)) {
         return (
-            'bucket name must be dot-separated' +
-            ' labels of lowercase letters,' +
-            ' numbers, and hyphens; labels' +
-            ' must not start or end with' +
+            'bucket name must be dot-separated labels of lowercase letters,' +
+            ' numbers, and hyphens; labels must not start or end with' +
             ' a hyphen');
     }
     return null;

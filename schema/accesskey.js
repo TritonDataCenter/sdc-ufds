@@ -160,8 +160,7 @@ function validateScopeBucketPattern(pattern) {
         }
         if (!SCOPE_PREFIX_RE.test(prefix)) {
             return (
-                'prefix must contain only' +
-                ' lowercase letters, numbers,' +
+                'prefix must contain only' + ' lowercase letters, numbers,' +
                 ' hyphens, and periods');
         }
         return null;
@@ -353,10 +352,8 @@ AccessKey.prototype.validate = function validate(
 
         if (scopeRaw.length > MAX_SCOPE_CHARS) {
             errors.push(
-                'accesskeyscope: raw value exceeds' +
-                    ' maximum size of ' +
-                    MAX_SCOPE_CHARS +
-                    ' characters');
+                'accesskeyscope: raw value exceeds maximum size of ' +
+                    MAX_SCOPE_CHARS + ' characters');
         }
 
         var scope;
@@ -380,18 +377,12 @@ AccessKey.prototype.validate = function validate(
                 } else {
                     if (scope.permissions.length === 0) {
                         errors.push(
-                            'accesskeyscope:' +
-                                ' permissions array' +
-                                ' must contain at' +
-                                ' least one entry');
+                            'accesskeyscope: permissions array must contain' +
+                                ' at least one entry');
                     } else if (scope.permissions.length > MAX_PERMISSIONS) {
                         errors.push(
-                            'accesskeyscope:' +
-                                ' permissions array' +
-                                ' exceeds maximum' +
-                                ' of ' +
-                                MAX_PERMISSIONS +
-                                ' entries');
+                            'accesskeyscope: permissions array exceeds ' +
+                                'maximum of ' + MAX_PERMISSIONS + ' entries');
                     } else {
                         /*
                          * Per-entry validation:
@@ -409,10 +400,7 @@ AccessKey.prototype.validate = function validate(
                                 perm.bucket.length < 1 ||
                                 perm.bucket.length > MAX_BUCKET_NAME_LENGTH) {
                                 errors.push(
-                                    pfx +
-                                        '.bucket must' +
-                                        ' be a string' +
-                                        ' (1-' +
+                                    pfx + '.bucket must be a string' + ' (1-' +
                                         MAX_BUCKET_NAME_LENGTH +
                                         ' characters)');
                             } else {
@@ -426,8 +414,7 @@ AccessKey.prototype.validate = function validate(
                             if (VALID_LEVELS.indexOf(perm.level) === -1) {
                                 errors.push(
                                     pfx +
-                                        '.level must' +
-                                        ' be one of: ' +
+                                        '.level must be one of: ' +
                                         VALID_LEVELS.join(', '));
                             }
                         }
@@ -438,11 +425,8 @@ AccessKey.prototype.validate = function validate(
                             var b = scope.permissions[j].bucket;
                             if (b && seen[b]) {
                                 errors.push(
-                                    'accesskeyscope' +
-                                        ': duplicate' +
-                                        ' bucket' +
-                                        ' pattern ' +
-                                        b);
+                                    'accesskeyscope: duplicate bucket ' +
+                                       'pattern ' +  b);
                                 break;
                             }
                             seen[b] = true;
